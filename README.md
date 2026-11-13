@@ -27,7 +27,7 @@ Otwórz http://localhost:4173. Na komputerze, na którym przygotowano projekt, m
 
 Workflow `.github/workflows/pages.yml` testuje i buduje aplikację z bazą `/body-reconstruction/`, następnie zapisuje sam wynik w gałęzi `gh-pages` i zleca natywną budowę Pages. Konfiguracja repozytorium: **Settings → Pages → Source: Deploy from a branch → gh-pages → /(root)**. Publikacja uruchamia się po zmianach gałęzi main lub ręcznie w Actions. Plik `.nojekyll` wyłącza przetwarzanie gotowych plików przez Jekyll.
 
-Darmowy GitHub Pages wymaga publicznego repozytorium. Adres docelowy: https://michalbaldyga.github.io/body-reconstruction/ — sam zapis adresu w dokumentacji nie potwierdza udanego wdrożenia; sprawdź wynik workflow.
+Darmowy GitHub Pages wymaga publicznego repozytorium. Adres docelowy: [replace] — sam zapis adresu w dokumentacji nie potwierdza udanego wdrożenia; sprawdź wynik workflow.
 
 Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu początkowego. Po pierwszym pobraniu aplikacja obsługuje pracę offline. Przycisk „Odśwież aplikację” na stałe na dole zakładki Dane sprawdza aktualizację, aktywuje nową wersję offline i przeładowuje aplikację bez kasowania lokalnej bazy. Wymaga internetu; podczas zapisu danych jest niedostępny. Przed odrzuceniem otwartego formularza pojawia się potwierdzenie. Zachowanie na rzeczywistym Safari wymaga sprawdzenia na urządzeniu.
 
