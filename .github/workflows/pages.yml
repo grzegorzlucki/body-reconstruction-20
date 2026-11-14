@@ -22,7 +22,7 @@ jobs:
       - run: npm test
       - run: npm run build
         env:
-          VITE_BASE_PATH: /body-reconstruction/
+          VITE_BASE_PATH: /body-reconstruction-20/
       - name: Publish static branch
         run: |
           git fetch origin gh-pages
