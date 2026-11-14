@@ -1,50 +1,50 @@
-# Mapa architektury
+# Architecture Map
 
-Przewodnik po repozytorium Body Reconstruction: gdzie szukać kodu dla głównych funkcji i jak przepływają dane. Aplikacja jest klientową aplikacją React + TypeScript, budowaną przez Vite. Dane użytkownika są przechowywane lokalnie w IndexedDB (Dexie); aplikacja nie ma backendu ani synchronizacji.
+A guide to the Body Reconstruction repository: where to find code for key features and how data flows through the app. The app is a client-side React + TypeScript application built with Vite. User data is stored locally in IndexedDB through Dexie; there is no backend or synchronization.
 
-## Szybka nawigacja
+## Quick Navigation
 
-| Jeśli zmieniasz… | Zacznij tutaj | Powiązane miejsca |
+| If you are changing… | Start here | Related locations |
 |---|---|---|
-| Widok, nawigację, formularze, zapis/edycję danych lub import/eksport | `src/main.tsx` | `src/SessionFields.tsx`, `src/Plans.tsx`, `src/Calendar.tsx`, `src/PainCharts.tsx` |
-| Reguły treningu, walidację, format kopii, monitor bólu lub operacje na sesjach | `src/domain.ts` | `src/domain.test.ts`, `src/editing.test.ts` |
-| Tabele IndexedDB, migrację bazy lub odczyt/zapis kopii | `src/db.ts` | `src/db.test.ts` |
-| Ćwiczenia, sprzęt, etykiety i początkowy dobór ćwiczeń | `src/catalog.ts` | `src/domain.ts`, `src/Plans.tsx` |
-| Edycję pól serii albo liczbowy input | `src/SessionFields.tsx` | `src/SetNumberInput.tsx` |
-| Tworzenie i edycję planów, wybór ćwiczeń | `src/Plans.tsx` | `src/catalog.ts`, `src/domain.ts`, `src/plans.test.ts` |
-| Kalendarz i nawigację z dnia do formularza | `src/Calendar.tsx` | `src/main.tsx` |
-| Wykresy bólu, podpowiedzi/obsługę punktów | `src/PainCharts.tsx` | `src/main.tsx`, `e2e/pain-charts.spec.ts` |
-| Logikę i interfejs zegara HSR | `src/intervalTimer.ts`, `src/IntervalTimer.tsx` | `src/intervalTimer.test.ts`, `e2e/timer.spec.ts` |
-| Aktualizację aplikacji/offline i service workera | `src/AppUpdater.tsx`, `vite.config.ts` | `src/main.tsx`, `e2e/update.spec.ts` |
-| Wygląd globalny | `src/style.css` | JSX w `src/*.tsx` |
+| A view, navigation, form, data save/edit flow, or import/export | `src/main.tsx` | `src/SessionFields.tsx`, `src/Plans.tsx`, `src/Calendar.tsx`, `src/PainCharts.tsx` |
+| Workout rules, validation, backup format, pain monitoring, or session operations | `src/domain.ts` | `src/domain.test.ts`, `src/editing.test.ts` |
+| IndexedDB tables, database migrations, or backup reads/writes | `src/db.ts` | `src/db.test.ts` |
+| Exercises, equipment, labels, or the initial exercise selection | `src/catalog.ts` | `src/domain.ts`, `src/Plans.tsx` |
+| Set fields or numeric input | `src/SessionFields.tsx` | `src/SetNumberInput.tsx` |
+| Creating and editing plans or selecting exercises | `src/Plans.tsx` | `src/catalog.ts`, `src/domain.ts`, `src/plans.test.ts` |
+| The calendar or navigation from a day to a form | `src/Calendar.tsx` | `src/main.tsx` |
+| Pain charts and point tooltips/interactions | `src/PainCharts.tsx` | `src/main.tsx`, `e2e/pain-charts.spec.ts` |
+| HSR timer logic and UI | `src/intervalTimer.ts`, `src/IntervalTimer.tsx` | `src/intervalTimer.test.ts`, `e2e/timer.spec.ts` |
+| App updates, offline support, and the service worker | `src/AppUpdater.tsx`, `vite.config.ts` | `src/main.tsx`, `e2e/update.spec.ts` |
+| Global styling | `src/style.css` | JSX in `src/*.tsx` |
 
-## Moduły i odpowiedzialności
+## Modules and Responsibilities
 
-- **`src/main.tsx` — składarka aplikacji.** Inicjalizuje React, otwiera/odświeża dane, utrzymuje stan widoku i formularzy, koordynuje zapis przez `db` i renderuje zakładki: Dzisiaj, Trening, Dziennik, Kalendarz, Historia, Plany, Zegar HSR oraz Dane. Obsługuje też edytor treningu historycznego. Jeśli zmieniasz zachowanie widoku lub przepływ między ekranami, tu znajduje się główna integracja.
-- **Komponenty UI:** `SessionFields.tsx` edytuje serie bieżącego i historycznego treningu; `SetNumberInput.tsx` jest współdzielonym polem liczbowym; `Plans.tsx` zawiera wybór ćwiczeń, edytor planu i listę szablonów; `Calendar.tsx` prezentuje dni z treningami i pomiarami; `PainCharts.tsx` rysuje trzy wykresy bólu; `IntervalTimer.tsx` obsługuje ustawienia, przebieg, pauzę i dźwięk zegara; `AppUpdater.tsx` obsługuje aktualizację service workera.
-- **`src/domain.ts` — typy i logika domenowa.** Zawiera schematy Zod i typy planów, sesji, serii, pomiarów oraz kopii; funkcje walidujące, tworzące sesję, grupujące serie, zamieniające ćwiczenie, obsługujące datę lokalną i wyznaczające wpisy monitora bólu. Tu umieszczaj reguły niezależne od React i IndexedDB.
-- **`src/catalog.ts` — katalog ćwiczeń.** Definiuje zestaw ćwiczeń początkowych i pełny katalog do wyboru, w tym sprzęt, stronność i domyślne wartości. `exerciseById` jest używane przez logikę domenową do rozwiązywania identyfikatorów.
-- **`src/db.ts` — trwałość danych.** Definiuje bazę Dexie `body-reconstruction-v1`, tabele `logs`, `sessions`, `templates`, migrację schematu do wersji 2 oraz transakcyjny eksport/import JSON. Import waliduje dane schematem z `domain.ts` i zastępuje całą lokalną bazę.
-- **Zegar:** `src/intervalTimer.ts` jest czystą logiką ustawień, walidacji, obliczania pozycji i formatowania; `IntervalTimer.tsx` realizuje interakcję. Ustawienia zegara są w `localStorage`, poza kopią bazy treningowej.
-- **Styl i zasoby:** `src/style.css` zawiera globalne style. `public/` zawiera ikony, manifest źródłowy i pliki statyczne. `index.html` jest dokumentem startowym.
+- **`src/main.tsx` — application composition.** Initializes React, loads and refreshes data, manages view and form state, coordinates writes through `db`, and renders the tabs: Today, Workout, Diary, Calendar, History, Plans, HSR Timer, and Data. It also handles the historical workout editor. Start here when changing view behavior or navigation between screens.
+- **UI components:** `SessionFields.tsx` edits sets in active and historical workouts; `SetNumberInput.tsx` is a shared numeric input; `Plans.tsx` contains the exercise picker, plan editor, and template list; `Calendar.tsx` displays days with workouts and pain logs; `PainCharts.tsx` renders three pain charts; `IntervalTimer.tsx` handles timer settings, progress, pause, and sound; `AppUpdater.tsx` handles service worker updates.
+- **`src/domain.ts` — types and domain logic.** Contains Zod schemas and types for plans, sessions, sets, pain logs, and backups; validation and creation functions; set grouping and exercise replacement; local date handling; and pain-monitor lookups. Keep rules that do not depend on React or IndexedDB here.
+- **`src/catalog.ts` — exercise catalog.** Defines the initial exercise set and the full picker catalog, including equipment, laterality, and defaults. `exerciseById` is used by domain logic to resolve exercise IDs.
+- **`src/db.ts` — persistence.** Defines the Dexie database `body-reconstruction-v1`, the `logs`, `sessions`, and `templates` tables, the version 2 schema migration, and transactional JSON backup import/export. Import validates data with schemas from `domain.ts` and replaces the entire local database.
+- **Timer:** `src/intervalTimer.ts` contains pure settings, validation, position calculation, and formatting logic; `IntervalTimer.tsx` implements the UI. Timer settings are stored in `localStorage`, outside the workout database backup.
+- **Styles and assets:** `src/style.css` contains global styles. `public/` contains icons, the source manifest, and static files. `index.html` is the app entry document.
 
-## Przepływ danych
+## Data Flow
 
-1. `src/main.tsx` po uruchomieniu pobiera sesje, pomiary i plany z `src/db.ts` (Dexie) i trzyma je w stanie React.
-2. Interakcje użytkownika przechodzą przez obsługę widoków/formularzy w `main.tsx` i wyspecjalizowanych komponentów. Reguły oraz walidacja danych są w `src/domain.ts` (Zod); katalog ćwiczeń pochodzi z `src/catalog.ts`.
-3. Zmiany są zapisywane w IndexedDB. Po operacjach zapisujących aplikacja odświeża lokalny stan z bazy. Sesja treningowa przechowuje własną kopię planu, więc późniejsze zmiany szablonu nie modyfikują historii.
-4. Eksport tworzy JSON v2 zawierający pomiary, sesje i szablony. Import przyjmuje v1 i v2, waliduje zawartość, a następnie transakcyjnie zastępuje lokalne dane.
-5. W produkcji `src/main.tsx` rejestruje service workera generowanego przez `vite.config.ts`. Konfiguracja Vite buduje manifest i cache offline z uwzględnieniem `VITE_BASE_PATH` (m.in. dla GitHub Pages).
+1. On startup, `src/main.tsx` loads sessions, pain logs, and plans from `src/db.ts` (Dexie) into React state.
+2. User interactions pass through view/form handlers in `main.tsx` and specialized components. Rules and validation live in `src/domain.ts` (Zod); exercise data comes from `src/catalog.ts`.
+3. Changes are saved to IndexedDB. After write operations, the app refreshes its local state from the database. Each workout session stores its own copy of the plan, so later template edits do not change workout history.
+4. Export creates a v2 JSON file containing pain logs, sessions, and templates. Import accepts v1 and v2, validates the contents, and then transactionally replaces the local data.
+5. In production, `src/main.tsx` registers the service worker generated by `vite.config.ts`. The Vite configuration builds the manifest and offline cache using `VITE_BASE_PATH` (including for GitHub Pages).
 
-## Testy i narzędzia
+## Tests and Tooling
 
-- Testy jednostkowe Vitest znajdują się obok kodu: `src/*.test.ts`. Pokrywają domenę, walidację i edycję (`domain.test.ts`, `editing.test.ts`), bazę i kopie (`db.test.ts`), plany (`plans.test.ts`) oraz obliczenia zegara (`intervalTimer.test.ts`). Vitest uruchamia pliki `src/**/*.test.ts`.
-- Testy E2E Playwright są w `e2e/`; konfiguracja telefonu, strefy `Europe/Warsaw` i serwera podglądu jest w `playwright.config.ts`. Scenariusze obejmują aplikację, historię, ból, plany, trening/serie, zegar i aktualizację/offline.
-- `TESTOWANIE.md` opisuje zakres testów i dodatkowe uwagi środowiskowe; `README.md` opisuje uruchomienie, hosting Pages, funkcje oraz prywatność.
-- Polecenia z `package.json`: `npm run dev` uruchamia Vite, `npm run build` wykonuje sprawdzenie TypeScript i buduje `dist`, `npm run preview` serwuje build, `npm test` uruchamia Vitest. Dla E2E: zbuduj aplikację, następnie uruchom `npx playwright test`.
+- Vitest unit tests live alongside the code in `src/*.test.ts`. They cover domain rules, validation and editing (`domain.test.ts`, `editing.test.ts`), the database and backups (`db.test.ts`), plans (`plans.test.ts`), and timer calculations (`intervalTimer.test.ts`). Vitest includes `src/**/*.test.ts`.
+- Playwright end-to-end tests are in `e2e/`; phone emulation, the `Europe/Warsaw` timezone, and the preview server are configured in `playwright.config.ts`. Scenarios cover the app, history, pain tracking, plans, workouts/sets, the timer, and updates/offline behavior.
+- `TESTOWANIE.md` documents test coverage and environment notes; `README.md` describes setup, Pages hosting, features, and privacy.
+- Commands from `package.json`: `npm run dev` starts Vite, `npm run build` runs the TypeScript check and builds `dist`, `npm run preview` serves the build, and `npm test` runs Vitest. For E2E tests, build the app first, then run `npx playwright test`.
 
-## Konfiguracja wdrożenia
+## Deployment Configuration
 
-- `vite.config.ts` ustala ścieżkę bazową z `VITE_BASE_PATH`, sprawdza jej format oraz generuje w `dist` manifest i service workera. Build do podkatalogu powinien używać tej samej ścieżki co konfiguracja Playwright.
-- `vitest.config.ts` ogranicza testy jednostkowe do `src/**/*.test.ts`; `playwright.config.ts` wskazuje `e2e/` i uruchamia `npm run preview` na porcie 4176.
-- `START.ps1` jest lokalnym skryptem startowym. `public/manifest.webmanifest` stanowi statyczny zasób manifestu, a manifest produkcyjny jest generowany dla buildu przez konfigurację Vite.
+- `vite.config.ts` reads the base path from `VITE_BASE_PATH`, validates its format, and generates the manifest and service worker in `dist`. Builds for a subpath should use the same path as the Playwright configuration.
+- `vitest.config.ts` limits unit tests to `src/**/*.test.ts`; `playwright.config.ts` points to `e2e/` and starts `npm run preview` on port 4176.
+- `START.ps1` is a local startup script. `public/manifest.webmanifest` is a static manifest asset; the production manifest is generated for the build by the Vite configuration.
