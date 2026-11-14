@@ -8,18 +8,19 @@ import {
   validTimer,
   type TimerSettings,
 } from "./intervalTimer";
-const storageKey = "body-reconstruction-hsr-timer-v1";
-function loadSettings(): TimerSettings {
+const storageKey = (profileId: string) => `body-reconstruction-hsr-timer-v1:${profileId}`;
+function loadSettings(profileId: string): TimerSettings {
   try {
-    const saved = JSON.parse(localStorage.getItem(storageKey) || "null");
+    const saved = JSON.parse(localStorage.getItem(storageKey(profileId)) ||
+      (profileId === "default-profile" ? localStorage.getItem("body-reconstruction-hsr-timer-v1") : null) || "null");
     if (saved && validTimer(saved)) return saved;
   } catch {
     /* Use defaults if storage is unavailable or corrupt. */
   }
   return { ...timerDefaults };
 }
-export function IntervalTimer({ visible }: { visible: boolean }) {
-  const [settings, setSettings] = useState(loadSettings);
+export function IntervalTimer({ visible, profileId = "default-profile" }: { visible: boolean; profileId?: string }) {
+  const [settings, setSettings] = useState(() => loadSettings(profileId));
   const [status, setStatus] = useState<"idle" | "running" | "paused" | "done">(
     "idle",
   );
@@ -37,7 +38,7 @@ export function IntervalTimer({ visible }: { visible: boolean }) {
   useEffect(() => {
     if (!validTimer(settings)) return;
     try {
-      localStorage.setItem(storageKey, JSON.stringify(settings));
+      localStorage.setItem(storageKey(profileId), JSON.stringify(settings));
     } catch {
       setMessage("Nie można zapamiętać ustawień w tej przeglądarce.");
     }

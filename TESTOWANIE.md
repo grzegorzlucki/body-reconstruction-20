@@ -1,5 +1,7 @@
 # Weryfikacja aplikacji
 
+Profile: `src/db.test.ts` sprawdza rozdzielenie danych między profilami oraz import zastępujący dane tylko wybranego profilu. Migracja IndexedDB do wersji 3 przypisuje dotychczasowe dane do profilu głównego.
+
 Testy używają danych syntetycznych. Nie zawierają dokumentacji ani indywidualnego profilu użytkownika.
 
 Zakres: monitor bólu i brakujące pomiary, walidacja importu, odtworzenie bazy, wspólna edycja serii, zgodność starszego formatu, daty historyczne, niedozwolone nakładanie treningów, kalendarz, zapis po odświeżeniu oraz działanie offline.

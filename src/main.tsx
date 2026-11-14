@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { db, exportBackup, importBackup } from "./db";
+import { db, exportBackup, importBackup, createProfile, legacyProfileId, type Profile } from "./db";
 import {
   sites,
   exerciseCatalog,
@@ -45,6 +45,8 @@ if (import.meta.env.PROD && "serviceWorker" in navigator)
 const fmt = (d: string) =>
   new Date(d).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 function App() {
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profileId, setProfileId] = useState(() => localStorage.getItem("rehab-active-profile") || legacyProfileId);
   const [tab, setTab] = useState("Dzisiaj"),
     [logs, setLogs] = useState<PainLog[]>([]),
     [sessions, setSessions] = useState<Session[]>([]),
@@ -89,6 +91,7 @@ function App() {
       ? structuredClone(session)
       : {
           ...newSession({}, start.toISOString(), workout),
+          profileId,
           ended: end.toISOString(),
         };
     if (!session)
@@ -145,15 +148,19 @@ function App() {
     });
   }
   async function refresh() {
-    const stored = await db.sessions.orderBy("started").toArray();
-    setLogs(await db.logs.orderBy("date").toArray());
+    const available = await db.profiles.toArray();
+    setProfiles(available);
+    const currentId = available.some((p) => p.id === profileId) ? profileId : legacyProfileId;
+    if (currentId !== profileId) setProfileId(currentId);
+    const stored = await db.sessions.where("profileId").equals(currentId).sortBy("started");
+    setLogs(await db.logs.where("profileId").equals(currentId).sortBy("date"));
     setSessions(stored);
-    const savedTemplates = await db.templates.toArray();
+    const savedTemplates = await db.templates.where("profileId").equals(currentId).toArray();
     setTemplates(savedTemplates);
     if (!ready && savedTemplates.length)
       setWorkout(
         structuredClone(
-          savedTemplates.find((t) => t.id === "original-plan") ??
+          savedTemplates.find((t) => t.id.endsWith(":original-plan") || t.id === "original-plan") ??
             savedTemplates[0],
         ),
       );
@@ -166,6 +173,49 @@ function App() {
       ),
     );
   }, []);
+  async function switchProfile(nextId: string) {
+    if (nextId === profileId || busy) return;
+    if (planDirty && !confirm("Odrzucić niezapisane zmiany planu?")) return;
+    if (editing && !confirm("Odrzucić niezapisane zmiany treningu?")) return;
+    setPlanDirty(false);
+    setEditing(null);
+    setTab("Dzisiaj");
+    setReady(false);
+    setSessions([]);
+    setLogs([]);
+    setTemplates([]);
+    setProfileId(nextId);
+    localStorage.setItem("rehab-active-profile", nextId);
+    try {
+      const savedTemplates = await db.templates.where("profileId").equals(nextId).toArray();
+      const stored = await db.sessions.where("profileId").equals(nextId).sortBy("started");
+      setTemplates(savedTemplates);
+      setWorkout(structuredClone(savedTemplates[0] ?? defaultTemplate()));
+      setSessions(stored);
+      setLogs(await db.logs.where("profileId").equals(nextId).sortBy("date"));
+      setReady(true);
+      setError("");
+      setNotice("");
+    } catch { setError("Nie można otworzyć danych profilu."); }
+  }
+  async function addProfile() {
+    const name = prompt("Nazwa nowego profilu:");
+    if (name === null) return;
+    try {
+      const profile = await createProfile(name);
+      setProfiles(await db.profiles.toArray());
+      await switchProfile(profile.id);
+    } catch (e) { setError(e instanceof Error ? e.message : "Nie można utworzyć profilu."); }
+  }
+  async function renameProfile() {
+    const current = profiles.find((p) => p.id === profileId);
+    const name = prompt("Nowa nazwa profilu:", current?.name);
+    if (name === null) return;
+    const clean = name.trim();
+    if (!clean || clean.length > 80) { setError("Nazwa profilu musi mieć od 1 do 80 znaków."); return; }
+    await db.profiles.update(profileId, { name: clean });
+    setProfiles(await db.profiles.toArray());
+  }
   async function action(fn: () => Promise<void>) {
     if (busy) return;
     setBusy(true);
@@ -211,6 +261,7 @@ function App() {
       const prior = logs.find((l) => l.date === date);
       const l = logSchema.parse({
         id: prior?.id || crypto.randomUUID(),
+        profileId,
         date,
         at: at.toISOString(),
         values: pain.map(Number),
@@ -232,7 +283,7 @@ function App() {
     await action(async () => {
       const selected = templateSchema.parse(workout);
       await db.sessions.add(
-        sessionSchema.parse(newSession({}, new Date().toISOString(), selected)),
+        sessionSchema.parse({ ...newSession({}, new Date().toISOString(), selected), profileId }),
       );
     });
   }
@@ -247,7 +298,7 @@ function App() {
   }
   async function download() {
     await action(async () => {
-      const data = await exportBackup();
+      const data = await exportBackup(profileId);
       const url = URL.createObjectURL(
         new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
       );
@@ -256,7 +307,7 @@ function App() {
       a.download = `rehab-${day(new Date())}.json`;
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
-      localStorage.setItem("rehab-last-backup", data.exportedAt);
+      localStorage.setItem(`rehab-last-backup:${profileId}`, data.exportedAt);
       setNotice(
         "Eksport przygotowany. Sprawdź, czy plik został zapisany w Plikach / Pobranych.",
       );
@@ -269,12 +320,12 @@ function App() {
       const data = backupSchema.parse(JSON.parse(await file.text()));
       if (
         !confirm(
-          `Plik zawiera ${data.logs.length} wpisów i ${data.sessions.length} treningów. ZASTĄPI całą lokalną bazę. Najpierw wyeksportuj obecną kopię. Kontynuować?`,
+          `Plik zawiera ${data.logs.length} wpisów i ${data.sessions.length} treningów. ZASTĄPI dane profilu „${profiles.find((p) => p.id === profileId)?.name}”. Pozostałe profile pozostaną bez zmian. Kontynuować?`,
         )
       )
         return;
-      await importBackup(data);
-      const restored = await db.templates.toArray();
+      await importBackup(data, profileId);
+      const restored = await db.templates.where("profileId").equals(profileId).toArray();
       setWorkout(structuredClone(restored[0] ?? defaultTemplate()));
       setNotice("Kopia odtworzona.");
     });
@@ -326,6 +377,15 @@ function App() {
             })}
           </span>
         </header>
+        <div className="profile-bar">
+          <label>Profil
+            <select aria-label="Profil" value={profileId} disabled={busy} onChange={(e) => void switchProfile(e.target.value)}>
+              {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+            </select>
+          </label>
+          <button type="button" className="secondary" onClick={() => void addProfile()}>Dodaj</button>
+          <button type="button" className="secondary" onClick={() => void renameProfile()}>Zmień nazwę</button>
+        </div>
         {error && (
           <div role="alert" className="alert">
             {error}
@@ -340,7 +400,7 @@ function App() {
           <p>Otwieranie lokalnej bazy…</p>
         ) : (
           <>
-            <IntervalTimer visible={tab === "Zegar HSR"} />
+            <IntervalTimer key={profileId} profileId={profileId} visible={tab === "Zegar HSR"} />
             {tab === "Dzisiaj" && (
               <>
                 <section className="heading">
@@ -983,7 +1043,7 @@ function App() {
                 templates={templates}
                 onDirty={setPlanDirty}
                 onSave={async (template) => {
-                  await db.templates.put(templateSchema.parse(template));
+                  await db.templates.put(templateSchema.parse({ ...template, profileId }));
                   await refresh();
                 }}
                 onDelete={async (id) => {
@@ -1008,9 +1068,9 @@ function App() {
                   </p>
                   <p>
                     Ostatni eksport:{" "}
-                    {localStorage.getItem("rehab-last-backup")
+                    {(localStorage.getItem(`rehab-last-backup:${profileId}`) || (profileId === legacyProfileId ? localStorage.getItem("rehab-last-backup") : null))
                       ? new Date(
-                          localStorage.getItem("rehab-last-backup")!,
+                          (localStorage.getItem(`rehab-last-backup:${profileId}`) || (profileId === legacyProfileId ? localStorage.getItem("rehab-last-backup") : null))!,
                         ).toLocaleString("pl-PL")
                       : "jeszcze nie wykonano"}
                   </p>

@@ -25,7 +25,7 @@ Otwórz http://localhost:4173. Na komputerze, na którym przygotowano projekt, m
 
 ## GitHub Pages
 
-Workflow `.github/workflows/pages.yml` testuje i buduje aplikację z bazą `/body-reconstruction/`, następnie zapisuje sam wynik w gałęzi `gh-pages` i zleca natywną budowę Pages. Konfiguracja repozytorium: **Settings → Pages → Source: Deploy from a branch → gh-pages → /(root)**. Publikacja uruchamia się po zmianach gałęzi main lub ręcznie w Actions. Plik `.nojekyll` wyłącza przetwarzanie gotowych plików przez Jekyll.
+Workflow `.github/workflows/pages.yml` testuje i buduje aplikację z bazą `/body-reconstruction-20/`, następnie zapisuje sam wynik w gałęzi `gh-pages` i zleca natywną budowę Pages. Konfiguracja repozytorium: **Settings → Pages → Source: Deploy from a branch → gh-pages → /(root)**. Publikacja uruchamia się po zmianach gałęzi main lub ręcznie w Actions. Plik `.nojekyll` wyłącza przetwarzanie gotowych plików przez Jekyll.
 
 Darmowy GitHub Pages wymaga publicznego repozytorium. Adres docelowy: [replace] — sam zapis adresu w dokumentacji nie potwierdza udanego wdrożenia; sprawdź wynik workflow.
 
@@ -41,7 +41,7 @@ Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu pocz
 - Kalendarz: zielona kropka oznacza ukończony trening, pomarańczowa pomiar, obwódka trening w trakcie. Wybrany dzień otwiera formularze.
 - Dziennik: codzienna ocena z datą, godziną i kontekstem. Wpisy można poprawić lub usunąć.
 - Zegar HSR: konfigurowalne przygotowanie, trzy fazy (Ruch 1 / Zatrzymanie / Ruch 2), powtórzenia, serie i przerwy. Wartość 0 pomija fazę; co najmniej jedna faza musi trwać dłużej niż 0 s. Piknięcia co sekundę lub cisza, pauza i wznowienie, automatyczny zapis ustawień na urządzeniu. Odliczanie trwa po zmianie zakładki aplikacji, ale nie jest wznawiane po zamknięciu lub przeładowaniu strony. Przygotowanie tylko przed pierwszą serią, bez przerwy po ostatniej. Zegar nie zapisuje wykonanych serii w dzienniku treningu. Podczas używania pozostaw aplikację na ekranie; dźwięk i podtrzymywanie ekranu na rzeczywistym iPhonie wymagają próby na urządzeniu. Ustawienia zegara nie wchodzą do eksportu treningów.
-- Dane: eksport JSON v2 obejmuje treningi, pomiary i szablony. Import przyjmuje również stare kopie v1 i wymaga potwierdzenia zastąpienia całej bazy. Aktualizacja zachowuje istniejącą bazę i dodaje tabelę szablonów.
+- Profile: kilka osób na jednym urządzeniu może mieć osobne treningi, pomiary, plany i ustawienia zegara. Profile są lokalne, bez hasła i synchronizacji. Istniejące wpisy trafiają do profilu głównego. Dane: eksport JSON v3 obejmuje dane wybranego profilu. Import przyjmuje również kopie v1 i v2 i zastępuje wyłącznie dane wybranego profilu po potwierdzeniu.
 
 Aplikacja pokazuje zapisane pomiary bólu bez automatycznych sugestii progresji lub regresji. Decyzję o obciążeniu podejmuje użytkownik.
 
@@ -57,7 +57,7 @@ npx playwright test
 Test wersji z podkatalogiem GitHub Pages:
 
 ```powershell
-$env:VITE_BASE_PATH = '/body-reconstruction/'
+$env:VITE_BASE_PATH = '/body-reconstruction-20/'
 npm run build
 npx playwright test
 ```

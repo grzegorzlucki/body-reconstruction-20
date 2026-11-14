@@ -41,6 +41,7 @@ export const planEntriesSchema = z
   );
 export const templateSchema = z.object({
   id: z.string().min(1),
+  profileId: z.string().optional(),
   name: z.string().trim().min(1).max(80),
   entries: planEntriesSchema,
 });
@@ -62,6 +63,7 @@ export function defaultTemplate(): WorkoutTemplate {
 const painSchema = z.number().int().min(0).max(10);
 export const logSchema = z.object({
   id: z.string(),
+  profileId: z.string().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   at: z.string().datetime(),
   values: z.array(painSchema).length(3),
@@ -81,6 +83,7 @@ export type SetLog = z.infer<typeof setSchema>;
 export const sessionSchema = z
   .object({
     id: z.string(),
+    profileId: z.string().optional(),
     started: z.string().datetime(),
     ended: z.string().datetime().optional(),
     sets: z.array(setSchema).min(1).max(600),
@@ -180,14 +183,15 @@ export function validateHistoricalSession(
 }
 export const backupSchema = z
   .object({
-    version: z.union([z.literal(1), z.literal(2)]),
+    version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    profileName: z.string().trim().min(1).max(80).optional(),
     templates: z.array(templateSchema).max(200).optional(),
     exportedAt: z.string().datetime(),
     logs: z.array(logSchema).max(30000),
     sessions: z.array(sessionSchema).max(10000),
   })
   .superRefine((data, ctx) => {
-    if (data.version === 2 && !data.templates)
+    if (data.version !== 1 && !data.templates)
       ctx.addIssue({ code: "custom", message: "Brak planów w kopii" });
     if (
       data.templates &&

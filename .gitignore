@@ -10,3 +10,4 @@ SPECYFIKACJA.md
 *.backup.json
 rehab-*.json
 **/*.private.*
+CODE_PRACTICES.md
