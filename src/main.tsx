@@ -59,6 +59,7 @@ function App({ accountId }: { accountId?: string }) {
     [sessions, setSessions] = useState<Session[]>([]),
     [error, setError] = useState(""),
     [ready, setReady] = useState(false),
+    [loadingData, setLoadingData] = useState(true),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
   const [date, setDate] = useState(day(new Date())),
@@ -155,26 +156,32 @@ function App({ accountId }: { accountId?: string }) {
     });
   }
   async function refresh() {
-    const available = await Promise.race([
-      db.profiles.toArray(),
-      new Promise<Profile[]>((_, reject) => window.setTimeout(() => reject(Error("Przekroczono czas połączenia z Supabase. Sprawdź sieć i tabelę profiles.")), 15000)),
-    ]);
-    setProfiles(available);
-    const currentId = available.some((p) => p.id === profileId) ? profileId : available[0]?.id ?? legacyProfileId;
-    if (currentId !== profileId) setProfileId(currentId);
-    const stored = await db.sessions.where("profileId").equals(currentId).sortBy("started");
-    setLogs(await db.logs.where("profileId").equals(currentId).sortBy("date"));
-    setSessions(stored);
-    const savedTemplates = await db.templates.where("profileId").equals(currentId).toArray();
-    setTemplates(savedTemplates);
-    if (!ready && savedTemplates.length)
-      setWorkout(
-        structuredClone(
-          savedTemplates.find((t) => t.id.endsWith(":original-plan") || t.id === "original-plan") ??
-            savedTemplates[0],
-        ),
-      );
-    setReady(true);
+    setLoadingData(true);
+    setError("");
+    try {
+      const available = await Promise.race([
+        db.profiles.toArray(),
+        new Promise<Profile[]>((_, reject) => window.setTimeout(() => reject(Error("Przekroczono czas połączenia z Supabase. Sprawdź sieć i tabelę profiles.")), 15000)),
+      ]);
+      setProfiles(available);
+      const currentId = available.some((p) => p.id === profileId) ? profileId : available[0]?.id ?? legacyProfileId;
+      if (currentId !== profileId) setProfileId(currentId);
+      const stored = await db.sessions.where("profileId").equals(currentId).sortBy("started");
+      setLogs(await db.logs.where("profileId").equals(currentId).sortBy("date"));
+      setSessions(stored);
+      const savedTemplates = await db.templates.where("profileId").equals(currentId).toArray();
+      setTemplates(savedTemplates);
+      if (!ready && savedTemplates.length)
+        setWorkout(
+          structuredClone(
+            savedTemplates.find((t) => t.id.endsWith(":original-plan") || t.id === "original-plan") ??
+              savedTemplates[0],
+          ),
+        );
+      setReady(true);
+    } finally {
+      setLoadingData(false);
+    }
   }
   useEffect(() => {
     refresh().catch((cause: unknown) => setError(
@@ -394,7 +401,7 @@ function App({ accountId }: { accountId?: string }) {
         </div>
         <div className="local">
           <i /> {supabase ? "Dane na koncie" : "Dane na tym urządzeniu"}
-          <small>{supabase ? "Połączono z Supabase" : "Tryb lokalny"}</small>
+          <small>{supabase ? ready && !error ? "Dane załadowane" : loadingData ? "Łączenie z Supabase" : "Błąd połączenia" : "Tryb lokalny"}</small>
         </div>
       </aside>
       <main>
@@ -436,8 +443,8 @@ function App({ accountId }: { accountId?: string }) {
         )}
         {!ready ? (
           <div>
-            <p>{error ? "Nie udało się załadować danych." : supabase ? "Ładowanie danych konta…" : "Otwieranie lokalnej bazy…"}</p>
-            {error && <button type="button" onClick={() => { setError(""); void refresh().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Nieznany błąd")); }}>Spróbuj ponownie</button>}
+            <p>{loadingData ? supabase ? "Ładowanie danych konta…" : "Otwieranie lokalnej bazy…" : "Nie udało się załadować danych."}</p>
+            {error && <button type="button" disabled={loadingData} onClick={() => { void refresh().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Nieznany błąd")); }}>Spróbuj ponownie</button>}
           </div>
         ) : (
           <>

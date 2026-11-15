@@ -54,7 +54,9 @@ export function AuthGate({ children }: { children: (session: Session) => ReactNo
       <button disabled={busy} type="submit">{mode === "register" ? "Zarejestruj" : mode === "reset" ? "Wyślij link" : mode === "update" ? "Zapisz nowe hasło" : "Zaloguj"}</button>
     </form>
     {message && <p role="status">{message}</p>}
-    {mode !== "update" && <button type="button" className="secondary" onClick={() => { setMode(mode === "login" ? "register" : "login"); setMessage(""); }}>{mode === "login" ? "Utwórz konto" : "Wróć do logowania"}</button>}
-    {mode === "login" && <button type="button" className="secondary" onClick={() => { setMode("reset"); setMessage(""); }}>Nie pamiętam hasła</button>}
+    <div className="auth-links">
+      {mode !== "update" && <button type="button" className="secondary" onClick={() => { setMode(mode === "login" ? "register" : "login"); setMessage(""); }}>{mode === "login" ? "Utwórz konto" : "Wróć do logowania"}</button>}
+      {mode === "login" && <button type="button" className="secondary" onClick={() => { setMode("reset"); setMessage(""); }}>Nie pamiętam hasła</button>}
+    </div>
   </main>;
 }

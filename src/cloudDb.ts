@@ -20,11 +20,24 @@ const siteIds = ["achilles", "pht", "quadriceps"];
 
 async function profiles(): Promise<Profile[]> {
   const owner = await userId();
-  let rows = checked(await client().from("profiles").select("id,name").eq("owner_user_id", owner));
+  let rows: Row[];
+  try {
+    rows = checked(await client().from("profiles").select("id,name").eq("owner_user_id", owner));
+  } catch (error) {
+    throw Error(`Odczyt profili: ${error instanceof Error ? error.message : String(error)}`);
+  }
   if (!rows.length) {
     const id = crypto.randomUUID();
-    checked(await client().from("profiles").insert({ id, owner_user_id: owner, name: "Profil główny" }));
-    await putTemplate({ ...defaultTemplate(), id: crypto.randomUUID(), profileId: id });
+    try {
+      checked(await client().from("profiles").insert({ id, owner_user_id: owner, name: "Profil główny" }));
+    } catch (error) {
+      throw Error(`Tworzenie profilu: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    try {
+      await putTemplate({ ...defaultTemplate(), id: crypto.randomUUID(), profileId: id });
+    } catch (error) {
+      throw Error(`Tworzenie planu startowego: ${error instanceof Error ? error.message : String(error)}`);
+    }
     rows = [{ id, name: "Profil główny" }];
   }
   return rows;

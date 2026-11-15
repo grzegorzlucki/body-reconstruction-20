@@ -27,6 +27,8 @@ Otwórz http://localhost:4173. Na komputerze, na którym przygotowano projekt, m
 
 ### Supabase
 
+Jeśli po zalogowaniu pojawia się `new row violates row-level security policy for table "profiles"`, uruchom w Supabase SQL Editor kolejno `supabase/migrations/20261115_profiles_auth_users.sql` i `supabase/migrations/20261115_profiles_rls_repair.sql`. Drugi plik zastępuje wyłącznie polityki tabeli `profiles`; nie wymaga klucza `SUPABASE_SECRET_KEY` w przeglądarce. Po opublikowaniu kodu odśwież aplikację przyciskiem w panelu bocznym. Jeżeli błąd trwa, sprawdź w Supabase Authentication, czy konto jest aktywne, oraz w Table Editor, czy `profiles.owner_user_id` ma typ UUID i wskazuje identyfikator tego konta.
+
 Przed włączeniem zapisu w chmurze zastosuj kolejno pliki SQL z `supabase/migrations/` w projekcie Supabase. Zawierają polityki RLS, katalog ćwiczeń i funkcje atomowego zapisu. Sprawdź ich zgodność z faktycznymi tabelami przed uruchomieniem. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
 
 W GitHub **Settings → Secrets and variables → Actions → Variables** ustaw `VITE_SUPABASE_URL` i `VITE_SUPABASE_PUBLISHABLE_KEY`. Workflow wymaga obu wartości. Są publiczne i trafiają do kodu przeglądarki. Lokalnie skopiuj `.env.example` do `.env.local` i uzupełnij te same wartości. Nigdy nie przekazuj `SUPABASE_SECRET_KEY` do Vite ani GitHub Pages.
