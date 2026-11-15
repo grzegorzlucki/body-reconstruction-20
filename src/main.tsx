@@ -69,6 +69,7 @@ function App({ accountId }: { accountId?: string }) {
     [note, setNote] = useState("");
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [workout, setWorkout] = useState<WorkoutTemplate>(defaultTemplate);
+  const [workoutDirty, setWorkoutDirty] = useState(false);
   const [planDirty, setPlanDirty] = useState(false);
   const [historyExercise, setHistoryExercise] = useState("");
   const [editing, setEditing] = useState<Session | null>(null);
@@ -171,13 +172,15 @@ function App({ accountId }: { accountId?: string }) {
       setSessions(stored);
       const savedTemplates = await db.templates.where("profileId").equals(currentId).toArray();
       setTemplates(savedTemplates);
-      if (!ready && savedTemplates.length)
+      if (!ready && savedTemplates.length) {
         setWorkout(
           structuredClone(
             savedTemplates.find((t) => t.id.endsWith(":original-plan") || t.id === "original-plan") ??
               savedTemplates[0],
           ),
         );
+        setWorkoutDirty(false);
+      }
       setReady(true);
     } finally {
       setLoadingData(false);
@@ -204,14 +207,16 @@ function App({ accountId }: { accountId?: string }) {
       if (!confirm(`Przenieść dane lokalnego profilu „${source.name}” do konta, do profilu „${target.name}”? Zastąpi to obecne dane profilu na serwerze. Lokalna kopia pozostanie na urządzeniu.`)) return;
       await importCloudBackup(backup, target.id);
       setWorkout(structuredClone((await db.templates.where("profileId").equals(target.id).toArray())[0] ?? defaultTemplate()));
+      setWorkoutDirty(false);
       setNotice("Dane przeniesione. Lokalna kopia pozostała na urządzeniu.");
     });
   }
   async function switchProfile(nextId: string) {
     if (nextId === profileId || busy) return;
-    if (planDirty && !confirm("Odrzucić niezapisane zmiany planu?")) return;
+    if ((planDirty || workoutDirty) && !confirm("Odrzucić niezapisane zmiany planu?")) return;
     if (editing && !confirm("Odrzucić niezapisane zmiany treningu?")) return;
     setPlanDirty(false);
+    setWorkoutDirty(false);
     setEditing(null);
     setTab("Dzisiaj");
     setReady(false);
@@ -225,6 +230,7 @@ function App({ accountId }: { accountId?: string }) {
       const stored = await db.sessions.where("profileId").equals(nextId).sortBy("started");
       setTemplates(savedTemplates);
       setWorkout(structuredClone(savedTemplates[0] ?? defaultTemplate()));
+      setWorkoutDirty(false);
       setSessions(stored);
       setLogs(await db.logs.where("profileId").equals(nextId).sortBy("date"));
       setReady(true);
@@ -321,6 +327,21 @@ function App({ accountId }: { accountId?: string }) {
       );
     });
   }
+  async function savePreparedWorkout(asNew: boolean) {
+    const existing = templates.some((template) => template.id === workout.id);
+    if (!asNew && !existing) return;
+    await action(async () => {
+      const next = templateSchema.parse({
+        ...workout,
+        id: asNew ? crypto.randomUUID() : workout.id,
+        profileId,
+      });
+      await db.templates.put(next);
+      setWorkout(structuredClone(next));
+      setWorkoutDirty(false);
+      setNotice(asNew ? "Nowy plan zapisany w profilu." : "Zmiany planu zapisane w profilu.");
+    });
+  }
   async function updateTraining(next: Session) {
     await action(async () => {
       const validated = sessionSchema.parse(next);
@@ -362,6 +383,7 @@ function App({ accountId }: { accountId?: string }) {
       else await importLocalBackup(data, profileId);
       const restored = await db.templates.where("profileId").equals(profileId).toArray();
       setWorkout(structuredClone(restored[0] ?? defaultTemplate()));
+      setWorkoutDirty(false);
       setNotice("Kopia odtworzona.");
     });
   }
@@ -397,7 +419,7 @@ function App({ accountId }: { accountId?: string }) {
           ))}
         </nav>
         <div className="sidebar-updater">
-          <AppUpdater disabled={busy} hasUnsavedChanges={planDirty || !!editing} />
+          <AppUpdater disabled={busy} hasUnsavedChanges={planDirty || workoutDirty || !!editing} />
         </div>
         <div className="local">
           <i /> {supabase ? "Dane na koncie" : "Dane na tym urządzeniu"}
@@ -416,7 +438,7 @@ function App({ accountId }: { accountId?: string }) {
           </span>
         </header>
         <div className="mobile-updater">
-          <AppUpdater disabled={busy} hasUnsavedChanges={planDirty || !!editing} />
+          <AppUpdater disabled={busy} hasUnsavedChanges={planDirty || workoutDirty || !!editing} />
         </div>
         {supabase && <div className="account-actions">
           <span>{accountId}</span>
@@ -796,7 +818,7 @@ function App({ accountId }: { accountId?: string }) {
                     </section>
                     <section className="panel">
                       <label>
-                        Szablon treningu
+                        Zapisane plany treningowe
                         <select
                           value={
                             templates.some((t) => t.id === workout.id)
@@ -809,11 +831,13 @@ function App({ accountId }: { accountId?: string }) {
                             );
                             if (
                               template &&
-                              confirm(
-                                "Wczytać szablon? Bieżące przygotowanie treningu zostanie zastąpione.",
-                              )
-                            )
+                              (!workoutDirty || confirm(
+                                "Wczytać plan? Niezapisane zmiany przygotowania treningu zostaną utracone.",
+                              ))
+                            ) {
                               setWorkout(structuredClone(template));
+                              setWorkoutDirty(false);
+                            }
                           }}
                         >
                           <option value="" disabled>
@@ -826,17 +850,40 @@ function App({ accountId }: { accountId?: string }) {
                           ))}
                         </select>
                       </label>
+                      <label>
+                        Nazwa planu
+                        <input
+                          maxLength={80}
+                          value={workout.name}
+                          onChange={(event) => {
+                            setWorkout({ ...workout, name: event.target.value });
+                            setWorkoutDirty(true);
+                          }}
+                        />
+                      </label>
                       <p>
-                        Zmiany poniżej dotyczą tylko tego treningu. Szablony
-                        edytujesz w zakładce Plany. Po zamianie ćwiczenia ustaw
-                        ciężar i powtórzenia od nowa.
+                        Ułóż ćwiczenia i zapisz plan w profilu, aby wczytać go przy
+                        kolejnym treningu. Rozpoczęty trening zachowa własną kopię
+                        kolejności i dawek.
                       </p>
+                      {workoutDirty && <p role="status">Plan ma niezapisane zmiany.</p>}
+                      <div className="actions">
+                        <button type="button" className="secondary" disabled={busy || !workout.entries.length} onClick={() => void savePreparedWorkout(true)}>
+                          Zapisz jako nowy plan
+                        </button>
+                        {templates.some((template) => template.id === workout.id) && (
+                          <button type="button" className="secondary" disabled={busy || !workoutDirty || !workout.entries.length} onClick={() => void savePreparedWorkout(false)}>
+                            Zapisz zmiany w planie
+                          </button>
+                        )}
+                      </div>
                     </section>
                     <PlanComposer
                       entries={workout.entries}
-                      onChange={(entries) =>
-                        setWorkout({ ...workout, entries })
-                      }
+                      onChange={(entries) => {
+                        setWorkout({ ...workout, entries });
+                        setWorkoutDirty(true);
+                      }}
                     />
                     <button
                       disabled={busy || !workout.entries.length}
@@ -1092,10 +1139,16 @@ function App({ accountId }: { accountId?: string }) {
                 onDirty={setPlanDirty}
                 onSave={async (template) => {
                   await db.templates.put(templateSchema.parse({ ...template, profileId }));
+                  if (workout.id === template.id && !workoutDirty)
+                    setWorkout(structuredClone(template));
                   await refresh();
                 }}
                 onDelete={async (id) => {
                   await db.templates.delete(id);
+                  if (workout.id === id) {
+                    setWorkout(defaultTemplate());
+                    setWorkoutDirty(false);
+                  }
                   await refresh();
                 }}
               />

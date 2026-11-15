@@ -43,6 +43,8 @@ Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu pocz
 
 ## Korzystanie
 
+W zakładce **Trening** można ułożyć kolejność ćwiczeń, ustawić serie, ciężar, powtórzenia i notatki, nadać planowi nazwę i wybrać **Zapisz jako nowy plan**. Zapis nie rozpoczyna treningu. Wczytany plan można poprawić i wybrać **Zapisz zmiany w planie**. Plany należą do wybranego profilu i w trybie konta są przechowywane w Supabase. Rozpoczęcie treningu tworzy osobną kopię planu w historii.
+
 - Plany: własne szablony (np. Lower A / Lower B), kopiowanie, kolejność ćwiczeń, 1–10 serii, powtórzenia, ciężar i notatki. Dotychczasowy zestaw pozostaje jako „Plan początkowy”.
 - Baza: 30 ćwiczeń nóg z wyszukiwarką i filtrem sprzętu. Ćwiczenia z gumą mają pole notatki na opis oporu; ćwiczenia jednostronne opisują powtórzenia na stronę.
 - Trening: wybór szablonu i modyfikacje tylko na tę sesję; zamiana jest dostępna również po rozpoczęciu. Nowe ćwiczenie po zamianie ma puste obciążenie i powtórzenia — nie przenosimy kilogramów z innej maszyny. Wpisy serii dla obu kończyn są wspólne; rozpoczętą sesję można wznowić.
