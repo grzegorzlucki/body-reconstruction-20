@@ -174,11 +174,11 @@ function App({ accountId }: { accountId?: string }) {
     setReady(true);
   }
   useEffect(() => {
-    refresh().catch(() =>
-      setError(
-        supabase ? "Nie można pobrać danych konta. Sprawdź połączenie i konfigurację Supabase." : "Nie można otworzyć bazy. Sprawdź ustawienia pamięci przeglądarki.",
-      ),
-    );
+    refresh().catch((cause: unknown) => setError(
+      supabase
+        ? `Nie można pobrać danych konta: ${cause instanceof Error ? cause.message : "nieznany błąd"}`
+        : "Nie można otworzyć bazy. Sprawdź ustawienia pamięci przeglądarki.",
+    ));
     if (supabase) void localDb.profiles.toArray().then((rows) => {
       setLocalProfiles(rows);
       if (rows.length) setSourceProfileId(rows[0].id);
@@ -423,7 +423,10 @@ function App({ accountId }: { accountId?: string }) {
           </div>
         )}
         {!ready ? (
-          <p>{supabase ? "Ładowanie danych konta…" : "Otwieranie lokalnej bazy…"}</p>
+          <div>
+            <p>{error ? "Nie udało się załadować danych." : supabase ? "Ładowanie danych konta…" : "Otwieranie lokalnej bazy…"}</p>
+            {error && <button type="button" onClick={() => { setError(""); void refresh().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Nieznany błąd")); }}>Spróbuj ponownie</button>}
+          </div>
         ) : (
           <>
             <IntervalTimer key={profileId} profileId={profileId} visible={tab === "Zegar HSR"} />
