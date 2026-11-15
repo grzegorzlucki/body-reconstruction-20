@@ -12,6 +12,7 @@
 }
 body {
   margin: 0;
+  min-width: 0;
 }
 button,
 input,
@@ -338,6 +339,8 @@ article,
   border-radius: 14px;
   padding: 25px;
   margin-bottom: 18px;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 .grid article {
   margin: 0;
@@ -596,7 +599,7 @@ a {
     right: 0;
     bottom: 0;
     width: 100%;
-    height: calc(70px + env(safe-area-inset-bottom));
+    height: calc(112px + env(safe-area-inset-bottom));
     padding: 0 8px env(safe-area-inset-bottom);
     border-right: 0;
     border-top: 1px solid #34483f;
@@ -611,26 +614,27 @@ a {
   nav {
     margin: 0;
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 2px;
-    height: 68px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, 1fr);
+    gap: 1px;
+    height: 108px;
     max-height: none;
     overflow-y: visible;
   }
   nav button {
     text-align: center;
-    padding: 8px 2px;
-    font-size: 9px;
+    padding: 4px 2px;
+    font-size: 10px;
     border-radius: 0;
   }
   nav button span {
     display: block;
     width: auto;
-    font-size: 20px;
-    margin-bottom: 3px;
+    font-size: 17px;
+    margin-bottom: 1px;
   }
   main {
-    padding: 0 18px 30px;
+    padding: 0 16px 140px;
   }
   .auth-screen { padding: 24px; }
   header {
@@ -702,7 +706,7 @@ a {
     font-size: 19px;
   }
   footer {
-    padding: 18px 18px 100px;
+    padding: 18px 16px 145px;
     font-size: 8px;
     letter-spacing: 0.6px;
   }
@@ -801,10 +805,10 @@ a {
 }
 @media (max-width: 700px) {
   nav {
-    grid-template-columns: repeat(7, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   nav button {
-    font-size: 8px;
+    font-size: 10px;
   }
   .calendar-day {
     min-height: 56px;
@@ -1041,13 +1045,20 @@ a {
 }
 @media (max-width: 700px) {
   nav {
-    display: flex;
-    overflow-x: auto;
+    display: grid;
+    overflow-x: visible;
   }
   nav button {
-    flex: 0 0 58px;
+    min-width: 0;
   }
   .timer-field {
     padding: 12px;
   }
+}
+@media (max-width: 420px) {
+  .plan-numbers { grid-template-columns: minmax(0, 1fr); }
+  .set-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .set-row label:first-child { grid-column: 1 / -1; }
+  .timer-field { gap: 8px; flex-wrap: wrap; }
+  .timer-field input { max-width: 100%; }
 }

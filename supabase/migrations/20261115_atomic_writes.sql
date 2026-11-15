@@ -109,3 +109,4 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION public.replace_profile_data(uuid,jsonb) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.replace_profile_data(uuid,jsonb) TO authenticated;
+NOTIFY pgrst, 'reload schema';

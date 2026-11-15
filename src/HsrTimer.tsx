@@ -23,6 +23,7 @@ function loadSettings(profileId: string): TimerSettings {
 export function IntervalTimer({ visible, profileId = "default-profile" }: { visible: boolean; profileId?: string }) {
   const [settings, setSettings] = useState(() => loadSettings(profileId));
   const [remoteReady, setRemoteReady] = useState(!supabase);
+  const [settingsDirty, setSettingsDirty] = useState(false);
   const [status, setStatus] = useState<"idle" | "running" | "paused" | "done">(
     "idle",
   );
@@ -38,12 +39,16 @@ export function IntervalTimer({ visible, profileId = "default-profile" }: { visi
     : null;
   const active = status === "running" || status === "paused";
   useEffect(() => {
-    if (!supabase) return;
+    if (!supabase || !visible) return;
     let cancelled = false;
     void supabase.from("timer_settings").select("*").eq("profile_id", profileId).maybeSingle()
       .then(({ data, error }) => {
         if (cancelled) return;
-        if (error) { setMessage(error.message); return; }
+        if (error) {
+          setMessage("Nie udało się pobrać ustawień zegara z konta. Sprawdź dostęp do tabeli timer_settings w Supabase.");
+          setRemoteReady(true);
+          return;
+        }
         if (data) {
           const next = { prepare: data.prepare_seconds, move1: data.move1_seconds,
             hold: data.hold_seconds, move2: data.move2_seconds, reps: data.reps,
@@ -53,15 +58,20 @@ export function IntervalTimer({ visible, profileId = "default-profile" }: { visi
         setRemoteReady(true);
       });
     return () => { cancelled = true; };
-  }, [profileId]);
+  }, [profileId, visible]);
   useEffect(() => {
-    if (!validTimer(settings) || !remoteReady) return;
+    if (!validTimer(settings) || !remoteReady || !settingsDirty || !visible) return;
     if (supabase) {
       void supabase.from("timer_settings").upsert({ profile_id: profileId,
         prepare_seconds: settings.prepare, move1_seconds: settings.move1,
         hold_seconds: settings.hold, move2_seconds: settings.move2,
         reps: settings.reps, sets: settings.sets, rest_seconds: settings.rest,
-        sound: settings.sound }).then(({ error }) => { if (error) setMessage(error.message); });
+        sound: settings.sound }).then(({ error }) => {
+          if (error) setMessage(error.message.includes("row-level security")
+            ? "Nie można zapisać ustawień zegara na koncie. Uruchom migrację 20261115_timer_settings_rls_repair.sql w Supabase."
+            : `Nie można zapisać ustawień zegara: ${error.message}`);
+          else { setSettingsDirty(false); setMessage(""); }
+        });
       return;
     }
     try {
@@ -69,7 +79,7 @@ export function IntervalTimer({ visible, profileId = "default-profile" }: { visi
     } catch {
       setMessage("Nie można zapamiętać ustawień w tej przeglądarce.");
     }
-  }, [settings, profileId, remoteReady]);
+  }, [settings, profileId, remoteReady, settingsDirty, visible]);
   function beep(finish = false) {
     const ctx = audio.current;
     if (!settings.sound || !ctx || ctx.state !== "running") return;
@@ -289,8 +299,9 @@ export function IntervalTimer({ visible, profileId = "default-profile" }: { visi
           <div className="panel">
             <h2>Ustawienia zegara</h2>
             <p>
-              Czasy w sekundach. Wpisz 0, żeby pominąć fazę, przygotowanie lub
-              przerwę.
+              Czasy w sekundach. Wpisz 0, żeby pominąć fazę ruchu, początkowe
+              przygotowanie lub przerwę. Ostatnie 5 sekund każdej przerwy to
+              przygotowanie do następnej serii.
             </p>
             <div className="timer-settings">
               {timerFields.map(([key, label, min, max]) => (
@@ -310,15 +321,16 @@ export function IntervalTimer({ visible, profileId = "default-profile" }: { visi
                     step="1"
                     required
                     value={Number.isNaN(settings[key]) ? "" : settings[key]}
-                    onChange={(event) =>
+                    onChange={(event) => {
+                      setSettingsDirty(true);
                       setSettings({
                         ...settings,
                         [key]:
                           event.target.value === ""
                             ? NaN
                             : Number(event.target.value),
-                      })
-                    }
+                      });
+                    }}
                   />
                 </label>
               ))}
@@ -328,12 +340,13 @@ export function IntervalTimer({ visible, profileId = "default-profile" }: { visi
               <select
                 aria-label="Dźwięk"
                 value={settings.sound ? "beep" : "silent"}
-                onChange={(event) =>
+                onChange={(event) => {
+                  setSettingsDirty(true);
                   setSettings({
                     ...settings,
                     sound: event.target.value === "beep",
-                  })
-                }
+                  });
+                }}
               >
                 <option value="beep">Piknięcia co sekundę</option>
                 <option value="silent">Cisza</option>

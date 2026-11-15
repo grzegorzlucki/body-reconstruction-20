@@ -19,7 +19,7 @@ export const timerDefaults: TimerSettings = {
   sound: true,
 };
 export const timerFields = [
-  ["prepare", "Czas przygotowania", 0, 3600],
+  ["prepare", "Przygotowanie przed pierwszą serią", 0, 3600],
   ["move1", "Ruch 1", 0, 3600],
   ["hold", "Zatrzymanie", 0, 3600],
   ["move2", "Ruch 2", 0, 3600],
@@ -70,7 +70,7 @@ export function timerPosition(s: TimerSettings, elapsed: number) {
   t %= blockTime;
   if (t >= repTime * s.reps) {
     const restRemaining = blockTime - t;
-    const preparation = Math.min(s.prepare, s.rest);
+    const preparation = Math.min(5, s.rest);
     if (preparation > 0 && restRemaining <= preparation)
       return {
         phase: "Przygotowanie",

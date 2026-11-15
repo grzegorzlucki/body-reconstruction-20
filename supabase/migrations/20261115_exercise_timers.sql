@@ -68,3 +68,4 @@ BEGIN
   END LOOP;
 END $$;
 COMMIT;
+NOTIFY pgrst, 'reload schema';

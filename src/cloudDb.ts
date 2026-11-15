@@ -65,7 +65,12 @@ async function templates(profileId: string): Promise<WorkoutTemplate[]> {
 async function putTemplate(template: WorkoutTemplate) {
   const profileId = template.profileId;
   if (!profileId) throw Error("Brak profilu planu.");
-  checked(await client().rpc("save_workout_template", { payload: { ...template, profileId } }));
+  const result = await client().rpc("save_workout_template", { payload: { ...template, profileId } });
+  if (result.error) {
+    if (result.error.code === "PGRST202" || result.error.message.includes("schema cache"))
+      throw Error("Brak funkcji zapisu planów w Supabase. Uruchom migracje 20261115_atomic_writes.sql oraz 20261115_exercise_timers.sql w SQL Editor.");
+    throw Error(`Nie udało się zapisać planu: ${result.error.message}`);
+  }
 }
 
 async function logs(profileId: string): Promise<PainLog[]> {

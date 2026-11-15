@@ -12,8 +12,15 @@ describe("HSR timer", () => {
     expect(totalSeconds({ ...s, prepare: 10 })).toBe(358);
     expect(timerPosition(s, 56)).toMatchObject({
       kind: "rest",
-      remaining: 90,
+      remaining: 85,
       set: 1,
+    });
+    expect(timerPosition(s, 141)).toMatchObject({
+      kind: "prepare",
+      phase: "Przygotowanie",
+      remaining: 5,
+      set: 2,
+      rep: 1,
     });
     expect(timerPosition(s, 146)).toMatchObject({
       kind: "move1",
