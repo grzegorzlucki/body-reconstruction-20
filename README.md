@@ -1,5 +1,7 @@
 # Body Reconstruction
 
+[Otwórz aplikację](https://grzegorzlucki.github.io/body-reconstruction-20/)
+
 Osobisty dziennik aktywności: zapis serii, monitoring samopoczucia, historia oraz kalendarz miesięczny. React + TypeScript + Vite. Dane konta są przechowywane w Supabase; dotychczasowe dane lokalne można przenieść z IndexedDB.
 
 ## Prywatność
@@ -39,7 +41,7 @@ Po zalogowaniu w zakładce **Dane** można przenieść wybrany lokalny profil do
 
 Workflow `.github/workflows/pages.yml` testuje i buduje aplikację z bazą `/body-reconstruction-20/`, następnie zapisuje sam wynik w gałęzi `gh-pages` i zleca natywną budowę Pages. Konfiguracja repozytorium: **Settings → Pages → Source: Deploy from a branch → gh-pages → /(root)**. Publikacja uruchamia się po zmianach gałęzi main lub ręcznie w Actions. Plik `.nojekyll` wyłącza przetwarzanie gotowych plików przez Jekyll.
 
-Darmowy GitHub Pages wymaga publicznego repozytorium. Adres docelowy: [replace] — sam zapis adresu w dokumentacji nie potwierdza udanego wdrożenia; sprawdź wynik workflow.
+Darmowy GitHub Pages wymaga publicznego repozytorium. Adres aplikacji: [https://grzegorzlucki.github.io/body-reconstruction-20/](https://grzegorzlucki.github.io/body-reconstruction-20/). Sprawdź wynik workflow, jeśli nowa wersja nie jest jeszcze widoczna.
 
 Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu początkowego. Pliki aplikacji są dostępne offline, ale zapis danych konta wymaga połączenia z Supabase. Przycisk „Odśwież aplikację” na stałe na dole zakładki Dane sprawdza aktualizację, aktywuje nową wersję offline i przeładowuje aplikację bez kasowania lokalnej bazy. Wymaga internetu; podczas zapisu danych jest niedostępny. Przed odrzuceniem otwartego formularza pojawia się potwierdzenie. Zachowanie na rzeczywistym Safari wymaga sprawdzenia na urządzeniu.
 
