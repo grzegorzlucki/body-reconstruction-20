@@ -20,7 +20,7 @@ const siteIds = ["achilles", "pht", "quadriceps"];
 
 async function profiles(): Promise<Profile[]> {
   const owner = await userId();
-  let rows: Row[];
+  let rows: Profile[];
   try {
     rows = checked(await client().from("profiles").select("id,name").eq("owner_user_id", owner));
   } catch (error) {
