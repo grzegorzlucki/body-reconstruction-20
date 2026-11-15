@@ -1,5 +1,6 @@
 import { ExercisePicker } from "./Plans";
 import { SetNumberInput } from "./SetNumberInput";
+import { ExerciseTimer } from "./ExerciseTimer";
 import {
   sessionExercises,
   sessionPlan,
@@ -13,11 +14,13 @@ export function SessionFields({
   disabled = false,
   onChange,
   onReplace,
+  onTimerFinish,
 }: {
   session: Session;
   disabled?: boolean;
   onChange: (next: Session) => void;
   onReplace?: (from: string, to: string) => void;
+  onTimerFinish?: (exerciseId: string, status: "completed" | "finishedEarly" | "stopped") => Promise<void>;
 }) {
   return (
     <>
@@ -44,6 +47,10 @@ export function SessionFields({
             {e.detail}
             {e.unilateral ? " · jeden wpis dotyczy obu nóg" : ""}
           </p>
+          {onTimerFinish && sessionPlan(session).find((entry) => entry.exerciseId === e.id)?.timer &&
+            <ExerciseTimer entry={sessionPlan(session).find((entry) => entry.exerciseId === e.id)!}
+              savedStatus={session.exerciseProgress?.find((row) => row.exerciseId === e.id)?.status}
+              disabled={disabled} onFinish={(status) => onTimerFinish(e.id, status)} />}
           {visibleSets(session)
             .filter((s) => s.exerciseId === e.id)
             .map((row) => {

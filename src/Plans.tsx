@@ -8,6 +8,7 @@ import {
   type WorkoutTemplate,
 } from "./domain";
 import { SetNumberInput } from "./SetNumberInput";
+import { timerDefaults } from "./intervalTimer";
 
 export function ExercisePicker({
   excluded,
@@ -148,7 +149,7 @@ export function PlanComposer({
                 label={`Zamień: ${exercise.name}`}
                 excluded={entries.map((e) => e.exerciseId)}
                 onPick={(exerciseId) =>
-                  update(index, { exerciseId, weight: 0, reps: 0, note: "" })
+                  update(index, { exerciseId, weight: 0, reps: 0, note: "", timer: undefined })
                 }
               />
               <button
@@ -211,6 +212,33 @@ export function PlanComposer({
                 onChange={(e) => update(index, { note: e.target.value })}
               />
             </label>
+            <label className="timer-option">
+              <input
+                type="checkbox"
+                checked={!!entry.timer}
+                onChange={(event) => update(index, event.target.checked
+                  ? { timer: { prepare: timerDefaults.prepare, move1: timerDefaults.move1,
+                      hold: timerDefaults.hold, move2: timerDefaults.move2,
+                      rest: timerDefaults.rest, sound: timerDefaults.sound },
+                      reps: Math.max(1, entry.reps) }
+                  : { timer: undefined })}
+              />
+              Użyj zegara HSR dla tego ćwiczenia
+            </label>
+            {entry.timer && <div className="timer-settings">
+              {([ ["prepare", "Przygotowanie"], ["move1", "Ruch 1"],
+                ["hold", "Zatrzymanie"], ["move2", "Ruch 2"],
+                ["rest", "Przerwa między seriami"] ] as const).map(([key, label]) =>
+                <label className="timer-field" key={key}>{label} (s)
+                  <input type="number" min={0} max={3600} step={1}
+                    aria-label={`${label}: ${exercise.name}`}
+                    value={entry.timer![key]}
+                    onChange={(event) => update(index, { timer: { ...entry.timer!, [key]: Number(event.target.value) } })} />
+                </label>)}
+              <label className="timer-option"><input type="checkbox" checked={entry.timer.sound}
+                onChange={(event) => update(index, { timer: { ...entry.timer!, sound: event.target.checked } })} /> Dźwięk</label>
+              <p>Serii i powtórzeń zegar użyje z ustawień ćwiczenia powyżej.</p>
+            </div>}
           </section>
         );
       })}

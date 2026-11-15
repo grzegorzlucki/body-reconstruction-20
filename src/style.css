@@ -830,6 +830,11 @@ a {
 .template-list {
   margin-top: 24px;
 }
+.timer-option { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+.timer-option input { width: auto; }
+.exercise-timer { margin: 20px 0; }
+.exercise-timer .timer-clock { font-size: clamp(42px, 9vw, 72px); }
+.exercise-timer progress { width: 100%; accent-color: #9bdbb4; }
 .exercise-picker {
   margin-bottom: 16px;
   min-width: 0;

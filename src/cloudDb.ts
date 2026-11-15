@@ -58,6 +58,7 @@ async function templates(profileId: string): Promise<WorkoutTemplate[]> {
   return rows.map((row) => ({ id: row.id, name: row.name, profileId,
     entries: entries.filter((e) => e.template_id === row.id).map((e) => ({
       exerciseId: e.exercise_id, sets: e.set_count, weight: Number(e.weight), reps: e.reps, note: e.note,
+      ...(e.timer_config ? { timer: e.timer_config } : {}),
     })),
   }));
 }
@@ -94,8 +95,10 @@ async function sessions(profileId: string): Promise<Session[]> {
     ...(row.decision ? { decision: row.decision } : {}),
     ...(row.rule_version ? { ruleVersion: row.rule_version } : {}),
     ...(row.edited_at ? { editedAt: row.edited_at } : {}),
+    exerciseProgress: row.exercise_progress ?? [],
     plan: plans.filter((p) => p.session_id === row.id).map((p) => ({ exerciseId: p.exercise_id,
-      sets: p.planned_sets, weight: Number(p.planned_weight), reps: p.planned_reps, note: p.note })),
+      sets: p.planned_sets, weight: Number(p.planned_weight), reps: p.planned_reps, note: p.note,
+      ...(p.timer_config ? { timer: p.timer_config } : {}) })),
     sets: sets.filter((s) => s.session_id === row.id).map((s) => ({ exerciseId: s.exercise_id,
       side: s.side as "L" | "P" | "both", index: s.set_index, weight: Number(s.weight), reps: s.reps, done: s.done })),
   }));

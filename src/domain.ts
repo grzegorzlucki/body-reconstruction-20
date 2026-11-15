@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { validTimer, type TimerSettings } from "./intervalTimer";
 export const sites = ["Achilles", "PHT", "Czworogłowy"];
 import {
   exercises,
@@ -23,13 +24,28 @@ export const exerciseIdSchema = z
     (id) => exerciseCatalog.some((e) => e.id === id),
     "Nieznane ćwiczenie",
   );
+export const exerciseTimerSchema = z.object({
+  prepare: z.number().int().min(0).max(3600),
+  move1: z.number().int().min(0).max(3600),
+  hold: z.number().int().min(0).max(3600),
+  move2: z.number().int().min(0).max(3600),
+  rest: z.number().int().min(0).max(3600),
+  sound: z.boolean(),
+}).refine((value) => value.move1 + value.hold + value.move2 > 0, "Co najmniej jedna faza ruchu musi trwać dłużej niż 0 sekund");
+export type ExerciseTimer = z.infer<typeof exerciseTimerSchema>;
+export function timerForEntry(entry: PlanEntry): TimerSettings | null {
+  if (!entry.timer || entry.reps < 1) return null;
+  const settings = { ...entry.timer, sets: entry.sets, reps: entry.reps };
+  return validTimer(settings) ? settings : null;
+}
 export const planEntrySchema = z.object({
   exerciseId: exerciseIdSchema,
   sets: z.number().int().min(1).max(10),
   weight: z.number().min(0).max(500),
   reps: z.number().int().min(0).max(50),
   note: z.string().max(1000),
-});
+  timer: exerciseTimerSchema.optional(),
+}).refine((entry) => !entry.timer || entry.reps >= 1, "Zegar wymaga co najmniej jednego powtórzenia");
 export const planEntriesSchema = z
   .array(planEntrySchema)
   .min(1)
@@ -91,6 +107,10 @@ export const sessionSchema = z
     planName: z.string().max(80).optional(),
     templateId: z.string().optional(),
     note: z.string().max(2000),
+    exerciseProgress: z.array(z.object({
+      exerciseId: exerciseIdSchema,
+      status: z.enum(["completed", "finishedEarly", "stopped"]),
+    })).optional(),
     prescribed: z
       .array(z.object({ exerciseId: z.string(), dose: doseSchema }))
       .optional(),
@@ -117,7 +137,9 @@ export const sessionSchema = z
       keys.some((key) => !expected.includes(key))
     )
       ctx.addIssue({ code: "custom", message: "Nieprawidłowy zestaw serii" });
-    if (s.ended && s.sets.some((x) => !x.done || x.reps < 1))
+    if (s.ended && s.sets.some((x) => (!x.done || x.reps < 1) &&
+      !s.exerciseProgress?.some((p) => p.exerciseId === x.exerciseId &&
+        (p.status === "stopped" || p.status === "finishedEarly"))))
       ctx.addIssue({ code: "custom", message: "Niekompletny trening" });
     if (s.ended && s.ended < s.started)
       ctx.addIssue({
@@ -296,7 +318,7 @@ export function replaceSessionExercise(
     throw Error("To ćwiczenie jest już w treningu.");
   const plan = sessionPlan(session).map((e) =>
     e.exerciseId === from
-      ? { ...e, exerciseId: to, weight: 0, reps: 0, note: "" }
+      ? { ...e, exerciseId: to, weight: 0, reps: 0, note: "", timer: undefined }
       : e,
   );
   const replacement = newSession({}, session.started, {
@@ -307,6 +329,7 @@ export function replaceSessionExercise(
   return {
     ...session,
     plan,
+    exerciseProgress: session.exerciseProgress?.filter((row) => row.exerciseId !== from),
     prescribed: replacement.prescribed,
     sets: plan.flatMap((entry) =>
       entry.exerciseId === to

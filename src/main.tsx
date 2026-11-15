@@ -7,6 +7,7 @@ import { AuthGate } from "./AuthGate";
 import {
   sites,
   exerciseCatalog,
+  exerciseById,
   defaultTemplate,
   templateSchema,
   sessionExercises,
@@ -319,9 +320,9 @@ function App({ accountId }: { accountId?: string }) {
       setNotice(supabase ? "Pomiar zapisany na koncie." : "Pomiar zapisany na tym urządzeniu.");
     });
   }
-  async function begin() {
+  async function begin(selectedWorkout: WorkoutTemplate = workout) {
     await action(async () => {
-      const selected = templateSchema.parse(workout);
+      const selected = templateSchema.parse(selectedWorkout);
       await db.sessions.add(
         sessionSchema.parse({ ...newSession({}, new Date().toISOString(), selected), profileId }),
       );
@@ -691,6 +692,23 @@ function App({ accountId }: { accountId?: string }) {
                       session={active}
                       disabled={busy}
                       onChange={updateTraining}
+                      onTimerFinish={async (exerciseId, status) => {
+                        if (busy) return;
+                        const next = sessionSchema.parse({ ...active,
+                          exerciseProgress: [
+                            ...(active.exerciseProgress ?? []).filter((row) => row.exerciseId !== exerciseId),
+                            { exerciseId, status },
+                          ],
+                        });
+                        setBusy(true);
+                        try {
+                          await db.sessions.put(next);
+                          await refresh();
+                        } catch (error) {
+                          setError(error instanceof Error ? error.message : "Nie udało się zapisać stanu ćwiczenia.");
+                          throw error;
+                        } finally { setBusy(false); }
+                      }}
                       onReplace={(from, to) =>
                         action(async () => {
                           if (
@@ -711,7 +729,9 @@ function App({ accountId }: { accountId?: string }) {
                     <div className="actions">
                       <button
                         disabled={
-                          busy || active.sets.some((x) => !x.done || x.reps < 1)
+                          busy || active.sets.some((x) => (!x.done || x.reps < 1) &&
+                            !active.exerciseProgress?.some((row) => row.exerciseId === x.exerciseId &&
+                              (row.status === "finishedEarly" || row.status === "stopped")))
                         }
                         onClick={() =>
                           action(async () => {
@@ -747,6 +767,28 @@ function App({ accountId }: { accountId?: string }) {
                   </>
                 ) : (
                   <>
+                    <section className="panel">
+                      <h2>Moje plany</h2>
+                      <p>Wybierz zapisany plan i rozpocznij trening lub wczytaj go do dostosowania.</p>
+                      <div className="template-list">
+                        {templates.map((template) => <article key={template.id}>
+                          <h3>{template.name}</h3>
+                          <p>{template.entries.map((entry) => exerciseById(entry.exerciseId).name).join(" · ")}</p>
+                          <p>{template.entries.length} ćwiczeń · {template.entries.reduce((sum, entry) => sum + entry.sets, 0)} serii
+                            {template.entries.some((entry) => entry.timer) ? " · Zegar HSR" : ""}</p>
+                          <div className="actions">
+                            <button type="button" disabled={busy} onClick={() => void begin(template)}>Uruchom plan</button>
+                            <button type="button" className="secondary" disabled={busy} onClick={() => {
+                              if (workoutDirty && !confirm("Odrzucić niezapisane zmiany przygotowania treningu?")) return;
+                              setWorkout(structuredClone(template));
+                              setWorkoutDirty(false);
+                            }}>Dostosuj</button>
+                            <button type="button" className="secondary" onClick={() => setTab("Plany")}>Edytuj plan</button>
+                          </div>
+                        </article>)}
+                      </div>
+                      {!templates.length && <p>Brak zapisanych planów. Utwórz pierwszy plan poniżej.</p>}
+                    </section>
                     <div className="notice">
                       {last
                         ? `Od ostatniego treningu minęło ${Math.floor(hours)} h.`
@@ -887,7 +929,7 @@ function App({ accountId }: { accountId?: string }) {
                     />
                     <button
                       disabled={busy || !workout.entries.length}
-                      onClick={begin}
+                      onClick={() => void begin()}
                     >
                       Zatwierdź dawki i rozpocznij
                     </button>
