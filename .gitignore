@@ -4,6 +4,9 @@ dist/
 playwright-report/
 test-results/
 *.local
+.env
+.env.*
+!.env.example
 private/
 SPECYFIKACJA.md
 .openai/

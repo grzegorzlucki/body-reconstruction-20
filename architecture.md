@@ -1,6 +1,6 @@
 # Architecture Map
 
-A guide to the Body Reconstruction repository: where to find code for key features and how data flows through the app. The app is a client-side React + TypeScript application built with Vite. User data is stored locally in IndexedDB through Dexie; there is no backend or synchronization.
+A guide to the Body Reconstruction repository. The app is React + TypeScript built with Vite. With Supabase configured, signed-in users store data in PostgreSQL; the previous IndexedDB database remains available for local migration and development without cloud configuration.
 
 ## Quick Navigation
 
@@ -14,26 +14,28 @@ A guide to the Body Reconstruction repository: where to find code for key featur
 | Creating and editing plans or selecting exercises | `src/Plans.tsx` | `src/catalog.ts`, `src/domain.ts`, `src/plans.test.ts` |
 | The calendar or navigation from a day to a form | `src/Calendar.tsx` | `src/main.tsx` |
 | Pain charts and point tooltips/interactions | `src/PainCharts.tsx` | `src/main.tsx`, `e2e/pain-charts.spec.ts` |
-| HSR timer logic and UI | `src/intervalTimer.ts`, `src/IntervalTimer.tsx` | `src/intervalTimer.test.ts`, `e2e/timer.spec.ts` |
+| HSR timer logic and UI | `src/intervalTimer.ts`, `src/HsrTimer.tsx` | `src/intervalTimer.test.ts`, `e2e/timer.spec.ts` |
 | App updates, offline support, and the service worker | `src/AppUpdater.tsx`, `vite.config.ts` | `src/main.tsx`, `e2e/update.spec.ts` |
 | Global styling | `src/style.css` | JSX in `src/*.tsx` |
+| Authentication and cloud access | `src/AuthGate.tsx`, `src/supabase.ts`, `src/cloudDb.ts` | `supabase/migrations/`, `src/main.tsx` |
 
 ## Modules and Responsibilities
 
 - **`src/main.tsx` — application composition.** Initializes React, loads and refreshes data, manages view and form state, coordinates writes through `db`, and renders the tabs: Today, Workout, Diary, Calendar, History, Plans, HSR Timer, and Data. It also handles the historical workout editor. Start here when changing view behavior or navigation between screens.
-- **UI components:** `SessionFields.tsx` edits sets in active and historical workouts; `SetNumberInput.tsx` is a shared numeric input; `Plans.tsx` contains the exercise picker, plan editor, and template list; `Calendar.tsx` displays days with workouts and pain logs; `PainCharts.tsx` renders three pain charts; `IntervalTimer.tsx` handles timer settings, progress, pause, and sound; `AppUpdater.tsx` handles service worker updates.
+- **UI components:** `SessionFields.tsx` edits sets in active and historical workouts; `SetNumberInput.tsx` is a shared numeric input; `Plans.tsx` contains the exercise picker, plan editor, and template list; `Calendar.tsx` displays days with workouts and pain logs; `PainCharts.tsx` renders three pain charts; `HsrTimer.tsx` handles timer settings, progress, pause, and sound; `AppUpdater.tsx` handles service worker updates.
 - **`src/domain.ts` — types and domain logic.** Contains Zod schemas and types for plans, sessions, sets, pain logs, and backups; validation and creation functions; set grouping and exercise replacement; local date handling; and pain-monitor lookups. Keep rules that do not depend on React or IndexedDB here.
 - **`src/catalog.ts` — exercise catalog.** Defines the initial exercise set and the full picker catalog, including equipment, laterality, and defaults. `exerciseById` is used by domain logic to resolve exercise IDs.
 - **`src/db.ts` — persistence.** Defines the Dexie database `body-reconstruction-v1`, the `profiles`, `logs`, `sessions`, and `templates` tables, migrations through version 3, and transactional JSON backup import/export. Version 3 assigns existing records to the default profile. Import validates data with schemas from `domain.ts` and replaces only the selected profile's data.
-- **Timer:** `src/intervalTimer.ts` contains pure settings, validation, position calculation, and formatting logic; `IntervalTimer.tsx` implements the UI. Timer settings are stored per profile in `localStorage`, outside the workout database backup.
+- **Cloud mode:** `src/supabase.ts` creates a browser client with the public project URL and publishable key. `src/AuthGate.tsx` handles sign-in, registration, password recovery, and session changes. `src/cloudDb.ts` maps the existing UI model to PostgreSQL tables and calls SQL functions for atomic writes. The SQL files in `supabase/migrations/` define RLS policies, lookup data, and write functions; apply them in order before enabling cloud mode.
+- **Timer:** `src/intervalTimer.ts` contains pure settings, validation, position calculation, and formatting logic; `HsrTimer.tsx` implements the UI. Timer settings use `timer_settings` in cloud mode and per-profile `localStorage` in local mode; they are outside the workout backup.
 - **Styles and assets:** `src/style.css` contains global styles. `public/` contains icons, the source manifest, and static files. `index.html` is the app entry document.
 
 ## Data Flow
 
-1. On startup, `src/main.tsx` loads profiles, then sessions, pain logs, and plans for the selected profile from `src/db.ts` (Dexie) into React state. Switching profiles clears view state before loading the next person's records.
+1. On startup, `src/main.tsx` selects Supabase when both public environment variables are present. Authenticated users load profiles and their records through `src/cloudDb.ts`; otherwise the app uses `src/db.ts` (Dexie). Switching profiles clears view state before loading the next person's records.
 2. User interactions pass through view/form handlers in `main.tsx` and specialized components. Rules and validation live in `src/domain.ts` (Zod); exercise data comes from `src/catalog.ts`.
 3. Changes are saved to IndexedDB. After write operations, the app refreshes its local state from the database. Each workout session stores its own copy of the plan, so later template edits do not change workout history.
-4. Export creates a v3 JSON file containing the selected profile's name, pain logs, sessions, and templates. Import accepts v1, v2, and v3, validates the contents, and then transactionally replaces only the selected profile's data.
+4. Export creates a v3 JSON file containing the selected profile's name, pain logs, sessions, and templates. Import accepts v1, v2, and v3 and replaces only the selected profile's data. Cloud import runs in one PostgreSQL function call. The Data tab can transfer an existing local profile into the signed-in account without deleting the local copy.
 5. In production, `src/main.tsx` registers the service worker generated by `vite.config.ts`. The Vite configuration builds the manifest and offline cache using `VITE_BASE_PATH` (including for GitHub Pages).
 
 ## Tests and Tooling

@@ -1,13 +1,13 @@
 # Body Reconstruction
 
-Osobisty dziennik aktywności: zapis serii, monitoring samopoczucia, historia oraz kalendarz miesięczny. React + TypeScript + Vite, lokalna baza IndexedDB/Dexie.
+Osobisty dziennik aktywności: zapis serii, monitoring samopoczucia, historia oraz kalendarz miesięczny. React + TypeScript + Vite. Dane konta są przechowywane w Supabase; dotychczasowe dane lokalne można przenieść z IndexedDB.
 
 ## Prywatność
 
 - Repozytorium i interfejs są publiczne. Nie zawierają indywidualnej dokumentacji medycznej ani danych użytkownika.
 - Początkowe dawki są neutralnym szablonem (0 kg dodatkowego obciążenia). Własne wartości wpisuje się w aplikacji; nie są wysyłane do GitHuba.
-- Wpisy przechowuje przeglądarka na urządzeniu. Brak konta, synchronizacji, analityki i serwera danych.
-- Baza lokalna i eksport JSON **nie są szyfrowane hasłem**. Nie publikuj eksportów ani nie przechowuj rzeczywistych wpisów na współdzielonym profilu przeglądarki.
+- Po skonfigurowaniu Supabase wpisy konta są przechowywane w jego bazie danych. Wpisy z poprzedniej wersji mogą pozostać lokalnie w przeglądarce do czasu ich ręcznego usunięcia.
+- Lokalna kopia i eksport JSON **nie są szyfrowane hasłem**. Nie publikuj eksportów ani nie przechowuj rzeczywistych wpisów na współdzielonym profilu przeglądarki.
 - Dokumenty prywatne, eksporty, katalog narzędzi i dane testów są wyłączone z Git. Do hostingu trafia wyłącznie katalog `dist`.
 - Zmiana adresu strony, telefonu lub przeglądarki oznacza inną lokalną bazę. Kopie JSON umożliwiają ręczne przeniesienie danych.
 
@@ -25,11 +25,19 @@ Otwórz http://localhost:4173. Na komputerze, na którym przygotowano projekt, m
 
 ## GitHub Pages
 
+### Supabase
+
+Przed włączeniem zapisu w chmurze zastosuj kolejno pliki SQL z `supabase/migrations/` w projekcie Supabase. Zawierają polityki RLS, katalog ćwiczeń i funkcje atomowego zapisu. Sprawdź ich zgodność z faktycznymi tabelami przed uruchomieniem. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
+
+W GitHub **Settings → Secrets and variables → Actions → Variables** ustaw `VITE_SUPABASE_URL` i `VITE_SUPABASE_PUBLISHABLE_KEY`. Workflow wymaga obu wartości. Są publiczne i trafiają do kodu przeglądarki. Lokalnie skopiuj `.env.example` do `.env.local` i uzupełnij te same wartości. Nigdy nie przekazuj `SUPABASE_SECRET_KEY` do Vite ani GitHub Pages.
+
+Po zalogowaniu w zakładce **Dane** można przenieść wybrany lokalny profil do profilu konta. Import zastępuje dane profilu docelowego w jednej transakcji; lokalna kopia pozostaje na urządzeniu. Wykonaj eksport JSON przed migracją. Brak sieci uniemożliwia zapis do Supabase; aplikacja wyświetla błąd zapisu.
+
 Workflow `.github/workflows/pages.yml` testuje i buduje aplikację z bazą `/body-reconstruction-20/`, następnie zapisuje sam wynik w gałęzi `gh-pages` i zleca natywną budowę Pages. Konfiguracja repozytorium: **Settings → Pages → Source: Deploy from a branch → gh-pages → /(root)**. Publikacja uruchamia się po zmianach gałęzi main lub ręcznie w Actions. Plik `.nojekyll` wyłącza przetwarzanie gotowych plików przez Jekyll.
 
 Darmowy GitHub Pages wymaga publicznego repozytorium. Adres docelowy: [replace] — sam zapis adresu w dokumentacji nie potwierdza udanego wdrożenia; sprawdź wynik workflow.
 
-Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu początkowego. Po pierwszym pobraniu aplikacja obsługuje pracę offline. Przycisk „Odśwież aplikację” na stałe na dole zakładki Dane sprawdza aktualizację, aktywuje nową wersję offline i przeładowuje aplikację bez kasowania lokalnej bazy. Wymaga internetu; podczas zapisu danych jest niedostępny. Przed odrzuceniem otwartego formularza pojawia się potwierdzenie. Zachowanie na rzeczywistym Safari wymaga sprawdzenia na urządzeniu.
+Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu początkowego. Pliki aplikacji są dostępne offline, ale zapis danych konta wymaga połączenia z Supabase. Przycisk „Odśwież aplikację” na stałe na dole zakładki Dane sprawdza aktualizację, aktywuje nową wersję offline i przeładowuje aplikację bez kasowania lokalnej bazy. Wymaga internetu; podczas zapisu danych jest niedostępny. Przed odrzuceniem otwartego formularza pojawia się potwierdzenie. Zachowanie na rzeczywistym Safari wymaga sprawdzenia na urządzeniu.
 
 ## Korzystanie
 
@@ -41,7 +49,7 @@ Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu pocz
 - Kalendarz: zielona kropka oznacza ukończony trening, pomarańczowa pomiar, obwódka trening w trakcie. Wybrany dzień otwiera formularze.
 - Dziennik: codzienna ocena z datą, godziną i kontekstem. Wpisy można poprawić lub usunąć.
 - Zegar HSR: konfigurowalne przygotowanie, trzy fazy (Ruch 1 / Zatrzymanie / Ruch 2), powtórzenia, serie i przerwy. Wartość 0 pomija fazę; co najmniej jedna faza musi trwać dłużej niż 0 s. Piknięcia co sekundę lub cisza, pauza i wznowienie, automatyczny zapis ustawień na urządzeniu. Odliczanie trwa po zmianie zakładki aplikacji, ale nie jest wznawiane po zamknięciu lub przeładowaniu strony. Przygotowanie tylko przed pierwszą serią, bez przerwy po ostatniej. Zegar nie zapisuje wykonanych serii w dzienniku treningu. Podczas używania pozostaw aplikację na ekranie; dźwięk i podtrzymywanie ekranu na rzeczywistym iPhonie wymagają próby na urządzeniu. Ustawienia zegara nie wchodzą do eksportu treningów.
-- Profile: kilka osób na jednym urządzeniu może mieć osobne treningi, pomiary, plany i ustawienia zegara. Profile są lokalne, bez hasła i synchronizacji. Istniejące wpisy trafiają do profilu głównego. Dane: eksport JSON v3 obejmuje dane wybranego profilu. Import przyjmuje również kopie v1 i v2 i zastępuje wyłącznie dane wybranego profilu po potwierdzeniu.
+- Profile: kilka osób na jednym urządzeniu może mieć osobne treningi, pomiary, plany i ustawienia zegara. Po zalogowaniu profile konta są przechowywane w Supabase. Istniejące lokalne wpisy można przenieść ręcznie. Dane: eksport JSON v3 obejmuje dane wybranego profilu. Import przyjmuje również kopie v1 i v2 i zastępuje wyłącznie dane wybranego profilu po potwierdzeniu.
 
 Aplikacja pokazuje zapisane pomiary bólu bez automatycznych sugestii progresji lub regresji. Decyzję o obciążeniu podejmuje użytkownik.
 

@@ -20,9 +20,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Check Supabase configuration
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+        run: test -n "$VITE_SUPABASE_URL" && test -n "$VITE_SUPABASE_PUBLISHABLE_KEY"
       - run: npm run build
         env:
           VITE_BASE_PATH: /body-reconstruction-20/
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
       - name: Publish static branch
         run: |
           git fetch origin gh-pages

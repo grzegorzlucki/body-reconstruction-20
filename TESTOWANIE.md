@@ -1,5 +1,7 @@
 # Weryfikacja aplikacji
 
+Tryb konta Supabase wymaga osobnego sprawdzenia po zastosowaniu migracji SQL: rejestracja i potwierdzenie e-mail, reset hasła, utworzenie profilu, zapis treningu oraz pomiaru, import lokalnego profilu i odmowa dostępu do danych innego konta. Lokalne testy Vitest nie uruchamiają prawdziwej bazy Supabase ani polityk RLS.
+
 Profile: `src/db.test.ts` sprawdza rozdzielenie danych między profilami oraz import zastępujący dane tylko wybranego profilu. Migracja IndexedDB do wersji 3 przypisuje dotychczasowe dane do profilu głównego.
 
 Testy używają danych syntetycznych. Nie zawierają dokumentacji ani indywidualnego profilu użytkownika.

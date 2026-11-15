@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { db, exportBackup, importBackup, createProfile, legacyProfileId, type Profile } from "./db";
+import { db as localDb, exportBackup as exportLocalBackup, importBackup as importLocalBackup, createProfile as createLocalProfile, legacyProfileId, type Profile } from "./db";
+import { cloudDb, createCloudProfile, exportCloudBackup, importCloudBackup } from "./cloudDb";
+import { supabase } from "./supabase";
+import { AuthGate } from "./AuthGate";
 import {
   sites,
   exerciseCatalog,
@@ -24,7 +27,7 @@ import { SessionFields } from "./SessionFields";
 import { Plans, PlanComposer } from "./Plans";
 import { PainCharts } from "./PainCharts";
 import { AppUpdater } from "./AppUpdater";
-import { IntervalTimer } from "./IntervalTimer";
+import { IntervalTimer } from "./HsrTimer";
 import { Calendar } from "./Calendar";
 import {
   visibleSets,
@@ -44,7 +47,11 @@ if (import.meta.env.PROD && "serviceWorker" in navigator)
     .catch(() => {});
 const fmt = (d: string) =>
   new Date(d).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
-function App() {
+const db = supabase ? cloudDb as unknown as typeof localDb : localDb;
+const createProfile = supabase ? createCloudProfile : createLocalProfile;
+function App({ accountId }: { accountId?: string }) {
+  const [localProfiles, setLocalProfiles] = useState<Profile[]>([]);
+  const [sourceProfileId, setSourceProfileId] = useState(legacyProfileId);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [profileId, setProfileId] = useState(() => localStorage.getItem("rehab-active-profile") || legacyProfileId);
   const [tab, setTab] = useState("Dzisiaj"),
@@ -150,7 +157,7 @@ function App() {
   async function refresh() {
     const available = await db.profiles.toArray();
     setProfiles(available);
-    const currentId = available.some((p) => p.id === profileId) ? profileId : legacyProfileId;
+    const currentId = available.some((p) => p.id === profileId) ? profileId : available[0]?.id ?? legacyProfileId;
     if (currentId !== profileId) setProfileId(currentId);
     const stored = await db.sessions.where("profileId").equals(currentId).sortBy("started");
     setLogs(await db.logs.where("profileId").equals(currentId).sortBy("date"));
@@ -169,10 +176,27 @@ function App() {
   useEffect(() => {
     refresh().catch(() =>
       setError(
-        "Nie można otworzyć bazy. Sprawdź ustawienia pamięci przeglądarki.",
+        supabase ? "Nie można pobrać danych konta. Sprawdź połączenie i konfigurację Supabase." : "Nie można otworzyć bazy. Sprawdź ustawienia pamięci przeglądarki.",
       ),
     );
+    if (supabase) void localDb.profiles.toArray().then((rows) => {
+      setLocalProfiles(rows);
+      if (rows.length) setSourceProfileId(rows[0].id);
+    }).catch(() => {});
   }, []);
+  async function migrateLocal() {
+    if (!supabase) return;
+    await action(async () => {
+      const source = localProfiles.find((p) => p.id === sourceProfileId);
+      const target = profiles.find((p) => p.id === profileId);
+      if (!source || !target) throw Error("Wybierz profil źródłowy i docelowy.");
+      const backup = await exportLocalBackup(source.id);
+      if (!confirm(`Przenieść dane lokalnego profilu „${source.name}” do konta, do profilu „${target.name}”? Zastąpi to obecne dane profilu na serwerze. Lokalna kopia pozostanie na urządzeniu.`)) return;
+      await importCloudBackup(backup, target.id);
+      setWorkout(structuredClone((await db.templates.where("profileId").equals(target.id).toArray())[0] ?? defaultTemplate()));
+      setNotice("Dane przeniesione. Lokalna kopia pozostała na urządzeniu.");
+    });
+  }
   async function switchProfile(nextId: string) {
     if (nextId === profileId || busy) return;
     if (planDirty && !confirm("Odrzucić niezapisane zmiany planu?")) return;
@@ -276,7 +300,7 @@ function App() {
       )
         return;
       await db.logs.put(l);
-      setNotice("Pomiar zapisany na tym urządzeniu.");
+      setNotice(supabase ? "Pomiar zapisany na koncie." : "Pomiar zapisany na tym urządzeniu.");
     });
   }
   async function begin() {
@@ -298,7 +322,7 @@ function App() {
   }
   async function download() {
     await action(async () => {
-      const data = await exportBackup(profileId);
+      const data = supabase ? await exportCloudBackup(profileId) : await exportLocalBackup(profileId);
       const url = URL.createObjectURL(
         new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
       );
@@ -324,7 +348,8 @@ function App() {
         )
       )
         return;
-      await importBackup(data, profileId);
+      if (supabase) await importCloudBackup(data, profileId);
+      else await importLocalBackup(data, profileId);
       const restored = await db.templates.where("profileId").equals(profileId).toArray();
       setWorkout(structuredClone(restored[0] ?? defaultTemplate()));
       setNotice("Kopia odtworzona.");
@@ -362,8 +387,8 @@ function App() {
           ))}
         </nav>
         <div className="local">
-          <i /> Dane na tym urządzeniu
-          <small>Wersja 0.3 · bez konta i chmury</small>
+          <i /> {supabase ? "Dane na koncie" : "Dane na tym urządzeniu"}
+          <small>{supabase ? "Połączono z Supabase" : "Tryb lokalny"}</small>
         </div>
       </aside>
       <main>
@@ -377,6 +402,7 @@ function App() {
             })}
           </span>
         </header>
+        {supabase && <button type="button" className="secondary" onClick={() => void supabase?.auth.signOut()}>Wyloguj ({accountId})</button>}
         <div className="profile-bar">
           <label>Profil
             <select aria-label="Profil" value={profileId} disabled={busy} onChange={(e) => void switchProfile(e.target.value)}>
@@ -397,7 +423,7 @@ function App() {
           </div>
         )}
         {!ready ? (
-          <p>Otwieranie lokalnej bazy…</p>
+          <p>{supabase ? "Ładowanie danych konta…" : "Otwieranie lokalnej bazy…"}</p>
         ) : (
           <>
             <IntervalTimer key={profileId} profileId={profileId} visible={tab === "Zegar HSR"} />
@@ -1055,10 +1081,20 @@ function App() {
             {tab === "Dane" && (
               <>
                 <h1>Twoje dane, u Ciebie</h1>
+                {supabase && localProfiles.length > 0 && <section className="panel">
+                  <h2>Przenieś lokalne dane do konta</h2>
+                  <label>Profil na tym urządzeniu
+                    <select value={sourceProfileId} onChange={(event) => setSourceProfileId(event.target.value)}>
+                      {localProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
+                    </select>
+                  </label>
+                  <p>Import zastąpi dane wybranego profilu konta. Lokalna kopia pozostanie na urządzeniu.</p>
+                  <button type="button" disabled={busy} onClick={() => void migrateLocal()}>Przenieś do wybranego profilu konta</button>
+                </section>}
                 <p className="intro">
-                  Baza jest na tym urządzeniu. Zmiana adresu aplikacji,
-                  przeglądarki lub wyczyszczenie pamięci może oznaczać osobną
-                  albo pustą bazę.
+                  {supabase
+                    ? "Dane konta są przechowywane w Supabase. Eksportuj kopię JSON, aby mieć własne archiwum."
+                    : "Baza jest na tym urządzeniu. Zmiana adresu aplikacji, przeglądarki lub wyczyszczenie pamięci może oznaczać osobną albo pustą bazę."}
                 </p>
                 <section className="panel">
                   <h2>Kopia zapasowa</h2>
@@ -1085,8 +1121,7 @@ function App() {
                 <section className="panel">
                   <h2>Odtwórz kopię</h2>
                   <p>
-                    Import zastępuje całą bazę po sprawdzeniu pliku i
-                    potwierdzeniu.
+                    Import zastępuje dane wybranego profilu po sprawdzeniu pliku i potwierdzeniu.
                   </p>
                   <label>
                     Wybierz plik JSON
@@ -1145,4 +1180,6 @@ function App() {
     </div>
   );
 }
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  supabase ? <AuthGate>{(session) => <App key={session.user.id} accountId={session.user.email} />}</AuthGate> : <App />,
+);

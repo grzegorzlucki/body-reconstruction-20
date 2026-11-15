@@ -177,6 +177,13 @@ nav button.selected {
 }
 .profile-bar label { flex: 1 1 160px; }
 .profile-bar select { width: 100%; }
+.auth-screen {
+  max-width: 440px;
+  margin: 8vh auto;
+  padding: 24px;
+}
+.auth-screen form { display: grid; gap: 16px; margin-bottom: 16px; }
+.auth-screen input { width: 100%; }
 main {
   max-width: 1150px;
   margin: auto;

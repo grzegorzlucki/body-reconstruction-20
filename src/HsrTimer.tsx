@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { supabase } from "./supabase";
 import {
   formatTimer,
   timerDefaults,
@@ -21,6 +22,7 @@ function loadSettings(profileId: string): TimerSettings {
 }
 export function IntervalTimer({ visible, profileId = "default-profile" }: { visible: boolean; profileId?: string }) {
   const [settings, setSettings] = useState(() => loadSettings(profileId));
+  const [remoteReady, setRemoteReady] = useState(!supabase);
   const [status, setStatus] = useState<"idle" | "running" | "paused" | "done">(
     "idle",
   );
@@ -36,13 +38,38 @@ export function IntervalTimer({ visible, profileId = "default-profile" }: { visi
     : null;
   const active = status === "running" || status === "paused";
   useEffect(() => {
-    if (!validTimer(settings)) return;
+    if (!supabase) return;
+    let cancelled = false;
+    void supabase.from("timer_settings").select("*").eq("profile_id", profileId).maybeSingle()
+      .then(({ data, error }) => {
+        if (cancelled) return;
+        if (error) { setMessage(error.message); return; }
+        if (data) {
+          const next = { prepare: data.prepare_seconds, move1: data.move1_seconds,
+            hold: data.hold_seconds, move2: data.move2_seconds, reps: data.reps,
+            sets: data.sets, rest: data.rest_seconds, sound: data.sound };
+          if (validTimer(next)) setSettings(next);
+        }
+        setRemoteReady(true);
+      });
+    return () => { cancelled = true; };
+  }, [profileId]);
+  useEffect(() => {
+    if (!validTimer(settings) || !remoteReady) return;
+    if (supabase) {
+      void supabase.from("timer_settings").upsert({ profile_id: profileId,
+        prepare_seconds: settings.prepare, move1_seconds: settings.move1,
+        hold_seconds: settings.hold, move2_seconds: settings.move2,
+        reps: settings.reps, sets: settings.sets, rest_seconds: settings.rest,
+        sound: settings.sound }).then(({ error }) => { if (error) setMessage(error.message); });
+      return;
+    }
     try {
       localStorage.setItem(storageKey(profileId), JSON.stringify(settings));
     } catch {
       setMessage("Nie można zapamiętać ustawień w tej przeglądarce.");
     }
-  }, [settings]);
+  }, [settings, profileId, remoteReady]);
   function beep(finish = false) {
     const ctx = audio.current;
     if (!settings.sound || !ctx || ctx.state !== "running") return;
