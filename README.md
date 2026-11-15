@@ -33,6 +33,8 @@ Jeśli po zalogowaniu pojawia się `new row violates row-level security policy f
 
 Komunikat `Could not find the function public.save_workout_template(payload)` oznacza brak funkcji w działającej bazie Supabase. Uruchom `20261115_atomic_writes.sql`, a potem `20261115_exercise_timers.sql` w SQL Editor. Błąd RLS przy zapisie `timer_settings` wymaga uruchomienia `20261115_timer_settings_rls_repair.sql` po migracji profili. Same pliki w repozytorium nie wykonują migracji na serwerze.
 
+Jeśli zapis planu kończy się `new row violates row-level security policy for table "workout_templates"`, sprawdź polityki tabeli w Supabase. Gdy nie ma żadnej, uruchom `supabase/migrations/20261115_workout_plans_rls_repair.sql` po migracji profili. Plik nadaje dostęp do planów i ich ćwiczeń wyłącznie właścicielowi profilu.
+
 Przed włączeniem zapisu w chmurze zastosuj kolejno pliki SQL z `supabase/migrations/` w projekcie Supabase. Zawierają polityki RLS, katalog ćwiczeń i funkcje atomowego zapisu. Sprawdź ich zgodność z faktycznymi tabelami przed uruchomieniem. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
 
 W GitHub **Settings → Secrets and variables → Actions → Variables** ustaw `VITE_SUPABASE_URL` i `VITE_SUPABASE_PUBLISHABLE_KEY`. Workflow wymaga obu wartości. Są publiczne i trafiają do kodu przeglądarki. Lokalnie skopiuj `.env.example` do `.env.local` i uzupełnij te same wartości. Nigdy nie przekazuj `SUPABASE_SECRET_KEY` do Vite ani GitHub Pages.
