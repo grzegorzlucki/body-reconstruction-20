@@ -22,7 +22,6 @@ async function profiles(): Promise<Profile[]> {
   const owner = await userId();
   let rows = checked(await client().from("profiles").select("id,name").eq("owner_user_id", owner));
   if (!rows.length) {
-    checked(await client().from("app_users").upsert({ id: owner, auth_subject: owner }, { onConflict: "id" }));
     const id = crypto.randomUUID();
     checked(await client().from("profiles").insert({ id, owner_user_id: owner, name: "Profil główny" }));
     await putTemplate({ ...defaultTemplate(), id: crypto.randomUUID(), profileId: id });

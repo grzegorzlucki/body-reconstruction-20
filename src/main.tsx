@@ -157,7 +157,7 @@ function App({ accountId }: { accountId?: string }) {
   async function refresh() {
     const available = await Promise.race([
       db.profiles.toArray(),
-      new Promise<Profile[]>((_, reject) => window.setTimeout(() => reject(Error("Przekroczono czas połączenia z Supabase. Sprawdź sieć i tabele profiles oraz app_users.")), 15000)),
+      new Promise<Profile[]>((_, reject) => window.setTimeout(() => reject(Error("Przekroczono czas połączenia z Supabase. Sprawdź sieć i tabelę profiles.")), 15000)),
     ]);
     setProfiles(available);
     const currentId = available.some((p) => p.id === profileId) ? profileId : available[0]?.id ?? legacyProfileId;
