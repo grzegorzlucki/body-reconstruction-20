@@ -68,14 +68,25 @@ export function timerPosition(s: TimerSettings, elapsed: number) {
   const blockTime = repTime * s.reps + s.rest;
   const set = Math.floor(t / blockTime) + 1;
   t %= blockTime;
-  if (t >= repTime * s.reps)
+  if (t >= repTime * s.reps) {
+    const restRemaining = blockTime - t;
+    const preparation = Math.min(s.prepare, s.rest);
+    if (preparation > 0 && restRemaining <= preparation)
+      return {
+        phase: "Przygotowanie",
+        kind: "prepare",
+        remaining: Math.ceil(restRemaining),
+        set: set + 1,
+        rep: 1,
+      };
     return {
       phase: "Przerwa",
       kind: "rest",
-      remaining: Math.ceil(blockTime - t),
+      remaining: Math.ceil(restRemaining - preparation),
       set,
       rep: s.reps,
     };
+  }
   const rep = Math.floor(t / repTime) + 1;
   t %= repTime;
   for (const [phase, kind, duration] of [

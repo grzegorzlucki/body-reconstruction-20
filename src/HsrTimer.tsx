@@ -359,8 +359,9 @@ export function IntervalTimer({ visible, profileId = "default-profile" }: { visi
         </form>
       )}
       <p className="footnote">
-        Przygotowanie jest przed pierwszą serią. Przerwy są tylko między
-        seriami. Zegar działa także w innych zakładkach tej aplikacji. Podczas
+        Przygotowanie jest przed pierwszą serią oraz w ostatnich sekundach
+        każdej przerwy. Czas przygotowania wlicza się w przerwę, więc nie wydłuża
+        treningu. Zegar działa także w innych zakładkach tej aplikacji. Podczas
         ćwiczenia pozostaw aplikację na ekranie — blokada telefonu lub przejście
         do innej aplikacji może zakłócić dźwięk. Ustawienia zapisują się
         automatycznie na tym urządzeniu.
