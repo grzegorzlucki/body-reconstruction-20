@@ -155,7 +155,10 @@ function App({ accountId }: { accountId?: string }) {
     });
   }
   async function refresh() {
-    const available = await db.profiles.toArray();
+    const available = await Promise.race([
+      db.profiles.toArray(),
+      new Promise<Profile[]>((_, reject) => window.setTimeout(() => reject(Error("Przekroczono czas połączenia z Supabase. Sprawdź sieć i tabele profiles oraz app_users.")), 15000)),
+    ]);
     setProfiles(available);
     const currentId = available.some((p) => p.id === profileId) ? profileId : available[0]?.id ?? legacyProfileId;
     if (currentId !== profileId) setProfileId(currentId);
@@ -386,6 +389,9 @@ function App({ accountId }: { accountId?: string }) {
             </button>
           ))}
         </nav>
+        <div className="sidebar-updater">
+          <AppUpdater disabled={busy} hasUnsavedChanges={planDirty || !!editing} />
+        </div>
         <div className="local">
           <i /> {supabase ? "Dane na koncie" : "Dane na tym urządzeniu"}
           <small>{supabase ? "Połączono z Supabase" : "Tryb lokalny"}</small>
@@ -402,8 +408,14 @@ function App({ accountId }: { accountId?: string }) {
             })}
           </span>
         </header>
-        {supabase && <button type="button" className="secondary" onClick={() => void supabase?.auth.signOut()}>Wyloguj ({accountId})</button>}
-        <div className="profile-bar">
+        <div className="mobile-updater">
+          <AppUpdater disabled={busy} hasUnsavedChanges={planDirty || !!editing} />
+        </div>
+        {supabase && <div className="account-actions">
+          <span>{accountId}</span>
+          <button type="button" className="secondary" onClick={() => void supabase?.auth.signOut()}>Wyloguj</button>
+        </div>}
+        {ready && <div className="profile-bar">
           <label>Profil
             <select aria-label="Profil" value={profileId} disabled={busy} onChange={(e) => void switchProfile(e.target.value)}>
               {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
@@ -411,7 +423,7 @@ function App({ accountId }: { accountId?: string }) {
           </label>
           <button type="button" className="secondary" onClick={() => void addProfile()}>Dodaj</button>
           <button type="button" className="secondary" onClick={() => void renameProfile()}>Zmień nazwę</button>
-        </div>
+        </div>}
         {error && (
           <div role="alert" className="alert">
             {error}
@@ -1163,14 +1175,6 @@ function App({ accountId }: { accountId?: string }) {
                     jest adres HTTPS. Szczegóły testowania znajdziesz w README
                     projektu.
                   </p>
-                </section>
-                <section className="panel">
-                  <h2>Aktualizacja aplikacji</h2>
-                  <p>
-                    Sprawdź dostępność nowej wersji i odśwież aplikację.
-                    Zapisane treningi i plany pozostaną na urządzeniu.
-                  </p>
-                  <AppUpdater disabled={busy} hasUnsavedChanges={false} />
                 </section>
               </>
             )}
