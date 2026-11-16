@@ -134,10 +134,11 @@ export function AppUpdater({
       onApprovedReload();
       window.location.reload();
     } catch (e) {
+      const detail = e instanceof Error ? e.message : "";
       setError(
-        e instanceof Error
-          ? e.message
-          : "Nie udało się odświeżyć aplikacji. Spróbuj ponownie po połączeniu z internetem.",
+        /failed to access storage|quotaexceeded|not enough space/i.test(detail)
+          ? "Przeglądarka nie może zapisać aktualizacji. Sprawdź wolne miejsce i uprawnienia do przechowywania danych dla tej strony, a potem spróbuj ponownie. Nie usuwaj danych witryny bez wcześniejszej kopii zapasowej."
+          : detail || "Nie udało się odświeżyć aplikacji. Spróbuj ponownie po połączeniu z internetem.",
       );
       setUpdating(false);
     }
