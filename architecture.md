@@ -4,7 +4,7 @@ A guide to the Body Reconstruction repository. The app is React + TypeScript bui
 
 Before changing code, follow `AGENTS.md` and inspect relevant guides in `skills/*/SKILL.md` when the local `skills/` directory is available. `skills/CODE_PRACTICES.md` contains the general repository coding practices.
 
-The detailed React refactor and desktop/mobile design plan is in `REACT_REFACTOR_DESIGN_PLAN.md`. Consult it before structural UI work; it is a plan, not a description of implemented behavior.
+The detailed UI, color, and responsive design plan is in `UI_COLOR_DESIGN_PLAN.md`. Consult it before visual UI changes; it is a plan, not a description of implemented behavior.
 
 ## Quick Navigation
 
@@ -38,7 +38,7 @@ The detailed React refactor and desktop/mobile design plan is in `REACT_REFACTOR
 - **Cloud mode:** `src/supabase.ts` creates a browser client with the public project URL and publishable key. `src/AuthGate.tsx` handles sign-in, registration, password recovery, and session changes. `src/cloudDb.ts` maps the UI model to PostgreSQL, pages large reads, and uses SQL functions for atomic writes. A set edit uses `update_session_sets`; older databases fall back to full session writes. Profile creation uses `create_profile_with_template` when installed. `supabase/bootstrap.sql` defines the new-project schema; `supabase/README.md` gives the existing/new project migration order. `20261116_relations_and_indexes.sql` adds cascading child relationships and query indexes, `20261116_canonical_rls.sql` replaces active table policies, and `20261116_safe_profile_import.sql` validates lookup references before profile replacement. Profile ownership references `auth.users` directly; `app_users` is legacy and inaccessible to browser roles.
 - **Cloud timestamps:** `src/cloudDb.ts` converts PostgreSQL `timestamptz` values to UTC ISO strings before passing sessions and pain logs to the domain schemas. The domain schemas expect timestamps ending in `Z`; see `src/cloudDb.test.ts` for offset regression coverage.
 - **Timer:** `src/intervalTimer.ts` contains pure settings, validation, position calculation, and formatting logic; `HsrTimer.tsx` implements the standalone UI and `ExerciseTimer.tsx` uses a saved session exercise configuration. The final `min(5, rest)` seconds of each between-set rest are shown as preparation for the next set and remain part of the rest duration. Standalone timer settings use `timer_settings` in cloud mode and per-profile `localStorage`; per-exercise timer configuration is included in templates, session snapshots, and backups.
-- **Styles and assets:** `src/style.css` imports ordered modules from `src/styles/` and applies the final phone layout overrides; `tokens.css` defines shared colors. `public/` contains icons, the source manifest, and static files. `index.html` is the app entry document.
+- **Styles and assets:** `src/style.css` imports shared modules from `src/styles/`; `responsive.css` is imported last and owns the shared breakpoint overrides. `tokens.css` defines semantic colors, typography, spacing, shape, and elevation tokens used by component styles. `public/` contains icons, the source manifest, and static files. `index.html` is the app entry document.
 
 ## Data Flow
 

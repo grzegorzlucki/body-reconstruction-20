@@ -66,11 +66,11 @@
     right: 0;
     bottom: 0;
     width: 100%;
-    height: calc(112px + env(safe-area-inset-bottom));
-    padding: 0 8px env(safe-area-inset-bottom);
+    height: calc(72px + env(safe-area-inset-bottom));
+    padding: 0 4px env(safe-area-inset-bottom);
     border-right: 0;
-    border-top: 1px solid #34483f;
-    background: #192622f5;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface-glass);
     backdrop-filter: blur(10px);
   }
   aside .brand,
@@ -78,36 +78,42 @@
   .local {
     display: none;
   }
-  nav {
-    margin: 0;
+  .desktop-nav { display: none; }
+  .phone-nav {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-rows: repeat(2, 1fr);
-    gap: 1px;
-    height: 108px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: 1fr;
+    height: 72px;
     max-height: none;
-    overflow-y: visible;
+    margin: 0;
+    gap: 2px;
   }
-  nav button {
+  .phone-nav button {
+    min-width: 0;
+    min-height: 48px;
+    padding: 4px 1px;
     text-align: center;
-    padding: 4px 2px;
-    font-size: 10px;
-    border-radius: 0;
+    font-size: 12px;
+    line-height: 1.2;
+    border-radius: 8px;
   }
-  nav button span {
+  .phone-nav button span {
     display: block;
     width: auto;
-    font-size: 17px;
-    margin-bottom: 1px;
+    margin-bottom: 2px;
+    font-size: 20px;
   }
   main {
-    padding: 0 16px 140px;
+    padding: 0 16px calc(96px + env(safe-area-inset-bottom));
   }
   .auth-screen { padding: 24px; }
   header {
-    height: 58px;
-    font-size: 8px;
-    letter-spacing: 0.8px;
+    height: auto;
+    min-height: 58px;
+    padding-block: 12px;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 13px;
   }
   .heading {
     margin: 26px 0;
@@ -146,7 +152,7 @@
     z-index: 2;
   }
   .hero p {
-    font-size: 10px;
+    font-size: var(--font-size-label);
   }
   .light {
     min-width: 185px;
@@ -174,29 +180,91 @@
   }
   footer {
     padding: 18px 16px 145px;
-    font-size: 8px;
+    font-size: var(--font-size-meta);
     letter-spacing: 0.6px;
   }
   .set-row {
     gap: 8px;
     grid-template-columns: 1.5fr 1fr 1fr;
   }
-  .set-row label {
-    font-size: 10px;
-  }
   .set-row input {
     padding: 10px 6px;
-  }
-  .history-row p {
-    font-size: 11px;
   }
   .hero-art {
     pointer-events: none;
   }
-}
-@media (prefers-reduced-motion: reduce) {
-  * {
-    scroll-behavior: auto !important;
+  footer {
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    font-size: var(--font-size-meta);
   }
+  .profile-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .profile-bar label { margin: 0; }
+  .mobile-storage-status {
+    display: inline;
+    font-size: var(--font-size-meta);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+  .profile-desktop-actions { display: none; }
+  .profile-mobile-actions { display: block; position: relative; }
+  .profile-mobile-actions summary {
+    list-style: none;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    border-radius: var(--radius-button);
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    font-size: var(--font-size-small);
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .profile-mobile-actions summary::-webkit-details-marker { display: none; }
+  .profile-mobile-actions summary:focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+  .profile-mobile-actions > div {
+    position: absolute;
+    z-index: 8;
+    right: 0;
+    top: calc(100% + 8px);
+    width: min(260px, calc(100vw - 32px));
+    display: grid;
+    gap: 8px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-popover);
+  }
+  .profile-mobile-actions > div button { width: 100%; }
+  .eyebrow { font-size: 13px; }
+  .hero p { font-size: 14px; }
+  label, .plan-numbers label, .set-row label { font-size: var(--font-size-label); }
+  .pill, .badge, .site-mark, .footnote, .grid article .eyebrow,
+  .timer-field small, .exercise-option span { font-size: 13px; }
+  .panel p,
+  article p,
+  .history-row p,
+  .text-button,
+  .app-updater p,
+  .app-updater button { font-size: var(--font-size-label); }
+  .calendar-legend { font-size: var(--font-size-small); }
+}
+
+@media (max-width: 420px) {
+  .plan-numbers { grid-template-columns: minmax(0, 1fr); }
+  .set-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .set-row label:first-child { grid-column: 1 / -1; }
+  .timer-field { gap: 8px; flex-wrap: wrap; }
+  .timer-field input { max-width: 100%; }
 }
 

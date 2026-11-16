@@ -11,8 +11,8 @@ aside {
   grid-row: 1 / span 2;
   height: 100dvh;
   min-height: 0;
-  background: #192622;
-  border-right: 1px solid #34483f;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
   padding: 40px 26px;
   z-index: 5;
 }
@@ -27,7 +27,7 @@ aside {
   font-size: 20px;
   line-height: 1.15;
   text-decoration: none;
-  color: #9bdbb4;
+  color: var(--color-accent);
   padding: 0 0 0 44px;
   position: relative;
 }
@@ -38,17 +38,17 @@ aside {
   position: absolute;
   left: 0;
   top: 0;
-  background: #9bdbb4;
+  background: var(--color-accent);
   border-radius: 10px;
-  color: #d7efa8;
+  color: var(--color-accent-soft-light);
   font-size: 28px;
   padding: 5px 10px;
 }
 .eyebrow {
-  font-size: 10px;
+  font-size: var(--font-size-meta);
   letter-spacing: 1.6px;
   font-weight: 700;
-  color: #9db1a4;
+  color: var(--color-text-subtle);
 }
 aside > .eyebrow {
   font-size: 11px;
@@ -64,7 +64,7 @@ nav {
 nav button {
   text-align: left;
   background: transparent;
-  color: #adc0b3;
+  color: var(--color-text-navigation);
   font-size: 14px;
   font-weight: 500;
 }
@@ -74,29 +74,29 @@ nav button span {
   font-size: 20px;
 }
 nav button.selected {
-  background: #2b4437;
-  color: #9bdbb4;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
   font-weight: 700;
 }
 .local {
   position: absolute;
   bottom: 28px;
   font-size: 12px;
-  color: #a4bcad;
+  color: var(--color-text-secondary);
 }
 .local i {
   display: inline-block;
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: #74a574;
+  background: var(--color-success-muted);
   margin-right: 6px;
 }
 .local small {
   display: block;
   font-size: 11px;
   margin-top: 9px;
-  color: #a2b4a7;
+  color: var(--color-text-subtle);
 }
 .sidebar-updater {
   position: absolute;
@@ -132,8 +132,8 @@ nav button.selected {
 .mobile-storage-status { display: none; }
 .profile-desktop-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .profile-mobile-actions { display: none; }
-.confirm-dialog { width: min(100% - 24px, 460px); max-height: 85dvh; margin: auto; padding: 24px; color: var(--text); background: var(--surface-raised); border: 1px solid var(--border); border-radius: 16px; overflow-wrap: anywhere; }
-.confirm-dialog::backdrop { background: #000a; }
+.confirm-dialog { width: min(100% - 24px, 460px); max-height: 85dvh; margin: auto; padding: 24px; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-dialog); overflow-wrap: anywhere; }
+.confirm-dialog::backdrop { background: var(--color-backdrop); }
 .confirm-dialog h2 { margin-top: 0; }
 .confirm-dialog .actions { justify-content: flex-end; }
 .auth-screen {
@@ -165,10 +165,10 @@ header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid #34483f;
-  font-size: 10px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-meta);
   letter-spacing: 1px;
-  color: #a8bbb0;
+  color: var(--color-text-secondary);
 }
 .heading {
   margin: 34px 0 28px;

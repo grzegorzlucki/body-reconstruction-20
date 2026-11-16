@@ -24,16 +24,16 @@
   -webkit-user-select: none;
 }
 .pain-chart svg:focus-visible {
-  outline: 2px solid #d89c52;
+  outline: 2px solid var(--color-focus);
   outline-offset: 4px;
   border-radius: 4px;
 }
 .pain-chart svg text {
-  fill: #afc1b7;
+  fill: var(--color-text-secondary);
   font-size: 11px;
 }
 .pain-chart-grid {
-  stroke: #34483f;
+  stroke: var(--color-border);
   stroke-width: 1;
 }
 .pain-chart-reading {
@@ -61,8 +61,8 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  border: 1px solid #476052;
-  border-left: 4px solid #9bdbb4;
+  border: 1px solid var(--color-border-control);
+  border-left: 4px solid var(--color-accent);
   border-radius: 10px;
   padding: 14px 16px;
   margin: 0;
@@ -71,7 +71,7 @@
 .timer-field small {
   display: block;
   font-size: 11px;
-  color: #afc1b7;
+  color: var(--color-text-secondary);
   margin-top: 4px;
 }
 .timer-field input {
@@ -81,14 +81,14 @@
   font-variant-numeric: tabular-nums;
 }
 .timer-hold {
-  border-color: #c4a166;
+  border-color: var(--color-timer-hold);
 }
 .timer-move2 {
-  border-color: #8ca8e6;
+  border-color: var(--color-timer-move);
 }
 .timer-rest,
 .timer-prepare {
-  border-color: #64c5cf;
+  border-color: var(--color-timer-rest);
 }
 .timer-settings + label {
   margin-top: 20px;
@@ -109,7 +109,7 @@
 }
 .timer-display {
   text-align: center;
-  border-top: 5px solid #9bdbb4;
+  border-top: 5px solid var(--color-accent);
 }
 .timer-clock {
   font-size: clamp(64px, 17vw, 120px);
@@ -131,19 +131,19 @@
 .timer-display progress {
   width: 100%;
   margin-top: 24px;
-  accent-color: #9bdbb4;
+  accent-color: var(--color-accent);
   height: 12px;
 }
 .timer-display .actions {
   justify-content: center;
 }
 .timer-display.timer-hold {
-  border-top-color: #c4a166;
+  border-top-color: var(--color-timer-hold);
 }
 .timer-display.timer-move2 {
-  border-top-color: #8ca8e6;
+  border-top-color: var(--color-timer-move);
 }
 .timer-display.timer-rest,
 .timer-display.timer-prepare {
-  border-top-color: #64c5cf;
+  border-top-color: var(--color-timer-rest);
 }

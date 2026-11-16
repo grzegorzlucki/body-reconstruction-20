@@ -3,54 +3,6 @@
 @import url("./styles/base.css");
 @import url("./styles/shell.css");
 @import url("./styles/forms.css");
-@import url("./styles/responsive.css");
 @import url("./styles/views.css");
 @import url("./styles/timer.css");
-
-@media (max-width: 700px) {
-  nav {
-    display: grid;
-    overflow-x: visible;
-  }
-  nav button {
-    min-width: 0;
-  }
-  .timer-field {
-    padding: 12px;
-  }
-}
-@media (max-width: 420px) {
-  .plan-numbers { grid-template-columns: minmax(0, 1fr); }
-  .set-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .set-row label:first-child { grid-column: 1 / -1; }
-  .timer-field { gap: 8px; flex-wrap: wrap; }
-  .timer-field input { max-width: 100%; }
-}
-@media (max-width: 700px) {
-  aside { height: calc(72px + env(safe-area-inset-bottom)); padding: 0 4px env(safe-area-inset-bottom); }
-  .desktop-nav { display: none; }
-  .phone-nav { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); grid-template-rows: 1fr; height: 72px; max-height: none; margin: 0; gap: 2px; }
-  .phone-nav button { min-width: 0; min-height: 48px; padding: 4px 1px; font-size: 12px; line-height: 1.2; border-radius: 8px; touch-action: manipulation; }
-  .phone-nav button span { display: block; width: auto; margin-bottom: 2px; font-size: 20px; }
-  main { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
-  footer { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
-  header { height: auto; min-height: 58px; padding-block: 12px; gap: 8px; flex-wrap: wrap; font-size: 13px; }
-  .profile-bar { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; margin-bottom: 18px; }
-  .profile-bar label { margin: 0; }
-  .mobile-storage-status { display: inline; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
-  .profile-desktop-actions { display: none; }
-  .profile-mobile-actions { display: block; position: relative; }
-  .profile-mobile-actions summary { list-style: none; min-height: 48px; display: flex; align-items: center; padding: 10px 12px; border-radius: 10px; background: #2b4437; color: var(--accent); font-size: 13px; font-weight: 600; cursor: pointer; }
-  .profile-mobile-actions summary::-webkit-details-marker { display: none; }
-  .profile-mobile-actions summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
-  .profile-mobile-actions > div { position: absolute; z-index: 8; right: 0; top: calc(100% + 8px); width: min(260px, calc(100vw - 32px)); display: grid; gap: 8px; padding: 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-raised); box-shadow: 0 14px 30px #0008; }
-  .profile-mobile-actions > div button { width: 100%; }
-  .eyebrow { font-size: 13px; }
-  .hero p { font-size: 14px; }
-  label, .plan-numbers label, .set-row label { font-size: 14px; }
-  .pill, .badge, .site-mark, .footnote, .grid article .eyebrow,
-  .timer-field small, .exercise-option span { font-size: 13px; }
-  .panel p, article p, .history-row p, .text-button,
-  .app-updater p, .app-updater button { font-size: 14px; }
-  .calendar-legend { font-size: 13px !important; }
-}
+@import url("./styles/responsive.css");

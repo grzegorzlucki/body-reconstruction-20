@@ -1,35 +1,35 @@
 :root {
-  font-family: "DM Sans", system-ui, sans-serif;
-  color: #e2ece7;
-  background: #101917;
-  color-scheme: dark;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-page);
   font-synthesis: none;
   font-weight: 400;
 }
-.skip-link { position: fixed; left: 12px; top: -80px; z-index: 100; background: var(--accent); color: #10241a; padding: 12px; border-radius: 8px; }
+.skip-link { position: fixed; left: 12px; top: -80px; z-index: 100; background: var(--color-accent); color: var(--color-accent-ink); padding: 12px; border-radius: var(--radius-control); }
 .skip-link:focus { top: 12px; }
 .phone-nav { display: none; }
-.more-dialog { width: min(100% - 24px, 460px); max-height: min(75dvh, 620px); margin: auto auto calc(76px + env(safe-area-inset-bottom)); padding: 20px; color: var(--text); background: var(--surface-raised); border: 1px solid var(--border); border-radius: 16px; overscroll-behavior: contain; }
-.more-dialog::backdrop { background: #000a; }
+.more-dialog { width: min(100% - 24px, 460px); max-height: min(75dvh, 620px); margin: auto auto calc(76px + env(safe-area-inset-bottom)); padding: 20px; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-dialog); overscroll-behavior: contain; }
+.more-dialog::backdrop { background: var(--color-backdrop); }
 .more-dialog-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .more-dialog-heading h2 { margin: 0; }
 .more-dialog nav { display: grid; gap: 8px; max-height: none; margin: 20px 0 0; }
-.more-dialog nav button { text-align: left; min-height: 48px; background: #2b4437; color: var(--text); }
+.more-dialog nav button { text-align: left; min-height: 48px; background: var(--color-accent-soft); color: var(--color-text); }
 .more-dialog nav button span { display: inline-block; width: 32px; }
-.profile-dialog { width: min(100% - 24px, 460px); max-height: 85dvh; margin: auto; padding: 24px; color: var(--text); background: var(--surface-raised); border: 1px solid var(--border); border-radius: 16px; overscroll-behavior: contain; }
-.profile-dialog::backdrop { background: #000a; }
+.profile-dialog { width: min(100% - 24px, 460px); max-height: 85dvh; margin: auto; padding: 24px; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-dialog); overscroll-behavior: contain; }
+.profile-dialog::backdrop { background: var(--color-backdrop); }
 .profile-dialog form { display: grid; gap: 18px; }
 .profile-dialog h2 { margin: 0; }
 .profile-dialog input { width: 100%; }
 .hero.today-hero { min-height: 230px; }
 .today-hero > div:first-child { max-width: 640px; }
-input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 * {
   box-sizing: border-box;
 }
 body {
   margin: 0;
   min-width: 0;
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
 }
 button,
 input,
@@ -43,38 +43,47 @@ input,
 select,
 textarea {
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 button {
   border: 0;
-  border-radius: 10px;
-  background: #9bdbb4;
-  color: #10241a;
+  border-radius: var(--radius-button);
+  background: var(--color-accent);
+  color: var(--color-accent-ink);
   padding: 14px 20px;
   cursor: pointer;
   font-weight: 600;
   min-height: 44px;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease,
+    box-shadow 140ms ease, filter 140ms ease, transform 100ms ease;
 }
 button:hover {
   filter: brightness(0.95);
 }
+button:active:not(:disabled) {
+  filter: brightness(0.9);
+  transform: translateY(1px);
+}
 button:disabled {
   opacity: 0.45;
-  cursor: default;
+  cursor: not-allowed;
+  filter: none;
+  transform: none;
 }
 button:focus-visible,
 a:focus-visible {
-  outline: 3px solid #d89c52;
+  outline: 3px solid var(--color-focus);
   outline-offset: 3px;
 }
 p {
-  line-height: 1.65;
-  color: #afc1b7;
+  line-height: var(--line-height-body);
+  color: var(--color-text-secondary);
 }
 h1,
 h2,
 h3,
 strong {
-  font-family: Manrope, system-ui, sans-serif;
+  font-family: var(--font-heading);
 }
 h1 {
   font-size: clamp(32px, 4vw, 54px);
@@ -93,5 +102,16 @@ h3 {
 }
 em {
   font-style: normal;
-  color: #a9c99b;
+  color: var(--color-accent-warm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

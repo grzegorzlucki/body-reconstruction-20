@@ -8,12 +8,12 @@
 .weekday {
   text-align: center;
   font-size: 12px;
-  color: #9db1a4;
+  color: var(--color-text-subtle);
   padding: 12px 0;
 }
 .calendar-day {
-  background: #22342a;
-  color: #d3e5d8;
+  background: var(--color-surface-soft);
+  color: var(--color-text-soft);
   min-height: 68px;
   border: 2px solid transparent;
   padding: 10px 4px;
@@ -24,12 +24,12 @@
   gap: 8px;
 }
 .calendar-day.muted {
-  color: #9eafa1;
-  background: #18221d;
+  color: var(--color-text-subtle);
+  background: var(--color-surface-muted);
 }
 .calendar-day.chosen {
-  border-color: #9bdbb4;
-  background: #304e34;
+  border-color: var(--color-accent);
+  background: var(--color-surface-selected);
 }
 .calendar-day.today > span:first-child {
   font-weight: 800;
@@ -50,20 +50,20 @@
   flex-shrink: 0;
 }
 .training-dot {
-  background: #91d5a7;
+  background: var(--color-success);
 }
 .pain-dot {
-  background: #d69a52;
+  background: var(--color-warning);
 }
 .active-dot {
-  border: 2px solid #91d5a7;
+  border: 2px solid var(--color-success);
   background: transparent;
 }
 .calendar-legend {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  font-size: 11px !important;
+  font-size: var(--font-size-meta);
 }
 .calendar-legend span {
   display: flex;
@@ -71,12 +71,6 @@
   align-items: center;
 }
 @media (max-width: 700px) {
-  nav {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-  nav button {
-    font-size: 10px;
-  }
   .calendar-day {
     min-height: 56px;
   }
@@ -105,7 +99,7 @@
 .timer-option input { width: auto; }
 .exercise-timer { margin: 20px 0; }
 .exercise-timer .timer-clock { font-size: clamp(42px, 9vw, 72px); }
-.exercise-timer progress { width: 100%; accent-color: #9bdbb4; }
+.exercise-timer progress { width: 100%; accent-color: var(--color-accent); }
 .exercise-picker {
   margin-bottom: 16px;
   min-width: 0;
@@ -113,9 +107,9 @@
 .exercise-library {
   margin-top: 16px;
   padding: 16px;
-  border: 1px solid #476052;
+  border: 1px solid var(--color-border-control);
   border-radius: 12px;
-  background: #101c17;
+  background: var(--color-surface-control);
 }
 .exercise-results {
   display: grid;
@@ -157,7 +151,7 @@
     padding: 10px 6px;
   }
   .plan-numbers label {
-    font-size: 11px;
+    font-size: var(--font-size-label);
   }
 }
 

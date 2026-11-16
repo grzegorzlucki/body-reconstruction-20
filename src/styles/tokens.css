@@ -1,9 +1,73 @@
 :root {
-  --surface: #101917;
-  --surface-raised: #192622;
-  --text: #e2ece7;
-  --text-muted: #afc1b7;
-  --border: #34483f;
-  --accent: #9bdbb4;
-  --focus: #d89c52;
+  color-scheme: dark;
+
+  /* Surfaces */
+  --color-page: #101917;
+  --color-surface: #192622;
+  --color-surface-glass: #192622f5;
+  --color-surface-control: #101c17;
+  --color-surface-soft: #22342a;
+  --color-surface-muted: #18221d;
+  --color-surface-selected: #304e34;
+  --color-surface-hero: #153d35;
+  --color-surface-hero-pill: #355b4e;
+  --color-surface-success: #293e27;
+  --color-surface-warning: #422e21;
+  --color-surface-set-done: #233c2c;
+
+  /* Text and borders */
+  --color-text: #e2ece7;
+  --color-text-on-hero: #ffffff;
+  --color-text-secondary: #afc1b7;
+  --color-text-subtle: #9db1a4;
+  --color-text-soft: #d3e5d8;
+  --color-text-navigation: #adc0b3;
+  --color-text-footer: #afc1b7;
+  --color-border: #34483f;
+  --color-border-control: #476052;
+  --color-border-hero: #607d63;
+  --color-backdrop: #000a;
+
+  /* Brand and action colors */
+  --color-accent: #9bdbb4;
+  --color-accent-ink: #10241a;
+  --color-accent-soft: #2b4437;
+  --color-accent-strong: #a9d99c;
+  --color-accent-warm: #a9c99b;
+  --color-accent-light: #d8efa7;
+  --color-accent-soft-light: #d7efa8;
+  --color-accent-dark-ink: #244336;
+  --color-focus: #d89c52;
+  --color-success: #91d5a7;
+  --color-success-muted: #74a574;
+  --color-warning: #d69a52;
+  --color-danger-border: #9b704a;
+  --color-danger-text: #ffaaa0;
+  --color-notice-border: #55704a;
+
+  /* Timer phase colors */
+  --color-timer-hold: #c4a166;
+  --color-timer-move: #8ca8e6;
+  --color-timer-rest: #64c5cf;
+
+  /* Typography, spacing, and shape */
+  --font-body: "DM Sans", system-ui, sans-serif;
+  --font-heading: Manrope, system-ui, sans-serif;
+  --font-size-body: 16px;
+  --font-size-label: 14px;
+  --font-size-small: 13px;
+  --font-size-meta: 12px;
+  --line-height-body: 1.6;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --radius-control: 8px;
+  --radius-button: 10px;
+  --radius-card: 14px;
+  --radius-dialog: 16px;
+  --shadow-popover: 0 14px 30px rgb(0 0 0 / 53%);
+
 }
