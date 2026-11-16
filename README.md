@@ -43,7 +43,7 @@ Workflow `.github/workflows/pages.yml` testuje i buduje aplikację z bazą `/bod
 
 Darmowy GitHub Pages wymaga publicznego repozytorium. Adres aplikacji: [https://grzegorzlucki.github.io/body-reconstruction-20/](https://grzegorzlucki.github.io/body-reconstruction-20/). Sprawdź wynik workflow, jeśli nowa wersja nie jest jeszcze widoczna.
 
-Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu początkowego. Pliki aplikacji są dostępne offline, ale zapis danych konta wymaga połączenia z Supabase. Przycisk „Odśwież aplikację” znajduje się w pasku bocznym na komputerze i nad treścią na telefonie. Sprawdza aktualizację, aktywuje nową wersję offline i przeładowuje aplikację bez kasowania lokalnej bazy. Wymaga internetu; podczas zapisu danych jest niedostępny. Zarządzanie profilami na telefonie znajduje się pod „Opcje profilu”. Usuwanie danych i opuszczanie niezapisanych formularzy wymaga potwierdzenia w aplikacji; zamknięcie karty z niezapisanymi zmianami wywołuje ostrzeżenie przeglądarki. Zachowanie na rzeczywistym Safari wymaga sprawdzenia na urządzeniu.
+Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu początkowego. Pliki aplikacji są dostępne offline, ale zapis danych konta wymaga połączenia z Supabase. Przycisk „Odśwież aplikację” znajduje się w pasku bocznym na komputerze i nad treścią na telefonie. Sprawdza aktualizację, aktywuje nową wersję offline i przeładowuje aplikację bez kasowania lokalnej bazy. Wymaga internetu; podczas zapisu danych jest niedostępny. Profile settings are available in the Settings tab. Usuwanie danych i opuszczanie niezapisanych formularzy wymaga potwierdzenia w aplikacji; zamknięcie karty z niezapisanymi zmianami wywołuje ostrzeżenie przeglądarki. Zachowanie na rzeczywistym Safari wymaga sprawdzenia na urządzeniu.
 
 ## Korzystanie
 
@@ -51,7 +51,7 @@ W zakładce **Trening → Moje plany** można uruchomić zapisany plan albo wczy
 
 Przed opublikowaniem tej funkcji uruchom w Supabase SQL Editor `supabase/migrations/20261115_exercise_timers.sql` po wcześniejszych migracjach. Bez tej migracji zapisy planów i sesji z zegarem nie będą działać.
 
-W zakładce **Trening** można ułożyć kolejność ćwiczeń, ustawić serie, ciężar, powtórzenia i notatki, nadać planowi nazwę i wybrać **Zapisz jako nowy plan**. Zapis nie rozpoczyna treningu. Wczytany plan można poprawić i wybrać **Zapisz zmiany w planie**. Plany należą do wybranego profilu i w trybie konta są przechowywane w Supabase. Rozpoczęcie treningu tworzy osobną kopię planu w historii.
+W zakladce Trening ukladasz plany nalezace do profilu konta. W Supabase plany sa przypisane do jednego profilu konta; lokalne profile mozna wybrac jako zrodlo migracji w zakladce Dane. Rozpoczecie treningu zapisuje osobna kopie planu w historii.
 
 - Plany: własne szablony (np. Lower A / Lower B), kopiowanie, kolejność ćwiczeń, 1–10 serii, powtórzenia, ciężar i notatki. Dotychczasowy zestaw pozostaje jako „Plan początkowy”.
 - Baza: 30 ćwiczeń nóg z wyszukiwarką i filtrem sprzętu. Ćwiczenia z gumą mają pole notatki na opis oporu; ćwiczenia jednostronne opisują powtórzenia na stronę.
@@ -61,7 +61,7 @@ W zakładce **Trening** można ułożyć kolejność ćwiczeń, ustawić serie, 
 - Kalendarz: zielona kropka oznacza ukończony trening, pomarańczowa pomiar, obwódka trening w trakcie. Wybrany dzień otwiera formularze.
 - Dziennik: codzienna ocena z datą, godziną i kontekstem. Wpisy można poprawić lub usunąć.
 - Zegar HSR: konfigurowalne przygotowanie, trzy fazy (Ruch 1 / Zatrzymanie / Ruch 2), powtórzenia, serie i przerwy. Wartość 0 pomija fazę; co najmniej jedna faza musi trwać dłużej niż 0 s. Piknięcia co sekundę lub cisza, pauza i wznowienie, automatyczny zapis ustawień na urządzeniu. Odliczanie trwa po zmianie zakładki aplikacji, ale nie jest wznawiane po zamknięciu lub przeładowaniu strony. Przygotowanie przed pierwszą serią i w końcówce każdej przerwy, bez przerwy po ostatniej. Zegar nie zapisuje wykonanych serii w dzienniku treningu. Podczas używania pozostaw aplikację na ekranie; dźwięk i podtrzymywanie ekranu na rzeczywistym iPhonie wymagają próby na urządzeniu. Ogólne ustawienia zegara nie wchodzą do eksportu; ustawienia przypisane do ćwiczeń w planach i sesjach są eksportowane.
-- Profile: kilka osób na jednym urządzeniu może mieć osobne treningi, pomiary, plany i ustawienia zegara. Po zalogowaniu profile konta są przechowywane w Supabase. Istniejące lokalne wpisy można przenieść ręcznie. Dane: eksport JSON v3 obejmuje dane wybranego profilu. Import przyjmuje również kopie v1 i v2 i zastępuje wyłącznie dane wybranego profilu po potwierdzeniu.
+- Profile: each Supabase account has one database-backed profile with configurable name, weekly workout goal, check-in time, rehabilitation areas, and diary contexts. Local profiles remain available only as migration sources. JSON backup v4 includes these settings and dynamic diary values; imports accept v1-v3 too.
 
 Aplikacja pokazuje zapisane pomiary bólu bez automatycznych sugestii progresji lub regresji. Decyzję o obciążeniu podejmuje użytkownik.
 

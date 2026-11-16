@@ -1,5 +1,5 @@
 import type { Profile } from "../db";
-import type { PainLog, Session, WorkoutTemplate } from "../domain";
+import type { PainLog, ProfileSettings, Session, WorkoutTemplate } from "../domain";
 
 type ProfileQuery<T> = {
   where(field: "profileId"): {
@@ -20,7 +20,7 @@ type SortedProfileQuery<T> = {
 export type AppRepository = {
   profiles: {
     toArray(): Promise<Profile[]>;
-    update(id: string, changes: { name: string }): Promise<unknown>;
+    update(id: string, changes: ProfileSettings): Promise<unknown>;
   };
   templates: Pick<ProfileQuery<WorkoutTemplate>, "where"> & {
     put(template: WorkoutTemplate): Promise<unknown>;

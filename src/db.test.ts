@@ -19,7 +19,7 @@ describe("Baza i kopie", () => {
       profileId: legacyProfileId,
       date: "2026-11-02",
       at: "2026-11-02T07:00:00.000Z",
-      values: [2, 3, 1],
+      values: [{ siteId: "achilles", value: 2 }, { siteId: "pht", value: 3 }, { siteId: "quadriceps", value: 1 }],
       context: "spacer",
       note: "notatka",
     });
@@ -36,7 +36,7 @@ describe("Baza i kopie", () => {
       profileId: legacyProfileId,
       date: "2026-11-02",
       at: "2026-11-02T07:00:00.000Z",
-      values: [2, 2, 2],
+      values: [{ siteId: "achilles", value: 2 }, { siteId: "pht", value: 2 }, { siteId: "quadriceps", value: 2 }],
       context: "spacer",
       note: "",
     });
@@ -59,7 +59,7 @@ it("eksportuje i przywraca plany razem z niezależną sesją", async () => {
   await importBackup(backup);
   expect((await db.templates.toArray())[0].name).toBe(template.name);
   expect((await db.sessions.toArray())[0]?.planName).toBe("Lower A");
-  expect(backup.version).toBe(3);
+  expect(backup.version).toBe(4);
 });
 
 it("importuje kopię v1 i dodaje plan początkowy bez zmiany historii", async () => {
@@ -104,7 +104,7 @@ it("isolates profiles and imports only into the selected profile", async () => {
   const other = await createProfile("Druga osoba");
   const original = {
     id: crypto.randomUUID(), profileId: legacyProfileId, date: "2026-11-02",
-    at: "2026-11-02T07:00:00.000Z", values: [2, 2, 2], context: "spacer", note: "",
+    at: "2026-11-02T07:00:00.000Z", values: [{ siteId: "achilles", value: 2 }, { siteId: "pht", value: 2 }, { siteId: "quadriceps", value: 2 }], context: "spacer", note: "",
   };
   await db.logs.add(original);
   await db.logs.add({ ...original, id: crypto.randomUUID(), profileId: other.id });

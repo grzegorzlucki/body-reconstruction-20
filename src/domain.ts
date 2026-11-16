@@ -1,6 +1,54 @@
 import { z } from "zod";
 import { validTimer, type TimerSettings } from "./intervalTimer";
-export const sites = ["Achilles", "PHT", "Czworogłowy"];
+export const defaultRehabSites: RehabSite[] = [
+  { id: "achilles", name: "Achilles", bodyArea: "Staw skokowy", position: 0, active: true },
+  { id: "pht", name: "PHT", bodyArea: "Tył uda", position: 1, active: true },
+  { id: "quadriceps", name: "Czworogłowy", bodyArea: "Przód uda", position: 2, active: true },
+];
+export const defaultPainContexts: PainContext[] = [
+  { value: "spacer", label: "Spacer", position: 0, active: true },
+  { value: "cwiczenie", label: "Ćwiczenie", position: 1, active: true },
+  { value: "spoczynek", label: "Spoczynek", position: 2, active: true },
+  { value: "inne", label: "Inne", position: 3, active: true },
+];
+export const rehabSiteSchema = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().trim().min(1).max(100),
+  bodyArea: z.string().trim().min(1).max(100),
+  position: z.number().int().min(0).max(100),
+  active: z.boolean(),
+});
+export type RehabSite = z.infer<typeof rehabSiteSchema>;
+export const painContextSchema = z.object({
+  value: z.string().trim().min(1).max(80),
+  label: z.string().trim().min(1).max(100),
+  position: z.number().int().min(0).max(100),
+  active: z.boolean(),
+});
+export type PainContext = z.infer<typeof painContextSchema>;
+export const profileSettingsSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  weeklyGoal: z.number().int().min(0).max(14),
+  checkInTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
+  rehabSites: z.array(rehabSiteSchema).min(1).max(50),
+  painContexts: z.array(painContextSchema).max(30),
+}).superRefine((settings, ctx) => {
+  if (new Set(settings.rehabSites.map((site) => site.id)).size !== settings.rehabSites.length)
+    ctx.addIssue({ code: "custom", message: "Powtórzony identyfikator obszaru rehabilitacji" });
+  if (new Set(settings.rehabSites.map((site) => site.name.toLocaleLowerCase())).size !== settings.rehabSites.length)
+    ctx.addIssue({ code: "custom", message: "Nazwy obszarów rehabilitacji muszą być unikalne" });
+  if (new Set(settings.rehabSites.map((site) => site.position)).size !== settings.rehabSites.length)
+    ctx.addIssue({ code: "custom", message: "Pozycje obszarów rehabilitacji muszą być unikalne" });
+  if (new Set(settings.painContexts.map((context) => context.value)).size !== settings.painContexts.length)
+    ctx.addIssue({ code: "custom", message: "Powtórzony kontekst pomiaru" });
+  if (new Set(settings.painContexts.map((context) => context.position)).size !== settings.painContexts.length)
+    ctx.addIssue({ code: "custom", message: "Pozycje kontekstów muszą być unikalne" });
+  if (new Set(settings.painContexts.map((context) => context.label.toLocaleLowerCase())).size !== settings.painContexts.length)
+    ctx.addIssue({ code: "custom", message: "Nazwy kontekstów muszą być unikalne" });
+  if (!settings.rehabSites.some((site) => site.active))
+    ctx.addIssue({ code: "custom", message: "Wybierz co najmniej jeden obszar do monitorowania" });
+});
+export type ProfileSettings = z.infer<typeof profileSettingsSchema>;
 import {
   exercises,
   exerciseCatalog,
@@ -77,14 +125,23 @@ export function defaultTemplate(): WorkoutTemplate {
   };
 }
 const painSchema = z.number().int().min(0).max(10);
+const legacyPainValuesSchema = z.array(painSchema).length(3).transform((values) =>
+  values.map((value, index) => ({ siteId: defaultRehabSites[index].id, value })));
+const painValuesSchema = z.union([
+  z.array(z.object({ siteId: z.string().min(1).max(80), value: painSchema })).max(50),
+  legacyPainValuesSchema,
+]);
 export const logSchema = z.object({
   id: z.string(),
   profileId: z.string().optional(),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   at: z.string().datetime(),
-  values: z.array(painSchema).length(3),
+  values: painValuesSchema,
   context: z.string().max(100),
   note: z.string().max(2000),
+}).superRefine((log, ctx) => {
+  if (new Set(log.values.map((item) => item.siteId)).size !== log.values.length)
+    ctx.addIssue({ code: "custom", message: "Duplicate tracked area in diary entry" });
 });
 export type PainLog = z.infer<typeof logSchema>;
 export const setSchema = z.object({
@@ -205,14 +262,17 @@ export function validateHistoricalSession(
 }
 export const backupSchema = z
   .object({
-    version: z.union([z.literal(1), z.literal(2), z.literal(3)]),
+    version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
     profileName: z.string().trim().min(1).max(80).optional(),
+    profileSettings: profileSettingsSchema.optional(),
     templates: z.array(templateSchema).max(200).optional(),
     exportedAt: z.string().datetime(),
     logs: z.array(logSchema).max(30000),
     sessions: z.array(sessionSchema).max(10000),
   })
   .superRefine((data, ctx) => {
+    if (data.version === 4 && !data.profileSettings)
+      ctx.addIssue({ code: "custom", message: "Missing profile settings" });
     if (data.version !== 1 && !data.templates)
       ctx.addIssue({ code: "custom", message: "Brak planów w kopii" });
     if (
@@ -223,8 +283,6 @@ export const backupSchema = z
     for (const records of [data.logs, data.sessions])
       if (new Set(records.map((x) => x.id)).size !== records.length)
         ctx.addIssue({ code: "custom", message: "Powtórzone identyfikatory" });
-    if (new Set(data.logs.map((x) => x.date)).size !== data.logs.length)
-      ctx.addIssue({ code: "custom", message: "Powtórzone dni" });
     if (data.sessions.filter((x) => !x.ended).length > 1)
       ctx.addIssue({
         code: "custom",
@@ -241,12 +299,10 @@ export function painMonitor(session: Session, logs: PainLog[]) {
     const date = new Date(session.started);
     date.setDate(date.getDate() + offset);
     const dateKey = day(date);
-    const log = logs.find(
-      (entry) =>
-        entry.date === dateKey &&
-        (offset !== 0 ||
-          new Date(entry.at).getTime() <= new Date(session.started).getTime()),
-    );
+    const log = logs
+      .filter((entry) => entry.date === dateKey &&
+        (offset !== 0 || new Date(entry.at).getTime() <= new Date(session.started).getTime()))
+      .sort((a, b) => b.at.localeCompare(a.at))[0];
     return { date: dateKey, log };
   });
 }

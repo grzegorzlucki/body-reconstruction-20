@@ -23,7 +23,7 @@ function log(date: string, values = [2, 2, 2]): PainLog {
     id: date,
     date,
     at: `${date}T07:00:00.000Z`,
-    values,
+    values: values.map((value, index) => ({ siteId: ["achilles", "pht", "quadriceps"][index], value })),
     context: "spacer",
     note: "",
   };
@@ -65,7 +65,7 @@ describe("Dane i serie", () => {
         logs: [log("2026-11-02"), { ...log("2026-11-02"), id: "inny" }],
         sessions: [],
       }).success,
-    ).toBe(false);
+    ).toBe(true);
   });
 });
 describe("Monitor bólu", () => {

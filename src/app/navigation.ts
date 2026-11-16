@@ -1,11 +1,11 @@
-export const tabs = ["Dzisiaj", "Trening", "Dziennik", "Kalendarz", "Historia", "Plany", "Zegar HSR", "Dane"] as const;
+export const tabs = ["Dzisiaj", "Trening", "Dziennik", "Kalendarz", "Historia", "Plany", "Zegar HSR", "Dane", "Ustawienia"] as const;
 export type MainTab = typeof tabs[number];
 export type Tab = MainTab | "Edytor treningu";
 
 const slugs: Record<Tab, string> = {
   Dzisiaj: "today", Trening: "workout", Dziennik: "diary",
   Kalendarz: "calendar", Historia: "history", Plany: "plans",
-  "Zegar HSR": "timer", Dane: "data", "Edytor treningu": "session-editor",
+  "Zegar HSR": "timer", Dane: "data", Ustawienia: "settings", "Edytor treningu": "session-editor",
 };
 
 export function tabFromSearch(search: string): Tab {

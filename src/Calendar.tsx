@@ -1,14 +1,16 @@
 import { useState } from "react";
-import { day, type Session, type PainLog } from "./domain";
+import { day, type Session, type PainLog, type RehabSite } from "./domain";
 export function Calendar({
   sessions,
   logs,
   onTraining,
   onEdit,
   onPain,
+  sites,
 }: {
   sessions: Session[];
   logs: PainLog[];
+  sites: RehabSite[];
   onTraining: (date: string) => void;
   onEdit: (s: Session) => void;
   onPain: (date: string) => void;
@@ -25,7 +27,7 @@ export function Calendar({
       new Date(month.getFullYear(), month.getMonth(), 1 - offset + i, 12),
   );
   const selectedSessions = sessions.filter((s) => day(s.started) === selected),
-    pain = logs.find((l) => l.date === selected),
+    pain = logs.filter((l) => l.date === selected).sort((a, b) => b.at.localeCompare(a.at))[0],
     future = selected > day(new Date());
   function move(delta: number) {
     setMonth(new Date(month.getFullYear(), month.getMonth() + delta, 1, 12));
@@ -132,7 +134,7 @@ export function Calendar({
         )}
         <p>
           {pain
-            ? `Ból: Achilles ${pain.values[0]}/10 · PHT ${pain.values[1]}/10 · czworogłowy ${pain.values[2]}/10`
+            ? `B\u00f3l: ${pain.values.map((value) => `${sites.find((site) => site.id === value.siteId)?.name ?? value.siteId} ${value.value}/10`).join(" \u00b7 ")}`
             : "Brak wpisu bólu."}
         </p>
         <div className="actions">

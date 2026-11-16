@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { db as localDb, createProfile as createLocalProfile, legacyProfileId, type Profile } from "./db";
-import { cloudDb, createCloudProfile } from "./cloudDb";
+import { db as localDb, legacyProfileId, type Profile } from "./db";
+import { cloudDb } from "./cloudDb";
 import { supabase } from "./supabase";
 import { AuthGate } from "./AuthGate";
 import {
@@ -11,6 +11,7 @@ import {
   type WorkoutTemplate,
   day,
   type Session,
+  type ProfileSettings,
 } from "./domain";
 import "./style.css";
 import { Plans } from "./Plans";
@@ -28,6 +29,7 @@ import { usePainLogActions } from "./app/usePainLogActions";
 import { useBackupActions } from "./app/useBackupActions";
 import type { AppRepository } from "./app/repository";
 import { useConfirmation } from "./app/useConfirmation";
+import { ProfileSettingsView } from "./views/ProfileSettingsView";
 const Calendar = React.lazy(() => import("./Calendar").then((module) => ({ default: module.Calendar })));
 const HistoryView = React.lazy(() => import("./views/HistoryView").then((module) => ({ default: module.HistoryView })));
 const DataView = React.lazy(() => import("./views/DataView").then((module) => ({ default: module.DataView })));
@@ -46,14 +48,13 @@ if (import.meta.env.PROD && "serviceWorker" in navigator)
     })
     .catch(() => {});
 const db: AppRepository = supabase ? cloudDb : localDb;
-const createProfile = supabase ? createCloudProfile : createLocalProfile;
 function App({ accountId }: { accountId?: string }) {
   const { ask: confirmAction, dialog: confirmationDialog } = useConfirmation();
   const approvedReload = useRef(false);
   const [localProfiles, setLocalProfiles] = useState<Profile[]>([]);
   const [sourceProfileId, setSourceProfileId] = useState(legacyProfileId);
-  const { profiles, setProfiles, profileId, logs, sessions, setSessions,
-    templates, ready, loadingData, refresh: refreshRecords, switchTo } = useProfileData(db);
+  const { profiles, profileId, logs, sessions, setSessions,
+    templates, ready, loadingData, refresh: refreshRecords } = useProfileData(db);
   const [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
@@ -65,9 +66,9 @@ function App({ accountId }: { accountId?: string }) {
   const [editStart, setEditStart] = useState(""),
     [editEnd, setEditEnd] = useState("");
   const [editingExisting, setEditingExisting] = useState(false);
-  const [profileDialog, setProfileDialog] = useState<"add" | "rename" | null>(null);
+  const [profileDirty, setProfileDirty] = useState(false);
   useEffect(() => {
-    if (!planDirty && !workoutDirty && !editing) return;
+    if (!planDirty && !workoutDirty && !editing && !profileDirty) return;
     const warn = (event: BeforeUnloadEvent) => {
       if (approvedReload.current) return;
       event.preventDefault();
@@ -75,14 +76,16 @@ function App({ accountId }: { accountId?: string }) {
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [planDirty, workoutDirty, editing]);
+  }, [planDirty, workoutDirty, editing, profileDirty]);
   const { tab, navigate: goToTab } = useNavigation(async (next) => {
     if (planDirty && !await confirmAction("Odrzucić niezapisane zmiany planu?")) return false;
     if (workoutDirty && !await confirmAction("Odrzucić niezapisane zmiany przygotowania treningu?")) return false;
     if (editing && next !== "Edytor treningu" &&
       !await confirmAction("Odrzucić niezapisane zmiany treningu?")) return false;
+    if (profileDirty && !await confirmAction("Discard unsaved profile settings?")) return false;
     setPlanDirty(false);
     setWorkoutDirty(false);
+    setProfileDirty(false);
     setEditing(null);
     setNotice("");
     setError("");
@@ -175,31 +178,16 @@ function App({ accountId }: { accountId?: string }) {
       if (rows.length) setSourceProfileId(rows[0].id);
     }).catch(() => {});
   }, []);
-  async function switchProfile(nextId: string) {
-    if (nextId === profileId || busy) return;
-    if ((planDirty || workoutDirty) && !await confirmAction("Odrzucić niezapisane zmiany planu?")) return;
-    if (editing && !await confirmAction("Odrzucić niezapisane zmiany treningu?")) return;
-    setPlanDirty(false);
-    setWorkoutDirty(false);
-    setEditing(null);
-    navigate("Dzisiaj", { replace: true, force: true });
+  async function saveProfileSettings(settings: ProfileSettings): Promise<boolean> {
     try {
-      const records = await switchTo(nextId);
-      if (!records) return;
-      setWorkout(structuredClone(records.templates[0] ?? defaultTemplate()));
-      setWorkoutDirty(false);
-      setError("");
-      setNotice("");
-    } catch { setError("Nie można otworzyć danych profilu."); }
-  }
-  async function saveProfileName(name: string) {
-    if (profileDialog === "add") {
-      const profile = await createProfile(name);
-      setProfiles(await db.profiles.toArray());
-      await switchProfile(profile.id);
-    } else if (profileDialog === "rename") {
-      await db.profiles.update(profileId, { name });
-      setProfiles(await db.profiles.toArray());
+      await db.profiles.update(profileId, settings);
+      await refreshRecords();
+      setProfileDirty(false);
+      setNotice("Ustawienia profilu zapisane.");
+      return true;
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save profile settings.");
+      return false;
     }
   }
   async function action(fn: () => Promise<void>) {
@@ -225,13 +213,16 @@ function App({ accountId }: { accountId?: string }) {
   }
   const active = sessions.find((s) => !s.ended),
     last = sessions.filter((s) => s.ended).at(-1),
-    today = logs.find((l) => l.date === day(new Date()));
+    today = logs.filter((l) => l.date === day(new Date())).sort((a, b) => b.at.localeCompare(a.at))[0];
   const hours = last
     ? (Date.now() - new Date(last.ended!).getTime()) / 36e5
     : Infinity;
+  const selectedProfile = profiles.find((profile) => profile.id === profileId);
   const { date, time, pain, context, note, editDate, savePain, removePain,
     setTime, setPain, setContext, setNote } = usePainLogActions({
-    database: db, logs, profileId, cloud: !!supabase, action, setNotice, confirmAction,
+    database: db, logs, profileId, cloud: !!supabase,
+    sites: selectedProfile?.rehabSites ?? [], contexts: selectedProfile?.painContexts ?? [],
+    defaultTime: selectedProfile?.checkInTime ?? "08:00", action, setNotice, confirmAction,
   });
   const { begin, savePreparedWorkout, updateTraining, finishExercise,
     replaceActiveExercise, finishWorkout, discardWorkout, loadWorkout,
@@ -247,12 +238,9 @@ function App({ accountId }: { accountId?: string }) {
     <>
     <AppShell tab={tab} onNavigate={navigate} busy={busy} confirmAction={confirmAction}
       onApprovedReload={() => { approvedReload.current = true; }}
-      dirty={planDirty || workoutDirty || !!editing} cloud={!!supabase}
+      dirty={planDirty || workoutDirty || !!editing || profileDirty} cloud={!!supabase}
       accountId={accountId} onSignOut={() => { void supabase?.auth.signOut(); }}
-      ready={ready} loadingData={loadingData} profiles={profiles} profileId={profileId}
-      onSwitchProfile={(id) => { void switchProfile(id); }}
-      profileDialog={profileDialog} onProfileDialogChange={setProfileDialog}
-      onSaveProfileName={saveProfileName} error={error} notice={notice}>
+      ready={ready} loadingData={loadingData} error={error} notice={notice}>
         {!ready ? (
           <div>
             <p>{loadingData ? supabase ? "Ładowanie danych konta…" : "Otwieranie lokalnej bazy…" : "Nie udało się załadować danych."}</p>
@@ -264,14 +252,15 @@ function App({ accountId }: { accountId?: string }) {
               confirmAction={confirmAction} />
             {tab === "Dzisiaj" && (
               <TodayView active={active} sessions={sessions} today={today} hours={hours}
+                sites={selectedProfile?.rehabSites ?? []} weeklyGoal={selectedProfile?.weeklyGoal ?? 2}
                 onWorkout={() => { navigate("Trening"); }}
                 onDiary={async () => { if (await navigate("Dziennik")) editDate(day(new Date())); }} />
             )}
             {tab === "Dziennik" && (
               <DiaryView date={date} time={time} pain={pain} context={context} note={note}
+                sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []}
                 logs={logs} busy={busy} onDate={editDate} onTime={setTime}
-                onPain={(index, value) => setPain((values) =>
-                  values.map((old, position) => position === index ? value : old))}
+                onPain={(siteId, value) => setPain((values) => ({ ...values, [siteId]: value }))}
                 onContext={setContext} onNote={setNote}
                 onSave={(event) => void savePain(event)} onRemove={() => void removePain()} />
             )}
@@ -279,7 +268,7 @@ function App({ accountId }: { accountId?: string }) {
               <WorkoutView active={active} cloud={!!supabase} busy={busy}
                 confirmAction={confirmAction}
                 templates={templates} workout={workout} workoutDirty={workoutDirty}
-                last={last} hours={hours} logs={logs}
+                last={last} hours={hours} logs={logs} sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []}
                 onSetChange={(session) => { void updateTraining(session); }}
                 onTimerFinish={finishExercise}
                 onReplace={(from, to) => { void replaceActiveExercise(from, to); }}
@@ -294,7 +283,7 @@ function App({ accountId }: { accountId?: string }) {
               <React.Suspense fallback={<p role="status">Ładowanie kalendarza…</p>}>
               <Calendar
                 sessions={sessions}
-                logs={logs}
+                logs={logs} sites={selectedProfile?.rehabSites ?? []}
                 onTraining={(d) => openSessionEditor(undefined, d)}
                 onEdit={(s) => openSessionEditor(s)}
                 onPain={(d) => {
@@ -314,7 +303,7 @@ function App({ accountId }: { accountId?: string }) {
             )}
             {tab === "Historia" && (
               <React.Suspense fallback={<p role="status">Ładowanie historii…</p>}>
-              <HistoryView logs={logs} sessions={sessions} historyExercise={historyExercise}
+              <HistoryView logs={logs} sessions={sessions} sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []} historyExercise={historyExercise}
                 setHistoryExercise={setHistoryExercise} openSessionEditor={openSessionEditor}
                 editDate={editDate} navigate={navigate} />
               </React.Suspense>
@@ -340,6 +329,8 @@ function App({ accountId }: { accountId?: string }) {
                 }}
               />
             )}
+            {tab === "Ustawienia" && selectedProfile && <ProfileSettingsView profile={selectedProfile}
+              busy={busy} onDirty={setProfileDirty} onSave={saveProfileSettings} />}
             {tab === "Dane" && (
               <React.Suspense fallback={<p role="status">Ładowanie danych…</p>}>
               <DataView cloud={!!supabase} localProfiles={localProfiles}

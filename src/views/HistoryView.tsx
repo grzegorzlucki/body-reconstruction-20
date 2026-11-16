@@ -1,10 +1,12 @@
 import { PainCharts } from "../PainCharts";
-import { sites, exerciseCatalog, sessionExercises, sessionPlan, completedGroups, visibleSets, type PainLog, type Session } from "../domain";
+import { exerciseCatalog, sessionExercises, sessionPlan, completedGroups, visibleSets, type PainLog, type Session, type RehabSite, type PainContext } from "../domain";
 
 const fmt = (date: string) => new Date(date).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 
-export function HistoryView({ logs, sessions, historyExercise, setHistoryExercise, openSessionEditor, editDate, navigate }: {
+export function HistoryView({ logs, sessions, sites, contexts, historyExercise, setHistoryExercise, openSessionEditor, editDate, navigate }: {
   logs: PainLog[];
+  sites: RehabSite[];
+  contexts: PainContext[];
   sessions: Session[];
   historyExercise: string;
   setHistoryExercise: (value: string) => void;
@@ -23,7 +25,7 @@ export function HistoryView({ logs, sessions, historyExercise, setHistoryExercis
                 <p className="intro">
                   Twoje rzeczywiste wpisy. Brak pomiaru pozostaje brakiem.
                 </p>
-                <PainCharts logs={logs} />
+                <PainCharts logs={logs} sites={sites} />
                 <h2>Pomiary</h2>
                 {!logs.length && (
                   <p>
@@ -41,12 +43,10 @@ export function HistoryView({ logs, sessions, historyExercise, setHistoryExercis
                         })}
                       </b>
                       <p>
-                        {sites
-                          .map((s, i) => `${s}: ${l.values[i]}`)
-                          .join(" / ")}
+                        {l.values.map((value) => `${sites.find((site) => site.id === value.siteId)?.name ?? value.siteId}: ${value.value}`).join(" / ")}
                       </p>
                       <small>
-                        {l.context || "Bez kontekstu"} {l.note && `· ${l.note}`}
+                        {(contexts.find((item) => item.value === l.context)?.label ?? l.context) || "Bez kontekstu"} {l.note && `· ${l.note}`}
                       </small>
                     </div>
                     <button

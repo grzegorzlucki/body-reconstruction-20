@@ -4,9 +4,10 @@ import { tabs, type MainTab, type Tab } from "./navigation";
 const icons: Record<MainTab, string> = {
   Dzisiaj: "◉", Trening: "↗", Dziennik: "+", Kalendarz: "▦",
   Historia: "◷", Plany: "☷", "Zegar HSR": "◴", Dane: "◇",
+  Ustawienia: "\u2699",
 };
 const primary: MainTab[] = ["Dzisiaj", "Trening", "Plany", "Dziennik"];
-const secondary: MainTab[] = ["Kalendarz", "Historia", "Zegar HSR", "Dane"];
+const secondary: MainTab[] = ["Kalendarz", "Historia", "Zegar HSR", "Dane", "Ustawienia"];
 
 export function AppNavigation({ current, onNavigate }: {
   current: Tab;

@@ -5,7 +5,7 @@ import {
   type PointerEvent,
   type KeyboardEvent,
 } from "react";
-import { sites, type PainLog } from "./domain";
+import { type PainLog, type RehabSite } from "./domain";
 
 const WIDTH = 400,
   HEIGHT = 210,
@@ -25,11 +25,12 @@ function PainChart({
   color,
 }: {
   logs: PainLog[];
-  site: number;
+  site: RehabSite;
   color: string;
 }) {
   const svg = useRef<SVGSVGElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const value = (log: PainLog) => log.values.find((item) => item.siteId === site.id)!.value;
   const selected = Math.max(
     0,
     logs.findIndex((log) => log.id === selectedId),
@@ -47,7 +48,7 @@ function PainChart({
       : LEFT + ((dayTime(log) - start) / (end! - start)) * (RIGHT - LEFT);
   const y = (value: number) => BOTTOM - (value / 10) * (BOTTOM - TOP);
   const describe = (log: PainLog) =>
-    `${new Date(log.date + "T12:00:00").toLocaleDateString("pl-PL")} · ${new Date(log.at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })} · ${log.values[site]}/10`;
+    `${new Date(log.date + "T12:00:00").toLocaleDateString("pl-PL")} · ${new Date(log.at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })} · ${value(log)}/10`;
   function selectAt(event: PointerEvent<SVGSVGElement>) {
     const matrix = svg.current?.getScreenCTM();
     if (!matrix || !logs.length) return;
@@ -74,8 +75,8 @@ function PainChart({
     setSelectedId(logs[Math.max(0, Math.min(logs.length - 1, next))].id);
   }
   return (
-    <section className="panel pain-chart" aria-label={`Wykres: ${sites[site]}`}>
-      <h3>{sites[site]}</h3>
+    <section className="panel pain-chart" aria-label={`Wykres: ${site.name}`}>
+      <h3>{site.name}</h3>
       {!current ? (
         <p>Brak pomiarów.</p>
       ) : (
@@ -97,7 +98,7 @@ function PainChart({
               })}
             </span>
             <strong style={{ color }}>
-              {current.values[site]}
+              {value(current)}
               <small>/10</small>
             </strong>
           </p>
@@ -105,7 +106,7 @@ function PainChart({
             ref={svg}
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
             role="slider"
-            aria-label={`Pomiar bólu: ${sites[site]}`}
+            aria-label={`Pomiar bólu: ${site.name}`}
             tabIndex={0}
             aria-valuemin={0}
             aria-valuemax={logs.length - 1}
@@ -119,7 +120,7 @@ function PainChart({
             onPointerMove={selectAt}
           >
             <title>
-              {sites[site]}: ostatnie {logs.length} pomiarów, skala 0–10
+              {site.name}: ostatnie {logs.length} pomiarów, skala 0–10
             </title>
             {[0, 2, 4, 6, 8, 10].map((value) => (
               <g key={value}>
@@ -139,9 +140,9 @@ function PainChart({
               <line
                 key={log.id}
                 x1={x(logs[i])}
-                y1={y(logs[i].values[site])}
+                y1={y(value(logs[i]))}
                 x2={x(log)}
-                y2={y(log.values[site])}
+                y2={y(value(log))}
                 stroke={color}
                 strokeWidth={2.5}
                 strokeDasharray={
@@ -162,7 +163,7 @@ function PainChart({
               <circle
                 key={log.id}
                 cx={x(log)}
-                cy={y(log.values[site])}
+                cy={y(value(log))}
                 r={i === index ? 5 : 3}
                 fill={color}
                 stroke="#192622"
@@ -210,7 +211,7 @@ function PainChart({
   );
 }
 
-export function PainCharts({ logs }: { logs: PainLog[] }) {
+export function PainCharts({ logs, sites }: { logs: PainLog[]; sites: RehabSite[] }) {
   const recent = useMemo(
     () =>
       [...logs]
@@ -229,13 +230,9 @@ export function PainCharts({ logs }: { logs: PainLog[] }) {
         rzeczywiste odstępy między dniami; linia przerywana oznacza brak
         pomiarów pomiędzy wpisami.
       </p>
-      {sites.map((_, site) => (
-        <PainChart
-          key={site}
-          logs={recent}
-          site={site}
-          color={["#91d5a7", "#c3d994", "#efb47c"][site]}
-        />
+      {sites.filter((site) => recent.some((log) => log.values.some((item) => item.siteId === site.id))).map((site, index) => (
+        <PainChart key={site.id} logs={recent.filter((log) => log.values.some((item) => item.siteId === site.id))}
+          site={site} color={["#91d5a7", "#c3d994", "#efb47c", "#83cbd0", "#c2a2dc"][index % 5]} />
       ))}
     </section>
   );

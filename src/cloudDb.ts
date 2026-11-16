@@ -1,6 +1,7 @@
 import { supabase } from "./supabase";
 import { backupSchema, defaultTemplate, exerciseById, sessionPlan, type PainLog, type Session, type SetLog, type WorkoutTemplate } from "./domain";
 import type { Profile } from "./db";
+import { profileSettingsSchema, type ProfileSettings } from "./domain";
 
 type Row = Record<string, any>;
 const pageSize = 500;
@@ -53,7 +54,6 @@ const userId = async () => {
   if (error || !user) throw Error("Sesja wygasła. Zaloguj się ponownie.");
   return user.id;
 };
-const siteIds = ["achilles", "pht", "quadriceps"];
 // PostgreSQL returns timestamptz with an offset (often +00:00), while the
 // application stores timestamps as canonical UTC ISO strings ending in Z.
 export function cloudTimestamp(value: string): string {
@@ -68,19 +68,17 @@ async function insertProfileWithStarter(id: string, name: string) {
     payload: { id, name, template },
   });
   if (!result.error) return;
-  if (result.error.code !== "PGRST202") throw Error(`Tworzenie profilu: ${result.error.message}`);
-  // Older databases retain the previous two-step flow until the migration runs.
-  const owner = await userId();
-  checked(await client().from("profiles").insert({ id, owner_user_id: owner, name }));
-  await putTemplate({ ...template, profileId: id });
+  if (result.error.code === "PGRST202")
+    throw Error("Brak migracji profilu konta. Zastosuj 20261116_account_profile_settings.sql w Supabase SQL Editor.");
+  throw Error(`Tworzenie profilu: ${result.error.message}`);
 }
 
 async function profiles(): Promise<Profile[]> {
   const owner = await userId();
-  let rows: Profile[];
+  let rows: Row[];
   try {
     rows = await allPages(async (start, end) => await client().from("profiles")
-      .select("id,name").eq("owner_user_id", owner).order("id").range(start, end)) as Profile[];
+      .select("id,name,weekly_goal,check_in_time").eq("owner_user_id", owner).order("id").range(start, end));
   } catch (error) {
     throw Error(`Odczyt profili: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -90,22 +88,36 @@ async function profiles(): Promise<Profile[]> {
       await insertProfileWithStarter(id, "Profil główny");
     } catch (error) {
       // A second tab may have created the same deterministic profile first.
-      if (!(error instanceof Error) || !error.message.includes("duplicate key")) throw error;
+      if (!(error instanceof Error) || !(error.message.includes("duplicate key") || error.message.includes("already has its profile"))) throw error;
     }
     rows = await allPages(async (start, end) => await client().from("profiles")
-      .select("id,name").eq("owner_user_id", owner).order("id").range(start, end)) as Profile[];
+      .select("id,name,weekly_goal,check_in_time").eq("owner_user_id", owner).order("id").range(start, end));
     if (!rows.length) throw Error("Nie udało się utworzyć profilu głównego.");
   }
-  return rows;
+  const profileIds = rows.map((row) => row.id as string);
+  const [sites, contexts] = profileIds.length ? await Promise.all([
+    allPages(async (start, end) => await client().from("profile_rehab_sites")
+      .select("profile_id,id,name,body_area,position,active").in("profile_id", profileIds)
+      .order("profile_id").order("position").range(start, end)),
+    allPages(async (start, end) => await client().from("profile_pain_contexts")
+      .select("profile_id,value,label,position,active").in("profile_id", profileIds)
+      .order("profile_id").order("position").range(start, end)),
+  ]) : [[], []];
+  const sitesByProfile = groupRows(sites, "profile_id"), contextsByProfile = groupRows(contexts, "profile_id");
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    weeklyGoal: row.weekly_goal,
+    checkInTime: String(row.check_in_time).slice(0, 5),
+    rehabSites: (sitesByProfile.get(row.id) ?? []).map((site) => ({
+      id: site.id, name: site.name, bodyArea: site.body_area,
+      position: site.position, active: site.active,
+    })),
+    painContexts: (contextsByProfile.get(row.id) ?? []).map((context) => ({
+      value: context.value, label: context.label, position: context.position, active: context.active,
+    })),
+  }));
 }
-async function createProfile(name: string): Promise<Profile> {
-  const clean = name.trim();
-  if (!clean || clean.length > 80) throw Error("Nazwa profilu musi mieć od 1 do 80 znaków.");
-  const id = crypto.randomUUID();
-  await insertProfileWithStarter(id, clean);
-  return { id, name: clean };
-}
-
 async function templates(profileId: string): Promise<WorkoutTemplate[]> {
   const rows = await allPages(async (start, end) => await client().from("workout_templates")
     .select("id,name").eq("profile_id", profileId).order("id").range(start, end));
@@ -140,7 +152,7 @@ async function logs(profileId: string): Promise<PainLog[]> {
   const byLog = groupRows(values, "pain_log_id");
   return rows.map((row) => ({ id: row.id, profileId, date: row.log_date,
     at: cloudTimestamp(row.measured_at), context: row.context, note: row.note,
-    values: siteIds.map((site) => (byLog.get(row.id) ?? []).find((v) => v.site_id === site)?.value ?? 0),
+    values: (byLog.get(row.id) ?? []).map((value) => ({ siteId: value.site_id, value: value.value })),
   }));
 }
 async function putLog(log: PainLog) {
@@ -201,8 +213,9 @@ export async function saveCloudSessionSets(session: Session, changed: SetLog[]) 
 }
 
 export const cloudDb = {
-  profiles: { toArray: profiles, update: async (id: string, changes: { name: string }) => {
-    checked(await client().from("profiles").update(changes).eq("id", id));
+  profiles: { toArray: profiles, update: async (id: string, changes: ProfileSettings) => {
+    const settings = profileSettingsSchema.parse(changes);
+    checked(await client().rpc("save_profile_settings", { payload: { profileId: id, ...settings } }));
   } },
   templates: { where: (_field: string) => ({ equals: (id: string) => ({ toArray: () => templates(id) }) }),
     put: putTemplate, delete: async (id: string) => { checked(await client().from("workout_templates").delete().eq("id", id)); } },
@@ -212,13 +225,15 @@ export const cloudDb = {
     put: putSession, add: putSession,
     delete: async (id: string) => { checked(await client().from("workout_sessions").delete().eq("id", id)); } },
 };
-export { createProfile as createCloudProfile };
 
 export async function exportCloudBackup(profileId: string) {
   const profile = (await profiles()).find((row) => row.id === profileId);
   if (!profile) throw Error("Nie znaleziono profilu.");
   const strip = <T extends { profileId?: string }>(rows: T[]) => rows.map(({ profileId: _id, ...row }) => row);
-  return { version: 3 as const, profileName: profile.name, exportedAt: new Date().toISOString(),
+  return { version: 4 as const, profileName: profile.name,
+    profileSettings: { name: profile.name, weeklyGoal: profile.weeklyGoal,
+      checkInTime: profile.checkInTime, rehabSites: profile.rehabSites, painContexts: profile.painContexts },
+    exportedAt: new Date().toISOString(),
     templates: strip(await templates(profileId)), logs: strip(await logs(profileId)), sessions: strip(await sessions(profileId)) };
 }
 
@@ -227,6 +242,7 @@ export async function importCloudBackup(raw: unknown, profileId: string) {
   const sourceTemplates = data.version === 1 ? [defaultTemplate()] : data.templates!;
   const ids = new Map(sourceTemplates.map((row) => [row.id, crypto.randomUUID()]));
   const payload = {
+    profileSettings: data.profileSettings,
     templates: sourceTemplates.map((row) => ({ ...row, id: ids.get(row.id), profileId,
       entries: row.entries.map((entry) => ({ ...entry })) })),
     logs: data.logs.map((row) => ({ ...row, id: crypto.randomUUID(), profileId })),

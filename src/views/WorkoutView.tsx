@@ -1,14 +1,14 @@
 import { useEffect, useRef } from "react";
 import { SessionFields } from "../SessionFields";
 import { PlanComposer } from "../Plans";
-import { completedGroups, exerciseById, painMonitor, sites, visibleSets,
-  type PainLog, type Session, type WorkoutTemplate } from "../domain";
+import { completedGroups, exerciseById, painMonitor, visibleSets,
+  type PainLog, type Session, type WorkoutTemplate, type RehabSite, type PainContext } from "../domain";
 
 const fmt = (value: string) => new Date(value).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 type ExerciseStatus = "completed" | "finishedEarly" | "stopped";
 
 export function WorkoutView({ active, cloud, busy, confirmAction, templates, workout, workoutDirty, last,
-  hours, logs, onSetChange, onTimerFinish, onReplace, onFinish, onDiscard,
+  hours, logs, sites, contexts, onSetChange, onTimerFinish, onReplace, onFinish, onDiscard,
   onStart, onLoadWorkout, onChangeWorkout, onSavePlan, onEditPlan }: {
   active?: Session;
   cloud: boolean;
@@ -20,6 +20,8 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
   last?: Session;
   hours: number;
   logs: PainLog[];
+  sites: RehabSite[];
+  contexts: PainContext[];
   onSetChange: (session: Session) => void;
   onTimerFinish: (exerciseId: string, status: ExerciseStatus) => Promise<void>;
   onReplace: (from: string, to: string) => void;
@@ -87,8 +89,8 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
               <h3>{["Przed treningiem", "Po około 24 h", "Po około 48 h"][index]}</h3>
               <p>{fmt(date + "T12:00:00")}</p>
               {log ? <>
-                {sites.map((site, siteIndex) => <p key={site}>{site}: <strong>{log.values[siteIndex]} / 10</strong></p>)}
-                <p>Godzina: {new Date(log.at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })} · Kontekst: {log.context || "Brak danych"}</p>
+                {log.values.map((value) => <p key={value.siteId}>{sites.find((site) => site.id === value.siteId)?.name ?? value.siteId}: <strong>{value.value} / 10</strong></p>)}
+                <p>Godzina: {new Date(log.at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })} · Kontekst: {(contexts.find((item) => item.value === log.context)?.label ?? log.context) || "Brak danych"}</p>
                 {log.note && <p>{log.note}</p>}
               </> : <p>Brak danych</p>}
             </article>)}</div>
