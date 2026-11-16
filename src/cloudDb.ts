@@ -69,6 +69,8 @@ async function putTemplate(template: WorkoutTemplate) {
   if (result.error) {
     if (result.error.code === "PGRST202" || result.error.message.includes("schema cache"))
       throw Error("Brak funkcji zapisu planów w Supabase. Uruchom migracje 20261115_atomic_writes.sql oraz 20261115_exercise_timers.sql w SQL Editor.");
+    if (result.error.code === "23503" && result.error.message.includes("template_exercises_exercise_id_fkey"))
+      throw Error("W bazie Supabase brakuje ćwiczeń użytych w planie. Uruchom migrację 20261115_exercise_catalog_seed.sql w SQL Editor.");
     throw Error(`Nie udało się zapisać planu: ${result.error.message}`);
   }
 }
