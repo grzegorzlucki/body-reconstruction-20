@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import { errorExplanation } from "./app/errorMessages";
 
 export function AuthGate({ children }: { children: (session: Session) => ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -39,7 +40,8 @@ export function AuthGate({ children }: { children: (session: Session) => ReactNo
       if (mode === "update") { setMode("login"); setPassword(""); }
       if (mode !== "login") setMessage("Sprawdź wiadomość e-mail, aby dokończyć operację.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Nie udało się połączyć z usługą logowania.");
+      const detail = error instanceof Error ? error.message : "Nie udało się połączyć z usługą logowania.";
+      setMessage(errorExplanation(detail) ?? detail);
     } finally { setBusy(false); }
   }
 
@@ -49,11 +51,11 @@ export function AuthGate({ children }: { children: (session: Session) => ReactNo
   return <main className="auth-screen">
     <h1>{mode === "register" ? "Utwórz konto" : mode === "reset" ? "Odzyskaj dostęp" : mode === "update" ? "Ustaw nowe hasło" : "Zaloguj się"}</h1>
     <form onSubmit={(event) => void submit(event)}>
-      {mode !== "update" && <label>E-mail<input type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} /></label>}
-      {mode !== "reset" && <label>Hasło<input type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} /></label>}
-      <button disabled={busy} type="submit">{mode === "register" ? "Zarejestruj" : mode === "reset" ? "Wyślij link" : mode === "update" ? "Zapisz nowe hasło" : "Zaloguj"}</button>
+      {mode !== "update" && <label>E-mail<input name="email" type="email" inputMode="email" autoComplete="email" spellCheck={false} required value={email} onChange={(event) => setEmail(event.target.value)} /></label>}
+      {mode !== "reset" && <label>Hasło<input name="password" type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} required minLength={8} value={password} onChange={(event) => setPassword(event.target.value)} /></label>}
+      <button disabled={busy} type="submit">{busy ? "Przetwarzanie…" : mode === "register" ? "Zarejestruj" : mode === "reset" ? "Wyślij link" : mode === "update" ? "Zapisz nowe hasło" : "Zaloguj"}</button>
     </form>
-    {message && <p role="status">{message}</p>}
+    {message && <p role="status" aria-live="polite">{message}</p>}
     <div className="auth-links">
       {mode !== "update" && <button type="button" className="secondary" onClick={() => { setMode(mode === "login" ? "register" : "login"); setMessage(""); }}>{mode === "login" ? "Utwórz konto" : "Wróć do logowania"}</button>}
       {mode === "login" && <button type="button" className="secondary" onClick={() => { setMode("reset"); setMessage(""); }}>Nie pamiętam hasła</button>}

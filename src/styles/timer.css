@@ -1,0 +1,149 @@
+.app-updater {
+  margin: 16px 0;
+}
+.app-updater button {
+  font-size: 12px;
+  padding: 10px 14px;
+}
+.app-updater p {
+  font-size: 12px;
+  margin: 8px 0;
+  letter-spacing: normal;
+}
+
+.pain-chart h3 {
+  margin: 0;
+  font-size: 18px;
+}
+.pain-chart svg {
+  display: block;
+  width: 100%;
+  overflow: visible;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pain-chart svg:focus-visible {
+  outline: 2px solid #d89c52;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
+.pain-chart svg text {
+  fill: #afc1b7;
+  font-size: 11px;
+}
+.pain-chart-grid {
+  stroke: #34483f;
+  stroke-width: 1;
+}
+.pain-chart-reading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  margin: 12px 0;
+}
+.pain-chart-reading strong {
+  font-size: 28px;
+  white-space: nowrap;
+}
+.pain-chart-reading small {
+  font-size: 14px;
+  margin-left: 2px;
+}
+
+.timer-settings {
+  display: grid;
+  gap: 12px;
+}
+.timer-field {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #476052;
+  border-left: 4px solid #9bdbb4;
+  border-radius: 10px;
+  padding: 14px 16px;
+  margin: 0;
+  font-size: 15px;
+}
+.timer-field small {
+  display: block;
+  font-size: 11px;
+  color: #afc1b7;
+  margin-top: 4px;
+}
+.timer-field input {
+  width: 100px;
+  font-size: 22px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.timer-hold {
+  border-color: #c4a166;
+}
+.timer-move2 {
+  border-color: #8ca8e6;
+}
+.timer-rest,
+.timer-prepare {
+  border-color: #64c5cf;
+}
+.timer-settings + label {
+  margin-top: 20px;
+}
+.timer-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.timer-summary span,
+.timer-summary strong {
+  display: block;
+}
+.timer-summary strong {
+  font-size: 40px;
+  font-variant-numeric: tabular-nums;
+}
+.timer-display {
+  text-align: center;
+  border-top: 5px solid #9bdbb4;
+}
+.timer-clock {
+  font-size: clamp(64px, 17vw, 120px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+}
+.timer-counts {
+  display: flex;
+  justify-content: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.timer-counts b {
+  display: block;
+  margin-top: 8px;
+  font-size: 24px;
+}
+.timer-display progress {
+  width: 100%;
+  margin-top: 24px;
+  accent-color: #9bdbb4;
+  height: 12px;
+}
+.timer-display .actions {
+  justify-content: center;
+}
+.timer-display.timer-hold {
+  border-top-color: #c4a166;
+}
+.timer-display.timer-move2 {
+  border-top-color: #8ca8e6;
+}
+.timer-display.timer-rest,
+.timer-display.timer-prepare {
+  border-top-color: #64c5cf;
+}

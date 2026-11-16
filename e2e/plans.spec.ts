@@ -1,3 +1,4 @@
+import { openTab, confirmInApp } from "./helpers";
 import { test, expect } from "@playwright/test";
 import { exercises, newSession } from "../src/domain";
 
@@ -76,8 +77,7 @@ test("Lower A/B, filtrowanie bazy, kopia sesji, zamiana i pełna kopia danych", 
   ).toBeVisible();
   await page.reload();
   await page.getByRole("button", { name: "Trening", exact: true }).click();
-  page.once("dialog", (dialog) => dialog.accept());
-  await page.getByLabel("Szablon treningu").selectOption({ label: "Lower A" });
+  await page.getByLabel("Zapisane plany treningowe").selectOption({ label: "Lower A" });
   await page
     .getByRole("button", { name: "Zatwierdź dawki i rozpocznij" })
     .click();
@@ -118,7 +118,8 @@ test("Lower A/B, filtrowanie bazy, kopia sesji, zamiana i pełna kopia danych", 
     await expect(field).toBeEnabled();
   }
   for (const checkbox of await page.getByRole("checkbox").all()) {
-    await checkbox.check();
+    await checkbox.click();
+    await expect(checkbox).toBeChecked();
     await expect(checkbox).toBeEnabled();
   }
   await page
@@ -131,30 +132,34 @@ test("Lower A/B, filtrowanie bazy, kopia sesji, zamiana i pełna kopia danych", 
     has: page.getByRole("heading", { name: "Lower A", exact: true }),
   });
   await expect(a).toContainText("Leg press na maszynie");
-  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Usuń plan: Lower A", exact: true }).click();
+  await page.getByRole("alertdialog", { name: "Potwierdź działanie" })
+    .getByRole("button", { name: "Anuluj" }).click();
+  await expect(a).toBeVisible();
   await page
     .getByRole("button", { name: "Usuń plan: Lower A", exact: true })
     .click();
+  await confirmInApp(page);
   await expect(
     page.getByRole("heading", { name: "Lower A", exact: true }),
   ).toHaveCount(0);
-  await page.getByRole("button", { name: "Historia", exact: true }).click();
-  await page.locator("details summary").click();
-  await expect(page.locator("details")).toContainText("Lower A");
-  await expect(page.locator("details")).toContainText("6/6 serii");
-  await expect(page.locator("details")).toContainText("Uginanie nóg siedząc");
-  await expect(page.locator("details")).toContainText("Guma lekka");
+  await openTab(page, "Historia");
+  await page.locator("details.panel summary").click();
+  await expect(page.locator("details.panel")).toContainText("Lower A");
+  await expect(page.locator("details.panel")).toContainText("6/6 serii");
+  await expect(page.locator("details.panel")).toContainText("Uginanie nóg siedząc");
+  await expect(page.locator("details.panel")).toContainText("Guma lekka");
   await page
     .getByLabel("Filtr ćwiczenia w historii", { exact: true })
     .selectOption("clamshell");
-  await expect(page.locator("details")).toContainText("Clamshells z gumą");
-  await expect(page.locator("details")).not.toContainText(
+  await expect(page.locator("details.panel")).toContainText("Clamshells z gumą");
+  await expect(page.locator("details.panel")).not.toContainText(
     "Uginanie nóg siedząc",
   );
   await page
     .getByLabel("Filtr ćwiczenia w historii", { exact: true })
     .selectOption("");
-  await page.getByRole("button", { name: "Dane", exact: true }).click();
+  await openTab(page, "Dane");
   const downloadPromise = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "Eksportuj pełną kopię JSON" })
@@ -164,11 +169,11 @@ test("Lower A/B, filtrowanie bazy, kopia sesji, zamiana i pełna kopia danych", 
   try {
     const other = await restored.newPage();
     await other.goto("./");
-    await other.getByRole("button", { name: "Dane", exact: true }).click();
-    other.once("dialog", (dialog) => dialog.accept());
+    await openTab(other, "Dane");
     await other
       .locator('input[type="file"]')
       .setInputFiles((await download.path())!);
+    await confirmInApp(other);
     await expect(other.getByRole("status")).toContainText("Kopia odtworzona");
     await other.getByRole("button", { name: "Plany", exact: true }).click();
     await expect(
@@ -177,8 +182,8 @@ test("Lower A/B, filtrowanie bazy, kopia sesji, zamiana i pełna kopia danych", 
     await expect(
       other.getByRole("heading", { name: "Lower A", exact: true }),
     ).toHaveCount(0);
-    await other.getByRole("button", { name: "Historia", exact: true }).click();
-    await expect(other.locator("details summary")).toContainText("Lower A");
+    await openTab(other, "Historia");
+    await expect(other.locator("details.panel summary")).toContainText("Lower A");
   } finally {
     await restored.close();
   }
@@ -233,6 +238,6 @@ test("aktualizacja istniejącej bazy v1 zachowuje trening i dodaje szablon", asy
   await expect(
     page.getByRole("heading", { name: "Plan początkowy", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Historia", exact: true }).click();
-  await expect(page.locator("details summary")).toContainText("W trakcie");
+  await openTab(page, "Historia");
+  await expect(page.locator("details.panel summary")).toContainText("W trakcie");
 });

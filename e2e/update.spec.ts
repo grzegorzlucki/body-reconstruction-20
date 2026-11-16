@@ -1,3 +1,4 @@
+import { openTab } from "./helpers";
 import { test, expect } from "@playwright/test";
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -20,9 +21,10 @@ test("aktualizacja w otwartej aplikacji zachowuje zapisany trening i działa pon
       .getByRole("button", { name: "Zatwierdź dawki i rozpocznij" })
       .click();
     const first = page.getByRole("checkbox").first();
-    await first.check();
+    await first.click();
+    await expect(first).toBeChecked();
     await expect(first).toBeEnabled();
-    await page.getByRole("button", { name: "Dane", exact: true }).click();
+    await openTab(page, "Dane");
     await context.setOffline(true);
     await page
       .getByRole("button", { name: "Odśwież aplikację", exact: true })
@@ -67,7 +69,7 @@ test("aktualizacja w otwartej aplikacji zachowuje zapisany trening i działa pon
   }
 });
 
-test("przycisk jest zawsze w Danych i nie występuje w innych zakładkach", async ({
+test("przycisk aktualizacji jest dostępny także poza Danymi", async ({
   page,
 }) => {
   await page.goto("./");
@@ -75,17 +77,14 @@ test("przycisk jest zawsze w Danych i nie występuje w innych zakładkach", asyn
     name: "Odśwież aplikację",
     exact: true,
   });
-  await expect(button).toHaveCount(0);
-  await page.getByRole("button", { name: "Dane", exact: true }).click();
+  await expect(button).toBeVisible();
+  await openTab(page, "Dane");
   await expect(button).toBeVisible();
   await expect(button).toBeEnabled();
-  await expect(page.locator("main section.panel").last()).toContainText(
-    "Aktualizacja aplikacji",
-  );
   await page.getByRole("button", { name: "Trening", exact: true }).click();
-  await expect(button).toHaveCount(0);
+  await expect(button).toBeVisible();
   await page.getByRole("button", { name: "Plany", exact: true }).click();
-  await expect(button).toHaveCount(0);
-  await page.getByRole("button", { name: "Dane", exact: true }).click();
+  await expect(button).toBeVisible();
+  await openTab(page, "Dane");
   await expect(button).toBeVisible();
 });

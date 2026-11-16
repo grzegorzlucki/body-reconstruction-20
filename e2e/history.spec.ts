@@ -1,3 +1,4 @@
+import { openTab, confirmInApp } from "./helpers";
 import { test, expect } from "@playwright/test";
 test("wspólne serie, dodawanie i edycja historii oraz znaczniki kalendarza", async ({
   page,
@@ -6,7 +7,7 @@ test("wspólne serie, dodawanie i edycja historii oraz znaczniki kalendarza", as
   d.setDate(d.getDate() - 1);
   const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
   await page.goto("./");
-  await page.getByRole("button", { name: "Historia", exact: true }).click();
+  await openTab(page, "Historia");
   await page.getByRole("button", { name: "Dodaj trening historyczny" }).click();
   await page.getByLabel("Początek treningu").fill(`${key}T10:00`);
   await page.getByLabel("Koniec treningu").fill(`${key}T11:00`);
@@ -26,7 +27,7 @@ test("wspólne serie, dodawanie i edycja historii oraz znaczniki kalendarza", as
     .getByRole("button", { name: "Zapisz trening", exact: true })
     .click();
   await expect(page.getByRole("status")).toContainText("Trening zapisany");
-  await page.locator("details summary").click();
+  await page.locator("details.panel summary").click();
   await expect(
     page.getByText("L+P 0 kg × 5 ✓", { exact: false }),
   ).toBeVisible();
@@ -45,7 +46,7 @@ test("wspólne serie, dodawanie i edycja historii oraz znaczniki kalendarza", as
     .click();
   await expect(page.getByRole("status")).toContainText("Trening zapisany");
   await page.reload();
-  await page.getByRole("button", { name: "Kalendarz", exact: true }).click();
+  await openTab(page, "Kalendarz");
   if (d.getMonth() !== new Date().getMonth())
     await page.getByRole("button", { name: "Poprzedni miesiąc" }).click();
   const cell = page.locator(`[data-date="${key}"]`);
@@ -61,9 +62,9 @@ test("wspólne serie, dodawanie i edycja historii oraz znaczniki kalendarza", as
   await expect(page.getByLabel("Notatka treningu")).toHaveValue(
     "Poprawiony trening",
   );
-  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Anuluj", exact: true }).click();
-  await page.getByRole("button", { name: "Kalendarz", exact: true }).click();
+  await confirmInApp(page);
+  await openTab(page, "Kalendarz");
   if (d.getMonth() !== new Date().getMonth())
     await page.getByRole("button", { name: "Poprzedni miesiąc" }).click();
   await cell.click();
@@ -74,7 +75,7 @@ test("wspólne serie, dodawanie i edycja historii oraz znaczniki kalendarza", as
     .getByRole("button", { name: "Zapisz pomiar", exact: true })
     .click();
   await expect(page.getByRole("status")).toContainText("Pomiar zapisany");
-  await page.getByRole("button", { name: "Kalendarz", exact: true }).click();
+  await openTab(page, "Kalendarz");
   if (d.getMonth() !== new Date().getMonth())
     await page.getByRole("button", { name: "Poprzedni miesiąc" }).click();
   await expect(cell.locator(".training-dot")).toHaveCount(1);
@@ -82,12 +83,12 @@ test("wspólne serie, dodawanie i edycja historii oraz znaczniki kalendarza", as
   await cell.click();
   await page.getByRole("button", { name: "Edytuj ból", exact: true }).click();
   await page.locator(".pain-row select").first().selectOption("3");
-  page.once("dialog", (dialog) => dialog.accept());
   await page
     .getByRole("button", { name: "Zapisz pomiar", exact: true })
     .click();
+  await confirmInApp(page);
   await expect(page.getByRole("status")).toContainText("Pomiar zapisany");
-  await page.getByRole("button", { name: "Kalendarz", exact: true }).click();
+  await openTab(page, "Kalendarz");
   if (d.getMonth() !== new Date().getMonth())
     await page.getByRole("button", { name: "Poprzedni miesiąc" }).click();
   await cell.click();
@@ -97,10 +98,10 @@ test("wspólne serie, dodawanie i edycja historii oraz znaczniki kalendarza", as
   await page
     .getByRole("button", { name: "Edytuj trening", exact: true })
     .click();
-  page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Usuń trening", exact: true }).click();
+  await confirmInApp(page);
   await expect(page.getByRole("status")).toContainText("Trening usunięty");
-  await page.getByRole("button", { name: "Kalendarz", exact: true }).click();
+  await openTab(page, "Kalendarz");
   if (d.getMonth() !== new Date().getMonth())
     await page.getByRole("button", { name: "Poprzedni miesiąc" }).click();
   await expect(cell.locator(".training-dot")).toHaveCount(0);

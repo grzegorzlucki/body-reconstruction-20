@@ -1,3 +1,4 @@
+import { openTab, confirmInApp } from "./helpers";
 import { test, expect } from "@playwright/test";
 import { newSession, defaultTemplate, day } from "../src/domain";
 
@@ -23,8 +24,7 @@ test("monitor trzech pomiarów i rozpoczęcie treningu po 71 godzinach", async (
     };
   });
   await page.goto("./");
-  await page.getByRole("button", { name: "Dane", exact: true }).click();
-  page.once("dialog", (dialog) => dialog.accept());
+  await openTab(page, "Dane");
   await page.locator('input[type="file"]').setInputFiles({
     name: "backup.json",
     mimeType: "application/json",
@@ -37,6 +37,7 @@ test("monitor trzech pomiarów i rozpoczęcie treningu po 71 godzinach", async (
       }),
     ),
   });
+  await confirmInApp(page);
   await expect(page.getByRole("status")).toContainText("Kopia odtworzona");
   await page.getByRole("button", { name: "Trening", exact: true }).click();
   await expect(

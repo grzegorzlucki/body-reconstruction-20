@@ -15,12 +15,14 @@ export function SessionFields({
   onChange,
   onReplace,
   onTimerFinish,
+  confirmAction,
 }: {
   session: Session;
   disabled?: boolean;
   onChange: (next: Session) => void;
   onReplace?: (from: string, to: string) => void;
   onTimerFinish?: (exerciseId: string, status: "completed" | "finishedEarly" | "stopped") => Promise<void>;
+  confirmAction: (message: string) => Promise<boolean>;
 }) {
   return (
     <>
@@ -50,7 +52,8 @@ export function SessionFields({
           {onTimerFinish && sessionPlan(session).find((entry) => entry.exerciseId === e.id)?.timer &&
             <ExerciseTimer entry={sessionPlan(session).find((entry) => entry.exerciseId === e.id)!}
               savedStatus={session.exerciseProgress?.find((row) => row.exerciseId === e.id)?.status}
-              disabled={disabled} onFinish={(status) => onTimerFinish(e.id, status)} />}
+              disabled={disabled} onFinish={(status) => onTimerFinish(e.id, status)}
+              confirmAction={confirmAction} />}
           {visibleSets(session)
             .filter((s) => s.exerciseId === e.id)
             .map((row) => {

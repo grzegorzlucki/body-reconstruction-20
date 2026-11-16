@@ -1,0 +1,163 @@
+/* Focused when a newly started workout replaces the preparation form. */
+#workout-heading { scroll-margin-top: 16px; }
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+.weekday {
+  text-align: center;
+  font-size: 12px;
+  color: #9db1a4;
+  padding: 12px 0;
+}
+.calendar-day {
+  background: #22342a;
+  color: #d3e5d8;
+  min-height: 68px;
+  border: 2px solid transparent;
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.calendar-day.muted {
+  color: #9eafa1;
+  background: #18221d;
+}
+.calendar-day.chosen {
+  border-color: #9bdbb4;
+  background: #304e34;
+}
+.calendar-day.today > span:first-child {
+  font-weight: 800;
+  text-decoration: underline;
+}
+.calendar-dots {
+  display: flex;
+  gap: 4px;
+  min-height: 8px;
+}
+.training-dot,
+.pain-dot,
+.active-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.training-dot {
+  background: #91d5a7;
+}
+.pain-dot {
+  background: #d69a52;
+}
+.active-dot {
+  border: 2px solid #91d5a7;
+  background: transparent;
+}
+.calendar-legend {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 11px !important;
+}
+.calendar-legend span {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+@media (max-width: 700px) {
+  nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  nav button {
+    font-size: 10px;
+  }
+  .calendar-day {
+    min-height: 56px;
+  }
+  .calendar-grid {
+    gap: 3px;
+  }
+  .calendar-legend {
+    gap: 10px;
+  }
+  .section-title:has(h1) {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+.plan-fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.template-list {
+  margin-top: 24px;
+}
+.timer-option { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+.timer-option input { width: auto; }
+.exercise-timer { margin: 20px 0; }
+.exercise-timer .timer-clock { font-size: clamp(42px, 9vw, 72px); }
+.exercise-timer progress { width: 100%; accent-color: #9bdbb4; }
+.exercise-picker {
+  margin-bottom: 16px;
+  min-width: 0;
+}
+.exercise-library {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid #476052;
+  border-radius: 12px;
+  background: #101c17;
+}
+.exercise-results {
+  display: grid;
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.exercise-option {
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.exercise-option strong,
+.exercise-option span {
+  display: block;
+}
+.exercise-option span {
+  font-size: 12px;
+  font-weight: 400;
+  margin-top: 6px;
+  line-height: 1.5;
+}
+.plan-actions {
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.plan-actions .exercise-picker {
+  margin: 0;
+  flex: 1 1 200px;
+}
+.plan-actions .exercise-picker > button {
+  width: 100%;
+}
+@media (max-width: 700px) {
+  .plan-numbers {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .plan-numbers input {
+    padding: 10px 6px;
+  }
+  .plan-numbers label {
+    font-size: 11px;
+  }
+}
+

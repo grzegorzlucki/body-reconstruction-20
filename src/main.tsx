@@ -1,38 +1,37 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
-import { db as localDb, exportBackup as exportLocalBackup, importBackup as importLocalBackup, createProfile as createLocalProfile, legacyProfileId, type Profile } from "./db";
-import { cloudDb, createCloudProfile, exportCloudBackup, importCloudBackup, saveCloudSessionSets } from "./cloudDb";
+import { db as localDb, createProfile as createLocalProfile, legacyProfileId, type Profile } from "./db";
+import { cloudDb, createCloudProfile } from "./cloudDb";
 import { supabase } from "./supabase";
 import { AuthGate } from "./AuthGate";
 import {
-  sites,
-  exerciseCatalog,
-  exerciseById,
   defaultTemplate,
   templateSchema,
-  sessionExercises,
-  sessionPlan,
-  replaceSessionExercise,
+  newSession,
   type WorkoutTemplate,
   day,
-  painMonitor,
-  newSession,
-  sessionSchema,
-  logSchema,
-  backupSchema,
-  type PainLog,
   type Session,
 } from "./domain";
 import "./style.css";
-import { SessionFields } from "./SessionFields";
-import { Plans, PlanComposer } from "./Plans";
-import { PainCharts } from "./PainCharts";
-import { AppUpdater } from "./AppUpdater";
+import { Plans } from "./Plans";
 import { IntervalTimer } from "./HsrTimer";
-import { Calendar } from "./Calendar";
+import { type Tab } from "./app/navigation";
+import { useNavigation } from "./app/useNavigation";
+import { useProfileData } from "./app/useProfileData";
+import { AppShell } from "./app/AppShell";
+import { TodayView } from "./views/TodayView";
+import { DiaryView } from "./views/DiaryView";
+import { SessionEditorView } from "./views/SessionEditorView";
+import { WorkoutView } from "./views/WorkoutView";
+import { useWorkoutActions } from "./app/useWorkoutActions";
+import { usePainLogActions } from "./app/usePainLogActions";
+import { useBackupActions } from "./app/useBackupActions";
+import type { AppRepository } from "./app/repository";
+import { useConfirmation } from "./app/useConfirmation";
+const Calendar = React.lazy(() => import("./Calendar").then((module) => ({ default: module.Calendar })));
+const HistoryView = React.lazy(() => import("./views/HistoryView").then((module) => ({ default: module.HistoryView })));
+const DataView = React.lazy(() => import("./views/DataView").then((module) => ({ default: module.DataView })));
 import {
-  visibleSets,
-  completedGroups,
   validateHistoricalSession,
 } from "./domain";
 const localDateTime = (iso: string) => {
@@ -46,38 +45,18 @@ if (import.meta.env.PROD && "serviceWorker" in navigator)
       updateViaCache: "none",
     })
     .catch(() => {});
-const fmt = (d: string) =>
-  new Date(d).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
-const db = supabase ? cloudDb as unknown as typeof localDb : localDb;
+const db: AppRepository = supabase ? cloudDb : localDb;
 const createProfile = supabase ? createCloudProfile : createLocalProfile;
-function withTimeout<T>(operation: Promise<T>, message: string): Promise<T> {
-  return new Promise<T>((resolve, reject) => {
-    const timeout = window.setTimeout(() => reject(Error(message)), 15000);
-    operation.then(
-      (result) => { window.clearTimeout(timeout); resolve(result); },
-      (cause) => { window.clearTimeout(timeout); reject(cause); },
-    );
-  });
-}
 function App({ accountId }: { accountId?: string }) {
+  const { ask: confirmAction, dialog: confirmationDialog } = useConfirmation();
+  const approvedReload = useRef(false);
   const [localProfiles, setLocalProfiles] = useState<Profile[]>([]);
   const [sourceProfileId, setSourceProfileId] = useState(legacyProfileId);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [profileId, setProfileId] = useState(() => localStorage.getItem("rehab-active-profile") || legacyProfileId);
-  const [tab, setTab] = useState("Dzisiaj"),
-    [logs, setLogs] = useState<PainLog[]>([]),
-    [sessions, setSessions] = useState<Session[]>([]),
-    [error, setError] = useState(""),
-    [ready, setReady] = useState(false),
-    [loadingData, setLoadingData] = useState(true),
+  const { profiles, setProfiles, profileId, logs, sessions, setSessions,
+    templates, ready, loadingData, refresh: refreshRecords, switchTo } = useProfileData(db);
+  const [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
-  const [date, setDate] = useState(day(new Date())),
-    [time, setTime] = useState("08:00"),
-    [pain, setPain] = useState(["", "", ""]),
-    [context, setContext] = useState("spacer"),
-    [note, setNote] = useState("");
-  const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [workout, setWorkout] = useState<WorkoutTemplate>(defaultTemplate);
   const [workoutDirty, setWorkoutDirty] = useState(false);
   const [planDirty, setPlanDirty] = useState(false);
@@ -86,19 +65,35 @@ function App({ accountId }: { accountId?: string }) {
   const [editStart, setEditStart] = useState(""),
     [editEnd, setEditEnd] = useState("");
   const [editingExisting, setEditingExisting] = useState(false);
-  function navigate(next: string) {
-    if (next === tab) return;
-    if (planDirty && !confirm("Odrzucić niezapisane zmiany planu?")) return;
+  const [profileDialog, setProfileDialog] = useState<"add" | "rename" | null>(null);
+  useEffect(() => {
+    if (!planDirty && !workoutDirty && !editing) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      if (approvedReload.current) return;
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [planDirty, workoutDirty, editing]);
+  const { tab, navigate: goToTab } = useNavigation(async (next) => {
+    if (planDirty && !await confirmAction("Odrzucić niezapisane zmiany planu?")) return false;
+    if (workoutDirty && !await confirmAction("Odrzucić niezapisane zmiany przygotowania treningu?")) return false;
+    if (editing && next !== "Edytor treningu" &&
+      !await confirmAction("Odrzucić niezapisane zmiany treningu?")) return false;
     setPlanDirty(false);
-    if (editing && !confirm("Odrzucić niezapisane zmiany treningu?")) return;
+    setWorkoutDirty(false);
     setEditing(null);
-    setTab(next);
     setNotice("");
     setError("");
+    return true;
+  });
+  function navigate(next: Tab, options?: { replace?: boolean; force?: boolean }) {
+    return goToTab(next, options);
   }
   function openSessionEditor(session?: Session, dateValue = day(new Date())) {
     if (session && !session.ended) {
-      setTab("Trening");
+      navigate("Trening", { force: true });
       return;
     }
     const end =
@@ -121,7 +116,7 @@ function App({ accountId }: { accountId?: string }) {
     setEditEnd(localDateTime(initial.ended!));
     setError("");
     setNotice("");
-    setTab("Edytor treningu");
+    navigate("Edytor treningu", { force: true });
   }
   async function saveHistorical(event: React.FormEvent) {
     event.preventDefault();
@@ -140,7 +135,7 @@ function App({ accountId }: { accountId?: string }) {
       );
       await db.sessions.put(saved);
       setEditing(null);
-      setTab("Historia");
+      navigate("Historia", { force: true });
       setNotice(
         "Trening zapisany. Historia, kalendarz i monitor bólu zostały zaktualizowane.",
       );
@@ -149,52 +144,24 @@ function App({ accountId }: { accountId?: string }) {
   async function removeSession() {
     if (!editing) return;
     await action(async () => {
-      if (!confirm("Usunąć ten trening z historii?")) return;
+      if (!await confirmAction("Usunąć ten trening z historii?")) return;
       await db.sessions.delete(editing.id);
       setEditing(null);
-      setTab("Historia");
+      navigate("Historia", { force: true });
       setNotice("Trening usunięty.");
     });
   }
-  async function removePain() {
-    await action(async () => {
-      const current = logs.find((l) => l.date === date);
-      if (current && confirm("Usunąć pomiar bólu z tego dnia?")) {
-        await db.logs.delete(current.id);
-        setPain(["", "", ""]);
-        setNotice("Pomiar usunięty.");
-      }
-    });
-  }
   async function refresh() {
-    setLoadingData(true);
     setError("");
-    try {
-      const available = await withTimeout(db.profiles.toArray(),
-        "Przekroczono czas odczytu profili. Sprawdź połączenie i spróbuj ponownie.");
-      setProfiles(available);
-      const currentId = available.some((p) => p.id === profileId) ? profileId : available[0]?.id ?? legacyProfileId;
-      if (currentId !== profileId) setProfileId(currentId);
-      const [stored, loadedLogs, savedTemplates] = await withTimeout(Promise.all([
-        db.sessions.where("profileId").equals(currentId).sortBy("started"),
-        db.logs.where("profileId").equals(currentId).sortBy("date"),
-        db.templates.where("profileId").equals(currentId).toArray(),
-      ]), "Przekroczono czas pobierania danych profilu. Spróbuj ponownie.");
-      setLogs(loadedLogs);
-      setSessions(stored);
-      setTemplates(savedTemplates);
-      if (!ready && savedTemplates.length) {
-        setWorkout(
-          structuredClone(
-            savedTemplates.find((t) => t.id.endsWith(":original-plan") || t.id === "original-plan") ??
-              savedTemplates[0],
-          ),
-        );
-        setWorkoutDirty(false);
-      }
-      setReady(true);
-    } finally {
-      setLoadingData(false);
+    const records = await refreshRecords();
+    if (!ready && records?.templates.length) {
+      setWorkout(
+        structuredClone(
+          records.templates.find((t) => t.id.endsWith(":original-plan") || t.id === "original-plan") ??
+            records.templates[0],
+        ),
+      );
+      setWorkoutDirty(false);
     }
   }
   useEffect(() => {
@@ -208,67 +175,32 @@ function App({ accountId }: { accountId?: string }) {
       if (rows.length) setSourceProfileId(rows[0].id);
     }).catch(() => {});
   }, []);
-  async function migrateLocal() {
-    if (!supabase) return;
-    await action(async () => {
-      const source = localProfiles.find((p) => p.id === sourceProfileId);
-      const target = profiles.find((p) => p.id === profileId);
-      if (!source || !target) throw Error("Wybierz profil źródłowy i docelowy.");
-      const backup = await exportLocalBackup(source.id);
-      if (!confirm(`Przenieść dane lokalnego profilu „${source.name}” do konta, do profilu „${target.name}”? Zastąpi to obecne dane profilu na serwerze. Lokalna kopia pozostanie na urządzeniu.`)) return;
-      await importCloudBackup(backup, target.id);
-      setWorkout(structuredClone((await db.templates.where("profileId").equals(target.id).toArray())[0] ?? defaultTemplate()));
-      setWorkoutDirty(false);
-      setNotice("Dane przeniesione. Lokalna kopia pozostała na urządzeniu.");
-    });
-  }
   async function switchProfile(nextId: string) {
     if (nextId === profileId || busy) return;
-    if ((planDirty || workoutDirty) && !confirm("Odrzucić niezapisane zmiany planu?")) return;
-    if (editing && !confirm("Odrzucić niezapisane zmiany treningu?")) return;
+    if ((planDirty || workoutDirty) && !await confirmAction("Odrzucić niezapisane zmiany planu?")) return;
+    if (editing && !await confirmAction("Odrzucić niezapisane zmiany treningu?")) return;
     setPlanDirty(false);
     setWorkoutDirty(false);
     setEditing(null);
-    setTab("Dzisiaj");
-    setReady(false);
-    setSessions([]);
-    setLogs([]);
-    setTemplates([]);
-    setProfileId(nextId);
-    localStorage.setItem("rehab-active-profile", nextId);
+    navigate("Dzisiaj", { replace: true, force: true });
     try {
-      const [savedTemplates, stored, loadedLogs] = await withTimeout(Promise.all([
-        db.templates.where("profileId").equals(nextId).toArray(),
-        db.sessions.where("profileId").equals(nextId).sortBy("started"),
-        db.logs.where("profileId").equals(nextId).sortBy("date"),
-      ]), "Przekroczono czas pobierania danych profilu. Spróbuj ponownie.");
-      setTemplates(savedTemplates);
-      setWorkout(structuredClone(savedTemplates[0] ?? defaultTemplate()));
+      const records = await switchTo(nextId);
+      if (!records) return;
+      setWorkout(structuredClone(records.templates[0] ?? defaultTemplate()));
       setWorkoutDirty(false);
-      setSessions(stored);
-      setLogs(loadedLogs);
-      setReady(true);
       setError("");
       setNotice("");
     } catch { setError("Nie można otworzyć danych profilu."); }
   }
-  async function addProfile() {
-    const name = prompt("Nazwa nowego profilu:");
-    if (name === null) return;
-    try {
+  async function saveProfileName(name: string) {
+    if (profileDialog === "add") {
       const profile = await createProfile(name);
       setProfiles(await db.profiles.toArray());
       await switchProfile(profile.id);
-    } catch (e) { setError(e instanceof Error ? e.message : "Nie można utworzyć profilu."); }
-  }
-  async function renameProfile() {
-    const current = profiles.find((p) => p.id === profileId);
-    const name = prompt("Nowa nazwa profilu:", current?.name);
-    if (name === null) return;
-    const clean = name.trim();
-    if (!clean || clean.length > 80) { setError("Nazwa profilu musi mieć od 1 do 80 znaków."); return; }
-    await db.profiles.update(profileId, { name: clean });
-    setProfiles(await db.profiles.toArray());
+    } else if (profileDialog === "rename") {
+      await db.profiles.update(profileId, { name });
+      setProfiles(await db.profiles.toArray());
+    }
   }
   async function action(fn: () => Promise<void>) {
     if (busy) return;
@@ -297,204 +229,30 @@ function App({ accountId }: { accountId?: string }) {
   const hours = last
     ? (Date.now() - new Date(last.ended!).getTime()) / 36e5
     : Infinity;
-  function editDate(value: string) {
-    setDate(value);
-    const l = logs.find((x) => x.date === value);
-    setPain(l ? l.values.map(String) : ["", "", ""]);
-    setContext(l?.context || "spacer");
-    setNote(l?.note || "");
-    if (l) setTime(new Date(l.at).toTimeString().slice(0, 5));
-  }
-  async function savePain(e: React.FormEvent) {
-    e.preventDefault();
-    await action(async () => {
-      if (pain.some((x) => x === "")) throw Error("Uzupełnij trzy oceny bólu.");
-      const at = new Date(`${date}T${time}:00`);
-      if (at.getTime() > Date.now())
-        throw Error("Nie zapisuj pomiaru z przyszłości.");
-      const prior = logs.find((l) => l.date === date);
-      const l = logSchema.parse({
-        id: prior?.id || crypto.randomUUID(),
-        profileId,
-        date,
-        at: at.toISOString(),
-        values: pain.map(Number),
-        context,
-        note,
-      });
-      if (
-        prior &&
-        !confirm(
-          "Zastąpić wpis z tego dnia? Monitor bólu zostanie zaktualizowany.",
-        )
-      )
-        return;
-      await db.logs.put(l);
-      setNotice(supabase ? "Pomiar zapisany na koncie." : "Pomiar zapisany na tym urządzeniu.");
-    });
-  }
-  async function begin(selectedWorkout: WorkoutTemplate = workout) {
-    await action(async () => {
-      const selected = templateSchema.parse(selectedWorkout);
-      await db.sessions.add(
-        sessionSchema.parse({ ...newSession({}, new Date().toISOString(), selected), profileId }),
-      );
-    });
-  }
-  async function savePreparedWorkout(asNew: boolean) {
-    const existing = templates.some((template) => template.id === workout.id);
-    if (!asNew && !existing) return;
-    await action(async () => {
-      const next = templateSchema.parse({
-        ...workout,
-        id: asNew ? crypto.randomUUID() : workout.id,
-        profileId,
-      });
-      await db.templates.put(next);
-      setWorkout(structuredClone(next));
-      setWorkoutDirty(false);
-      setNotice(asNew ? "Nowy plan zapisany w profilu." : "Zmiany planu zapisane w profilu.");
-    });
-  }
-  async function updateTraining(next: Session) {
-    if (busy) return;
-    setBusy(true);
-    setError("");
-    try {
-      const validated = sessionSchema.parse(next);
-      const previous = sessions.find((row) => row.id === validated.id);
-      const sameRows = previous?.sets.length === validated.sets.length &&
-        validated.sets.every((row, index) => {
-          const old = previous!.sets[index];
-          return old.exerciseId === row.exerciseId && old.side === row.side && old.index === row.index;
-        });
-      const changed = sameRows ? validated.sets.filter((row, index) => {
-        const old = previous!.sets[index];
-        return old.weight !== row.weight || old.reps !== row.reps || old.done !== row.done;
-      }) : [];
-      if (supabase && sameRows && changed.length > 0 && changed.length <= 2)
-        await saveCloudSessionSets(validated, changed);
-      else
-        await db.sessions.put(validated);
-      setSessions((stored) => stored.map((row) => row.id === validated.id ? validated : row));
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Nie udało się zapisać serii.");
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function download() {
-    await action(async () => {
-      const data = supabase ? await exportCloudBackup(profileId) : await exportLocalBackup(profileId);
-      const url = URL.createObjectURL(
-        new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }),
-      );
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `rehab-${day(new Date())}.json`;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
-      localStorage.setItem(`rehab-last-backup:${profileId}`, data.exportedAt);
-      setNotice(
-        "Eksport przygotowany. Sprawdź, czy plik został zapisany w Plikach / Pobranych.",
-      );
-    });
-  }
-  async function load(file: File) {
-    await action(async () => {
-      if (file.size > 20 * 1024 * 1024)
-        throw Error("Plik jest zbyt duży (limit 20 MB).");
-      const data = backupSchema.parse(JSON.parse(await file.text()));
-      if (
-        !confirm(
-          `Plik zawiera ${data.logs.length} wpisów i ${data.sessions.length} treningów. ZASTĄPI dane profilu „${profiles.find((p) => p.id === profileId)?.name}”. Pozostałe profile pozostaną bez zmian. Kontynuować?`,
-        )
-      )
-        return;
-      if (supabase) await importCloudBackup(data, profileId);
-      else await importLocalBackup(data, profileId);
-      const restored = await db.templates.where("profileId").equals(profileId).toArray();
-      setWorkout(structuredClone(restored[0] ?? defaultTemplate()));
-      setWorkoutDirty(false);
-      setNotice("Kopia odtworzona.");
-    });
-  }
+  const { date, time, pain, context, note, editDate, savePain, removePain,
+    setTime, setPain, setContext, setNote } = usePainLogActions({
+    database: db, logs, profileId, cloud: !!supabase, action, setNotice, confirmAction,
+  });
+  const { begin, savePreparedWorkout, updateTraining, finishExercise,
+    replaceActiveExercise, finishWorkout, discardWorkout, loadWorkout,
+    changeWorkout } = useWorkoutActions({ database: db, cloud: !!supabase,
+    profileId, active, sessions, templates, workout, workoutDirty, busy,
+    setBusy, setError, setNotice, setSessions, setWorkout, setWorkoutDirty,
+    action, refresh, confirmAction });
+  const { migrateLocal, download, load } = useBackupActions({
+    database: db, cloud: !!supabase, localProfiles, sourceProfileId, profiles,
+    profileId, action, setWorkout, setWorkoutDirty, setNotice, confirmAction,
+  });
   return (
-    <div className="shell">
-      <aside>
-        <a className="brand" href="#" onClick={(e) => e.preventDefault()}>
-          <span className="brand-icon">↗</span> Body
-          <br />
-          <span>Reconstruction</span>
-        </a>
-        <p className="eyebrow">TWÓJ PROCES. TWOJE TEMPO.</p>
-        <nav>
-          {[
-            "Dzisiaj",
-            "Trening",
-            "Dziennik",
-            "Kalendarz",
-            "Historia",
-            "Plany",
-            "Zegar HSR",
-            "Dane",
-          ].map((t, i) => (
-            <button
-              key={t}
-              aria-label={t}
-              className={tab === t ? "selected" : ""}
-              onClick={() => navigate(t)}
-            >
-              <span>{["◉", "↗", "＋", "▦", "◷", "☷", "◴", "◇"][i]}</span>
-              {t}
-            </button>
-          ))}
-        </nav>
-        <div className="sidebar-updater">
-          <AppUpdater disabled={busy} hasUnsavedChanges={planDirty || workoutDirty || !!editing} />
-        </div>
-        <div className="local">
-          <i /> {supabase ? "Dane na koncie" : "Dane na tym urządzeniu"}
-          <small>{supabase ? ready && !error ? "Dane załadowane" : loadingData ? "Łączenie z Supabase" : "Błąd połączenia" : "Tryb lokalny"}</small>
-        </div>
-      </aside>
-      <main>
-        <header>
-          <span>REHABILITACJA / {tab.toUpperCase()}</span>
-          <span>
-            {new Date().toLocaleDateString("pl-PL", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </span>
-        </header>
-        <div className="mobile-updater">
-          <AppUpdater disabled={busy} hasUnsavedChanges={planDirty || workoutDirty || !!editing} />
-        </div>
-        {supabase && <div className="account-actions">
-          <span>{accountId}</span>
-          <button type="button" className="secondary" onClick={() => void supabase?.auth.signOut()}>Wyloguj</button>
-        </div>}
-        {ready && <div className="profile-bar">
-          <label>Profil
-            <select aria-label="Profil" value={profileId} disabled={busy} onChange={(e) => void switchProfile(e.target.value)}>
-              {profiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
-            </select>
-          </label>
-          <button type="button" className="secondary" onClick={() => void addProfile()}>Dodaj</button>
-          <button type="button" className="secondary" onClick={() => void renameProfile()}>Zmień nazwę</button>
-        </div>}
-        {error && (
-          <div role="alert" className="alert">
-            {error}
-          </div>
-        )}
-        {notice && (
-          <div role="status" className="notice">
-            {notice}
-          </div>
-        )}
+    <>
+    <AppShell tab={tab} onNavigate={navigate} busy={busy} confirmAction={confirmAction}
+      onApprovedReload={() => { approvedReload.current = true; }}
+      dirty={planDirty || workoutDirty || !!editing} cloud={!!supabase}
+      accountId={accountId} onSignOut={() => { void supabase?.auth.signOut(); }}
+      ready={ready} loadingData={loadingData} profiles={profiles} profileId={profileId}
+      onSwitchProfile={(id) => { void switchProfile(id); }}
+      profileDialog={profileDialog} onProfileDialogChange={setProfileDialog}
+      onSaveProfileName={saveProfileName} error={error} notice={notice}>
         {!ready ? (
           <div>
             <p>{loadingData ? supabase ? "Ładowanie danych konta…" : "Otwieranie lokalnej bazy…" : "Nie udało się załadować danych."}</p>
@@ -502,478 +260,38 @@ function App({ accountId }: { accountId?: string }) {
           </div>
         ) : (
           <>
-            <IntervalTimer key={profileId} profileId={profileId} visible={tab === "Zegar HSR"} />
+            <IntervalTimer key={profileId} profileId={profileId} visible={tab === "Zegar HSR"}
+              confirmAction={confirmAction} />
             {tab === "Dzisiaj" && (
-              <>
-                <section className="heading">
-                  <p className="eyebrow">MAŁE KROKI, TRWAŁY POSTĘP</p>
-                  <h1>
-                    Wracaj do ruchu.
-                    <br />
-                    <em>W swoim tempie.</em>
-                  </h1>
-                  <p>Zapisz reakcję. Wykonaj plan. Daj sobie czas.</p>
-                </section>
-                <section className="hero">
-                  <div>
-                    <span className="pill">TWÓJ PLAN STARTOWY</span>
-                    <h2>
-                      Twój własny plan.
-                      <br />
-                      Jeden krok dalej.
-                    </h2>
-                    <p>
-                      Twój plan i monitor bólu
-                      <br />
-                      {sites.join(" · ")}
-                    </p>
-                    <button className="light" onClick={() => setTab("Trening")}>
-                      {active ? "Wznów trening" : "Przejdź do treningu"}{" "}
-                      <span>↗</span>
-                    </button>
-                  </div>
-                  <div className="hero-art" aria-hidden="true">
-                    <div className="ring r1" />
-                    <div className="ring r2" />
-                    <div className="ring r3" />
-                    <span>
-                      01<span>/ PROCES</span>
-                    </span>
-                  </div>
-                </section>
-                <div className="grid three">
-                  <article>
-                    <p className="eyebrow">RYTM TYGODNIA</p>
-                    <strong>
-                      {
-                        sessions.filter(
-                          (s) =>
-                            s.ended &&
-                            Date.now() - new Date(s.ended).getTime() <
-                              7 * 864e5,
-                        ).length
-                      }
-                      <small> / 2 sesje</small>
-                    </strong>
-                    <p>Ukończone w ostatnich 7 dniach</p>
-                  </article>
-                  <article>
-                    <p className="eyebrow">PORANNY CHECK-IN</p>
-                    <strong>08:00</strong>
-                    <p>
-                      {today
-                        ? "Dzisiejszy wpis zapisany"
-                        : "Dziś jeszcze bez wpisu"}
-                    </p>
-                    <button
-                      className="text-button"
-                      onClick={() => {
-                        editDate(day(new Date()));
-                        setTab("Dziennik");
-                      }}
-                    >
-                      {today ? "Zobacz wpis" : "Zapisz ból"} →
-                    </button>
-                  </article>
-                  <article>
-                    <p className="eyebrow">REGENERACJA</p>
-                    <strong>
-                      {hours === Infinity ? "—" : `${Math.floor(hours)} h`}
-                    </strong>
-                    <p>Czas od ostatniego treningu</p>
-                  </article>
-                </div>
-                <section className="section-title">
-                  <h2>Jak czują się ścięgna?</h2>
-                  <button
-                    className="text-button"
-                    onClick={() => setTab("Dziennik")}
-                  >
-                    Dziennik →
-                  </button>
-                </section>
-                <div className="grid three">
-                  {sites.map((s, i) => (
-                    <article key={s}>
-                      <span className="site-mark">0{i + 1}</span>
-                      <h3>{s}</h3>
-                      <strong>
-                        {today?.values[i] ?? "—"}
-                        <small> / 10</small>
-                      </strong>
-                      <p>{today ? "Dzisiejsza ocena bólu" : "Brak pomiaru"}</p>
-                    </article>
-                  ))}
-                </div>
-                <p className="footnote">
-                  Regularność jest ważniejsza od pośpiechu. Propozycje aplikacji
-                  wymagają Twojego zatwierdzenia.
-                </p>
-              </>
+              <TodayView active={active} sessions={sessions} today={today} hours={hours}
+                onWorkout={() => { navigate("Trening"); }}
+                onDiary={async () => { if (await navigate("Dziennik")) editDate(day(new Date())); }} />
             )}
             {tab === "Dziennik" && (
-              <>
-                <h1>Poranny check-in</h1>
-                <p className="intro">
-                  Raz dziennie, najlepiej o 08:00. Oceniaj osobno każdą okolicę.
-                </p>
-                <form onSubmit={savePain} className="panel">
-                  <div className="grid two">
-                    <label>
-                      Dzień
-                      <input
-                        required
-                        type="date"
-                        max={day(new Date())}
-                        value={date}
-                        onChange={(e) => editDate(e.target.value)}
-                      />
-                    </label>
-                    <label>
-                      Godzina pomiaru
-                      <input
-                        required
-                        type="time"
-                        value={time}
-                        onChange={(e) => setTime(e.target.value)}
-                      />
-                    </label>
-                  </div>
-                  {sites.map((s, i) => (
-                    <label className="pain-row" key={s}>
-                      <span>{s}</span>
-                      <select
-                        required
-                        value={pain[i]}
-                        onChange={(e) =>
-                          setPain((v) =>
-                            v.map((x, j) => (j === i ? e.target.value : x)),
-                          )
-                        }
-                      >
-                        <option value="">Wybierz 0–10</option>
-                        {Array.from({ length: 11 }, (_, n) => (
-                          <option key={n} value={n}>
-                            {n} / 10
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  ))}
-                  <label>
-                    Kontekst pomiaru
-                    <select
-                      value={context}
-                      onChange={(e) => setContext(e.target.value)}
-                    >
-                      <option value="spacer">Spacer</option>
-                      <option value="ćwiczenie">Ćwiczenie</option>
-                      <option value="spoczynek">Spoczynek</option>
-                      <option value="inne">Inne</option>
-                      <option value="">Nie podano</option>
-                    </select>
-                  </label>
-                  <label>
-                    Notatka (opcjonalnie)
-                    <textarea
-                      maxLength={2000}
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      placeholder="Np. dłuższy spacer, zmiana czynności, sztywność…"
-                    />
-                  </label>
-                  <div className="actions">
-                    <button disabled={busy}>Zapisz pomiar</button>
-                    {logs.some((l) => l.date === date) && (
-                      <button
-                        type="button"
-                        className="secondary"
-                        disabled={busy}
-                        onClick={removePain}
-                      >
-                        Usuń pomiar
-                      </button>
-                    )}
-                  </div>
-                  <p className="footnote">
-                    Stała godzina nie oznacza 24 godzin od treningu. Przy
-                    większym skoku zapisz dodatkową informację w notatce i
-                    sprawdź czas utrzymywania się reakcji.
-                  </p>
-                </form>
-              </>
+              <DiaryView date={date} time={time} pain={pain} context={context} note={note}
+                logs={logs} busy={busy} onDate={editDate} onTime={setTime}
+                onPain={(index, value) => setPain((values) =>
+                  values.map((old, position) => position === index ? value : old))}
+                onContext={setContext} onNote={setNote}
+                onSave={(event) => void savePain(event)} onRemove={() => void removePain()} />
             )}
             {tab === "Trening" && (
-              <>
-                <h1>{active ? "Twój trening trwa" : "Następny trening"}</h1>
-                <p className="intro">
-                  {active
-                    ? "Każda zmiana jest zapisywana na urządzeniu. Możesz zamknąć aplikację i wrócić."
-                    : "Sprawdź monitor bólu i ustaw dawki. Jeden wpis serii dotyczy obu nóg."}
-                </p>
-                {active ? (
-                  <>
-                    <p className="badge">
-                      {active.planName ?? "Plan początkowy"} · Rozpoczęto{" "}
-                      {new Date(active.started).toLocaleString("pl-PL")} ·{" "}
-                      {completedGroups(active)}/{visibleSets(active).length}{" "}
-                      serii
-                    </p>
-                    <SessionFields
-                      session={active}
-                      disabled={busy}
-                      onChange={updateTraining}
-                      onTimerFinish={async (exerciseId, status) => {
-                        if (busy) return;
-                        const next = sessionSchema.parse({ ...active,
-                          exerciseProgress: [
-                            ...(active.exerciseProgress ?? []).filter((row) => row.exerciseId !== exerciseId),
-                            { exerciseId, status },
-                          ],
-                        });
-                        setBusy(true);
-                        try {
-                          await db.sessions.put(next);
-                          await refresh();
-                        } catch (error) {
-                          setError(error instanceof Error ? error.message : "Nie udało się zapisać stanu ćwiczenia.");
-                          throw error;
-                        } finally { setBusy(false); }
-                      }}
-                      onReplace={(from, to) =>
-                        action(async () => {
-                          if (
-                            active.sets.some(
-                              (row) => row.exerciseId === from && row.done,
-                            ) &&
-                            !confirm(
-                              "Zamiana usunie wykonane serie tego ćwiczenia z bieżącego treningu. Kontynuować?",
-                            )
-                          )
-                            return;
-                          await db.sessions.put(
-                            replaceSessionExercise(active, from, to),
-                          );
-                        })
-                      }
-                    />
-                    <div className="actions">
-                      <button
-                        disabled={
-                          busy || active.sets.some((x) => (!x.done || x.reps < 1) &&
-                            !active.exerciseProgress?.some((row) => row.exerciseId === x.exerciseId &&
-                              (row.status === "finishedEarly" || row.status === "stopped")))
-                        }
-                        onClick={() =>
-                          action(async () => {
-                            await db.sessions.put(
-                              sessionSchema.parse({
-                                ...active,
-                                ended: new Date().toISOString(),
-                              }),
-                            );
-                            setNotice(
-                              "Trening ukończony. Zapisz reakcję następnego ranka.",
-                            );
-                          })
-                        }
-                      >
-                        Zakończ trening
-                      </button>
-                      <button
-                        className="secondary"
-                        disabled={busy}
-                        onClick={() =>
-                          action(async () => {
-                            if (
-                              confirm("Usunąć rozpoczęty trening i jego serie?")
-                            )
-                              await db.sessions.delete(active.id);
-                          })
-                        }
-                      >
-                        Odrzuć trening
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <section className="panel">
-                      <h2>Moje plany</h2>
-                      <p>Wybierz zapisany plan i rozpocznij trening lub wczytaj go do dostosowania.</p>
-                      <div className="template-list">
-                        {templates.map((template) => <article key={template.id}>
-                          <h3>{template.name}</h3>
-                          <p>{template.entries.map((entry) => exerciseById(entry.exerciseId).name).join(" · ")}</p>
-                          <p>{template.entries.length} ćwiczeń · {template.entries.reduce((sum, entry) => sum + entry.sets, 0)} serii
-                            {template.entries.some((entry) => entry.timer) ? " · Zegar HSR" : ""}</p>
-                          <div className="actions">
-                            <button type="button" disabled={busy} onClick={() => void begin(template)}>Uruchom plan</button>
-                            <button type="button" className="secondary" disabled={busy} onClick={() => {
-                              if (workoutDirty && !confirm("Odrzucić niezapisane zmiany przygotowania treningu?")) return;
-                              setWorkout(structuredClone(template));
-                              setWorkoutDirty(false);
-                            }}>Dostosuj</button>
-                            <button type="button" className="secondary" onClick={() => setTab("Plany")}>Edytuj plan</button>
-                          </div>
-                        </article>)}
-                      </div>
-                      {!templates.length && <p>Brak zapisanych planów. Utwórz pierwszy plan poniżej.</p>}
-                    </section>
-                    <div className="notice">
-                      {last
-                        ? `Od ostatniego treningu minęło ${Math.floor(hours)} h.`
-                        : "Brak poprzednich treningów."}
-                    </div>
-                    <section
-                      className="panel"
-                      aria-label="Monitor bólu po ostatnim treningu"
-                    >
-                      <h2>Monitor bólu po ostatnim treningu</h2>
-                      {last ? (
-                        <>
-                          <p>
-                            Ostatni trening: {fmt(last.started)}. Pomiary z dnia
-                            treningu oraz poranków jeden i dwa dni później
-                            (około 24 i 48 h).
-                          </p>
-                          <div className="grid three">
-                            {painMonitor(last, logs).map(
-                              ({ date, log }, index) => (
-                                <article key={date}>
-                                  <h3>
-                                    {
-                                      [
-                                        "Przed treningiem",
-                                        "Po około 24 h",
-                                        "Po około 48 h",
-                                      ][index]
-                                    }
-                                  </h3>
-                                  <p>{fmt(date + "T12:00:00")}</p>
-                                  {log ? (
-                                    <>
-                                      {sites.map((site, i) => (
-                                        <p key={site}>
-                                          {site}:{" "}
-                                          <strong>{log.values[i]} / 10</strong>
-                                        </p>
-                                      ))}
-                                      <p>
-                                        Godzina:{" "}
-                                        {new Date(log.at).toLocaleTimeString(
-                                          "pl-PL",
-                                          {
-                                            hour: "2-digit",
-                                            minute: "2-digit",
-                                          },
-                                        )}{" "}
-                                        · Kontekst:{" "}
-                                        {log.context || "Brak danych"}
-                                      </p>
-                                      {log.note && <p>{log.note}</p>}
-                                    </>
-                                  ) : (
-                                    <p>Brak danych</p>
-                                  )}
-                                </article>
-                              ),
-                            )}
-                          </div>
-                        </>
-                      ) : (
-                        <p>Brak ukończonego treningu do porównania.</p>
-                      )}
-                      <p>
-                        Samodzielnie wybierz, czy zwiększyć, zmniejszyć, czy
-                        pozostawić obciążenie.
-                      </p>
-                    </section>
-                    <section className="panel">
-                      <label>
-                        Zapisane plany treningowe
-                        <select
-                          value={
-                            templates.some((t) => t.id === workout.id)
-                              ? workout.id
-                              : ""
-                          }
-                          onChange={(event) => {
-                            const template = templates.find(
-                              (t) => t.id === event.target.value,
-                            );
-                            if (
-                              template &&
-                              (!workoutDirty || confirm(
-                                "Wczytać plan? Niezapisane zmiany przygotowania treningu zostaną utracone.",
-                              ))
-                            ) {
-                              setWorkout(structuredClone(template));
-                              setWorkoutDirty(false);
-                            }
-                          }}
-                        >
-                          <option value="" disabled>
-                            Własny trening
-                          </option>
-                          {templates.map((t) => (
-                            <option key={t.id} value={t.id}>
-                              {t.name}
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        Nazwa planu
-                        <input
-                          maxLength={80}
-                          value={workout.name}
-                          onChange={(event) => {
-                            setWorkout({ ...workout, name: event.target.value });
-                            setWorkoutDirty(true);
-                          }}
-                        />
-                      </label>
-                      <p>
-                        Ułóż ćwiczenia i zapisz plan w profilu, aby wczytać go przy
-                        kolejnym treningu. Rozpoczęty trening zachowa własną kopię
-                        kolejności i dawek.
-                      </p>
-                      {workoutDirty && <p role="status">Plan ma niezapisane zmiany.</p>}
-                      <div className="actions">
-                        <button type="button" className="secondary" disabled={busy || !workout.entries.length} onClick={() => void savePreparedWorkout(true)}>
-                          Zapisz jako nowy plan
-                        </button>
-                        {templates.some((template) => template.id === workout.id) && (
-                          <button type="button" className="secondary" disabled={busy || !workoutDirty || !workout.entries.length} onClick={() => void savePreparedWorkout(false)}>
-                            Zapisz zmiany w planie
-                          </button>
-                        )}
-                      </div>
-                    </section>
-                    <PlanComposer
-                      entries={workout.entries}
-                      onChange={(entries) => {
-                        setWorkout({ ...workout, entries });
-                        setWorkoutDirty(true);
-                      }}
-                    />
-                    <button
-                      disabled={busy || !workout.entries.length}
-                      onClick={() => void begin()}
-                    >
-                      Zatwierdź dawki i rozpocznij
-                    </button>
-                    <p className="footnote">
-                      MVP nie rozpoznaje urazów. Nagły silny ból lub utrata
-                      funkcji wymagają oceny medycznej; nie czekaj na kolejny
-                      wpis.
-                    </p>
-                  </>
-                )}
-              </>
+              <WorkoutView active={active} cloud={!!supabase} busy={busy}
+                confirmAction={confirmAction}
+                templates={templates} workout={workout} workoutDirty={workoutDirty}
+                last={last} hours={hours} logs={logs}
+                onSetChange={(session) => { void updateTraining(session); }}
+                onTimerFinish={finishExercise}
+                onReplace={(from, to) => { void replaceActiveExercise(from, to); }}
+                onFinish={() => { void finishWorkout(); }}
+                onDiscard={() => { void discardWorkout(); }}
+                onStart={(template) => { void begin(template); }}
+                onLoadWorkout={loadWorkout} onChangeWorkout={changeWorkout}
+                onSavePlan={(asNew) => { void savePreparedWorkout(asNew); }}
+                onEditPlan={() => { navigate("Plany"); }} />
             )}
             {tab === "Kalendarz" && (
+              <React.Suspense fallback={<p role="status">Ładowanie kalendarza…</p>}>
               <Calendar
                 sessions={sessions}
                 logs={logs}
@@ -981,235 +299,31 @@ function App({ accountId }: { accountId?: string }) {
                 onEdit={(s) => openSessionEditor(s)}
                 onPain={(d) => {
                   editDate(d);
-                  setTab("Dziennik");
+                  navigate("Dziennik");
                 }}
               />
+              </React.Suspense>
             )}
             {tab === "Edytor treningu" && editing && (
-              <>
-                <h1>
-                  {editingExisting
-                    ? "Edytuj trening"
-                    : "Dodaj trening historyczny"}
-                </h1>
-                <p className="intro">
-                  Wpisz faktyczne wykonanie. Dane dla lewej i prawej nogi
-                  uzupełniasz wspólnie. Zmiany zostaną zapisane dopiero po
-                  zatwierdzeniu.
-                </p>
-                <form onSubmit={saveHistorical}>
-                  <section className="panel">
-                    <div className="grid two">
-                      <label>
-                        Początek treningu
-                        <input
-                          type="datetime-local"
-                          required
-                          value={editStart}
-                          onChange={(e) => setEditStart(e.target.value)}
-                        />
-                      </label>
-                      <label>
-                        Koniec treningu
-                        <input
-                          type="datetime-local"
-                          required
-                          value={editEnd}
-                          onChange={(e) => setEditEnd(e.target.value)}
-                        />
-                      </label>
-                    </div>
-                    <label>
-                      Notatka treningu
-                      <textarea
-                        maxLength={2000}
-                        value={editing.note}
-                        onChange={(e) =>
-                          setEditing({ ...editing, note: e.target.value })
-                        }
-                      />
-                    </label>
-                    <p className="footnote">
-                      Wpisz rzeczywiste godziny treningu. Przyszłe i nakładające
-                      się treningi nie są dozwolone.
-                    </p>
-                  </section>
-                  <SessionFields
-                    session={editing}
-                    disabled={busy}
-                    onChange={setEditing}
-                    onReplace={(from, to) => {
-                      if (
-                        confirm(
-                          "Zastąpić ćwiczenie w tym wpisie? Jego serie trzeba będzie uzupełnić ponownie.",
-                        )
-                      )
-                        setEditing(replaceSessionExercise(editing, from, to));
-                    }}
-                  />
-                  <div className="actions">
-                    <button disabled={busy}>Zapisz trening</button>
-                    <button
-                      type="button"
-                      className="secondary"
-                      disabled={busy}
-                      onClick={() => navigate("Historia")}
-                    >
-                      Anuluj
-                    </button>
-                    {editingExisting && (
-                      <button
-                        type="button"
-                        className="secondary"
-                        disabled={busy}
-                        onClick={removeSession}
-                      >
-                        Usuń trening
-                      </button>
-                    )}
-                  </div>
-                </form>
-              </>
+              <SessionEditorView editing={editing} editingExisting={editingExisting}
+                confirmAction={confirmAction}
+                editStart={editStart} editEnd={editEnd} setEditStart={setEditStart}
+                setEditEnd={setEditEnd} setEditing={setEditing} busy={busy}
+                saveHistorical={(event) => void saveHistorical(event)}
+                navigate={navigate} removeSession={() => void removeSession()} />
             )}
             {tab === "Historia" && (
-              <>
-                <div className="section-title">
-                  <h1>Historia procesu</h1>
-                  <button onClick={() => openSessionEditor()}>
-                    Dodaj trening historyczny
-                  </button>
-                </div>
-                <p className="intro">
-                  Twoje rzeczywiste wpisy. Brak pomiaru pozostaje brakiem.
-                </p>
-                <PainCharts logs={logs} />
-                <h2>Pomiary</h2>
-                {!logs.length && (
-                  <p>
-                    Jeszcze bez pomiarów. Zacznij od dzisiejszego check-inu.
-                  </p>
-                )}
-                {[...logs].reverse().map((l) => (
-                  <article className="history-row" key={l.id}>
-                    <div>
-                      <b>
-                        {fmt(l.at)} ·{" "}
-                        {new Date(l.at).toLocaleTimeString("pl-PL", {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </b>
-                      <p>
-                        {sites
-                          .map((s, i) => `${s}: ${l.values[i]}`)
-                          .join(" / ")}
-                      </p>
-                      <small>
-                        {l.context || "Bez kontekstu"} {l.note && `· ${l.note}`}
-                      </small>
-                    </div>
-                    <button
-                      className="text-button"
-                      onClick={() => {
-                        editDate(l.date);
-                        setTab("Dziennik");
-                      }}
-                    >
-                      Edytuj
-                    </button>
-                  </article>
-                ))}
-                <h2>Treningi</h2>
-                {!sessions.length && <p>Jeszcze bez treningów.</p>}
-                <label>
-                  Filtr ćwiczenia w historii
-                  <select
-                    aria-label="Filtr ćwiczenia w historii"
-                    value={historyExercise}
-                    onChange={(event) => setHistoryExercise(event.target.value)}
-                  >
-                    <option value="">Wszystkie ćwiczenia</option>
-                    {exerciseCatalog
-                      .filter((e) =>
-                        sessions.some((s) =>
-                          s.sets.some((row) => row.exerciseId === e.id),
-                        ),
-                      )
-                      .map((e) => (
-                        <option key={e.id} value={e.id}>
-                          {e.name}
-                        </option>
-                      ))}
-                  </select>
-                </label>
-                {historyExercise &&
-                  !sessions.some((s) =>
-                    s.sets.some((row) => row.exerciseId === historyExercise),
-                  ) && <p>Brak treningów tego ćwiczenia.</p>}
-                {[...sessions]
-                  .filter(
-                    (s) =>
-                      !historyExercise ||
-                      s.sets.some((row) => row.exerciseId === historyExercise),
-                  )
-                  .reverse()
-                  .map((s) => (
-                    <details className="panel" key={s.id}>
-                      <summary>
-                        {fmt(s.started)} · {s.planName ?? "Plan początkowy"} ·{" "}
-                        {s.ended ? "Ukończony" : "W trakcie"} ·{" "}
-                        {completedGroups(s)}/{visibleSets(s).length} serii
-                      </summary>
-                      {sessionExercises(s)
-                        .filter(
-                          (e) => !historyExercise || e.id === historyExercise,
-                        )
-                        .map((e) => (
-                          <p key={e.id}>
-                            <b>{e.name}</b>
-                            <br />
-                            {sessionPlan(s).find(
-                              (entry) => entry.exerciseId === e.id,
-                            )?.note && (
-                              <span>
-                                {
-                                  sessionPlan(s).find(
-                                    (entry) => entry.exerciseId === e.id,
-                                  )?.note
-                                }
-                                <br />
-                              </span>
-                            )}
-                            {visibleSets(s)
-                              .filter((x) => x.exerciseId === e.id)
-                              .map(
-                                (x) =>
-                                  `${e.unilateral ? "L+P" : "Obunóż"} ${x.weight} kg × ${x.reps}${x.done ? " ✓" : ""}`,
-                              )
-                              .join(" · ")}
-                          </p>
-                        ))}
-                      {s.note && <p>{s.note}</p>}
-                      {s.editedAt && (
-                        <p className="footnote">
-                          Poprawiono:{" "}
-                          {new Date(s.editedAt).toLocaleString("pl-PL")}
-                        </p>
-                      )}
-                      <button
-                        className="secondary"
-                        onClick={() => openSessionEditor(s)}
-                      >
-                        {s.ended ? "Edytuj trening" : "Wznów trening"}
-                      </button>
-                    </details>
-                  ))}
-              </>
+              <React.Suspense fallback={<p role="status">Ładowanie historii…</p>}>
+              <HistoryView logs={logs} sessions={sessions} historyExercise={historyExercise}
+                setHistoryExercise={setHistoryExercise} openSessionEditor={openSessionEditor}
+                editDate={editDate} navigate={navigate} />
+              </React.Suspense>
             )}
             {tab === "Plany" && (
               <Plans
                 templates={templates}
                 onDirty={setPlanDirty}
+                confirmAction={confirmAction}
                 onSave={async (template) => {
                   await db.templates.put(templateSchema.parse({ ...template, profileId }));
                   if (workout.id === template.id && !workoutDirty)
@@ -1227,97 +341,25 @@ function App({ accountId }: { accountId?: string }) {
               />
             )}
             {tab === "Dane" && (
-              <>
-                <h1>Twoje dane, u Ciebie</h1>
-                {supabase && localProfiles.length > 0 && <section className="panel">
-                  <h2>Przenieś lokalne dane do konta</h2>
-                  <label>Profil na tym urządzeniu
-                    <select value={sourceProfileId} onChange={(event) => setSourceProfileId(event.target.value)}>
-                      {localProfiles.map((profile) => <option key={profile.id} value={profile.id}>{profile.name}</option>)}
-                    </select>
-                  </label>
-                  <p>Import zastąpi dane wybranego profilu konta. Lokalna kopia pozostanie na urządzeniu.</p>
-                  <button type="button" disabled={busy} onClick={() => void migrateLocal()}>Przenieś do wybranego profilu konta</button>
-                </section>}
-                <p className="intro">
-                  {supabase
-                    ? "Dane konta są przechowywane w Supabase. Eksportuj kopię JSON, aby mieć własne archiwum."
-                    : "Baza jest na tym urządzeniu. Zmiana adresu aplikacji, przeglądarki lub wyczyszczenie pamięci może oznaczać osobną albo pustą bazę."}
-                </p>
-                <section className="panel">
-                  <h2>Kopia zapasowa</h2>
-                  <p>
-                    {logs.length} pomiarów · {sessions.length} treningów ·{" "}
-                    {templates.length} planów
-                  </p>
-                  <p>
-                    Ostatni eksport:{" "}
-                    {(localStorage.getItem(`rehab-last-backup:${profileId}`) || (profileId === legacyProfileId ? localStorage.getItem("rehab-last-backup") : null))
-                      ? new Date(
-                          (localStorage.getItem(`rehab-last-backup:${profileId}`) || (profileId === legacyProfileId ? localStorage.getItem("rehab-last-backup") : null))!,
-                        ).toLocaleString("pl-PL")
-                      : "jeszcze nie wykonano"}
-                  </p>
-                  <button disabled={busy} onClick={download}>
-                    Eksportuj pełną kopię JSON
-                  </button>
-                  <p>
-                    Zapisz pobrany plik w aplikacji Pliki. Eksport obejmuje dane
-                    zdrowotne — przechowuj go prywatnie.
-                  </p>
-                </section>
-                <section className="panel">
-                  <h2>Odtwórz kopię</h2>
-                  <p>
-                    Import zastępuje dane wybranego profilu po sprawdzeniu pliku i potwierdzeniu.
-                  </p>
-                  <label>
-                    Wybierz plik JSON
-                    <input
-                      disabled={busy}
-                      type="file"
-                      accept=".json,application/json"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) load(f);
-                        e.target.value = "";
-                      }}
-                    />
-                  </label>
-                </section>
-                <section className="panel">
-                  <h2>Pamięć i instalacja</h2>
-                  <button
-                    className="secondary"
-                    onClick={() =>
-                      action(async () => {
-                        const granted = await navigator.storage?.persist?.();
-                        setNotice(
-                          granted
-                            ? "Przeglądarka przyznała trwałą pamięć. Nadal wykonuj kopie."
-                            : "Trwała pamięć nie została przyznana. Wykonuj regularne kopie.",
-                        );
-                      })
-                    }
-                  >
-                    Poproś o trwałe przechowywanie
-                  </button>
-                  <p>
-                    Na iPhonie: Safari → Udostępnij → Dodaj do ekranu
-                    początkowego. Do instalacji i działania offline potrzebny
-                    jest adres HTTPS. Szczegóły testowania znajdziesz w README
-                    projektu.
-                  </p>
-                </section>
-              </>
+              <React.Suspense fallback={<p role="status">Ładowanie danych…</p>}>
+              <DataView cloud={!!supabase} localProfiles={localProfiles}
+                sourceProfileId={sourceProfileId} onSourceProfileChange={setSourceProfileId}
+                profileId={profileId} logs={logs} sessions={sessions} templates={templates}
+                busy={busy} onMigrate={() => void migrateLocal()}
+                onDownload={() => void download()} onImport={(file) => void load(file)}
+                onPersist={() => void action(async () => {
+                  const granted = await navigator.storage?.persist?.();
+                  setNotice(granted
+                    ? "Przeglądarka przyznała trwałą pamięć. Nadal wykonuj kopie."
+                    : "Trwała pamięć nie została przyznana. Wykonuj regularne kopie.");
+                })} />
+              </React.Suspense>
             )}
           </>
         )}
-      </main>
-      <footer>
-        BODY RECONSTRUCTION <span>Konsekwencja, nie pośpiech.</span>
-      </footer>
-    </div>
+    </AppShell>
+    {confirmationDialog}
+    </>
   );
 }
 createRoot(document.getElementById("root")!).render(

@@ -9,6 +9,7 @@ import {
 } from "./domain";
 import { SetNumberInput } from "./SetNumberInput";
 import { timerDefaults } from "./intervalTimer";
+import { ErrorNotice } from "./app/errorMessages";
 
 export function ExercisePicker({
   excluded,
@@ -264,11 +265,13 @@ export function Plans({
   onSave,
   onDelete,
   onDirty,
+  confirmAction,
 }: {
   onDirty: (dirty: boolean) => void;
   templates: WorkoutTemplate[];
   onSave: (template: WorkoutTemplate) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
+  confirmAction: (message: string) => Promise<boolean>;
 }) {
   const [editing, setEditing] = useState<WorkoutTemplate | null>(null);
   useEffect(() => {
@@ -296,14 +299,9 @@ export function Plans({
     <>
       <h1>Twoje plany</h1>
       <p className="intro">
-        Utwórz Lower A, Lower B lub własny zestaw. Zmiany szablonu nie zmieniają
-        zapisanych treningów. Nowe ćwiczenia mają ręcznie ustalane obciążenia.
+        Wybierz zapisany plan albo utwórz nowy. Zmiany planu nie wpływają na zapisane treningi.
       </p>
-      {error && (
-        <div role="alert" className="alert">
-          {error}
-        </div>
-      )}
+      {error && <ErrorNotice message={error} />}
       {message && (
         <p role="status" className="notice">
           {message}
@@ -311,15 +309,6 @@ export function Plans({
       )}
       {!editing ? (
         <>
-          <button
-            onClick={() => {
-              setEditing({ id: crypto.randomUUID(), name: "", entries: [] });
-              setMessage("");
-              setError("");
-            }}
-          >
-            Nowy plan
-          </button>
           <div className="template-list">
             {templates.map((t) => (
               <article key={t.id}>
@@ -361,7 +350,7 @@ export function Plans({
                     className="text-button"
                     onClick={async () => {
                       if (
-                        !confirm(
+                        !await confirmAction(
                           `Usunąć plan „${t.name}”? Historia treningów zostanie zachowana.`,
                         )
                       )
@@ -388,6 +377,15 @@ export function Plans({
               początkowy.
             </p>
           )}
+          <button
+            onClick={() => {
+              setEditing({ id: crypto.randomUUID(), name: "", entries: [] });
+              setMessage("");
+              setError("");
+            }}
+          >
+            Nowy plan
+          </button>{" "}
           <button
             className="secondary"
             onClick={() =>
@@ -423,8 +421,8 @@ export function Plans({
               type="button"
               className="secondary"
               disabled={saving}
-              onClick={() => {
-                if (confirm("Odrzucić niezapisane zmiany planu?")) {
+              onClick={async () => {
+                if (await confirmAction("Odrzucić niezapisane zmiany planu?")) {
                   setEditing(null);
                   setError("");
                 }

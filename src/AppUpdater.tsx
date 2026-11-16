@@ -31,9 +31,13 @@ const installationFinished = (worker: ServiceWorker) =>
 export function AppUpdater({
   disabled,
   hasUnsavedChanges,
+  confirmAction,
+  onApprovedReload,
 }: {
   disabled: boolean;
   hasUnsavedChanges: boolean;
+  confirmAction: (message: string) => Promise<boolean>;
+  onApprovedReload: () => void;
 }) {
   const [updating, setUpdating] = useState(false);
   const [available, setAvailable] = useState(false);
@@ -75,7 +79,7 @@ export function AppUpdater({
   async function refresh() {
     if (
       hasUnsavedChanges &&
-      !confirm(
+      !await confirmAction(
         "Odświeżyć aplikację? Niezapisane zmiany formularza zostaną utracone. Zapisane treningi i plany pozostaną na urządzeniu.",
       )
     )
@@ -127,6 +131,7 @@ export function AppUpdater({
           }
         }
       }
+      onApprovedReload();
       window.location.reload();
     } catch (e) {
       setError(

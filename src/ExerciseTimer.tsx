@@ -4,11 +4,12 @@ import { timerForEntry, type PlanEntry, type Session } from "./domain";
 
 type FinishStatus = NonNullable<Session["exerciseProgress"]>[number]["status"];
 
-export function ExerciseTimer({ entry, savedStatus, disabled, onFinish }: {
+export function ExerciseTimer({ entry, savedStatus, disabled, onFinish, confirmAction }: {
   entry: PlanEntry;
   savedStatus?: FinishStatus;
   disabled: boolean;
   onFinish: (status: FinishStatus) => Promise<void>;
+  confirmAction: (message: string) => Promise<boolean>;
 }) {
   const settings = useMemo(() => timerForEntry(entry), [entry.timer, entry.sets, entry.reps]);
   const [state, setState] = useState<"idle" | "running" | "paused" | "done">("idle");
@@ -58,7 +59,7 @@ export function ExerciseTimer({ entry, savedStatus, disabled, onFinish }: {
     if (finishing.current) return;
     if (status !== "completed") {
       const question = status === "finishedEarly" ? "Zakończyć to ćwiczenie wcześniej? Niewykonane serie pozostaną niezaznaczone." : "Przerwać to ćwiczenie? Niewykonane serie pozostaną niezaznaczone.";
-      if (!confirm(question)) return;
+      if (!await confirmAction(question)) return;
     }
     finishing.current = true;
     try { await onFinish(status); }

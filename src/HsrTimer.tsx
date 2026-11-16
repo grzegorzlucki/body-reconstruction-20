@@ -20,7 +20,11 @@ function loadSettings(profileId: string): TimerSettings {
   }
   return { ...timerDefaults };
 }
-export function IntervalTimer({ visible, profileId = "default-profile" }: { visible: boolean; profileId?: string }) {
+export function IntervalTimer({ visible, profileId = "default-profile", confirmAction }: {
+  visible: boolean;
+  profileId?: string;
+  confirmAction: (message: string) => Promise<boolean>;
+}) {
   const [settings, setSettings] = useState(() => loadSettings(profileId));
   const [remoteReady, setRemoteReady] = useState(!supabase);
   const [settingsDirty, setSettingsDirty] = useState(false);
@@ -263,8 +267,8 @@ export function IntervalTimer({ visible, profileId = "default-profile" }: { visi
             {active && (
               <button
                 className="secondary"
-                onClick={() => {
-                  if (confirm("Zakończyć odliczanie?")) {
+                onClick={async () => {
+                  if (await confirmAction("Zakończyć odliczanie?")) {
                     setStatus("idle");
                     setElapsed(0);
                   }

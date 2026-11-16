@@ -27,6 +27,8 @@ Otwórz http://localhost:4173. Na komputerze, na którym przygotowano projekt, m
 
 ## GitHub Pages
 
+Widoki aplikacji używają adresów `?view=...`, dzięki czemu przycisk Wstecz działa między zakładkami. Na telefonie cztery główne widoki są w dolnej nawigacji, a Historia, Kalendarz, Zegar HSR i Dane znajdują się pod **Więcej**. Strona startowa oraz widoki otwarte z parametrem `view` działają także po ponownym uruchomieniu aplikacji offline, jeżeli nowa wersja została wcześniej pobrana.
+
 ### Supabase
 
 Jeśli pojawia się błąd RLS, brak funkcji zapisu lub błąd klucza obcego ćwiczenia, zastosuj migracje opisane poniżej w podanej kolejności. Starsze pliki `*_rls_repair.sql` służyły do doraźnych napraw i nie należy ich uruchamiać po migracji `20261116_canonical_rls.sql`.
@@ -41,7 +43,7 @@ Workflow `.github/workflows/pages.yml` testuje i buduje aplikację z bazą `/bod
 
 Darmowy GitHub Pages wymaga publicznego repozytorium. Adres aplikacji: [https://grzegorzlucki.github.io/body-reconstruction-20/](https://grzegorzlucki.github.io/body-reconstruction-20/). Sprawdź wynik workflow, jeśli nowa wersja nie jest jeszcze widoczna.
 
-Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu początkowego. Pliki aplikacji są dostępne offline, ale zapis danych konta wymaga połączenia z Supabase. Przycisk „Odśwież aplikację” na stałe na dole zakładki Dane sprawdza aktualizację, aktywuje nową wersję offline i przeładowuje aplikację bez kasowania lokalnej bazy. Wymaga internetu; podczas zapisu danych jest niedostępny. Przed odrzuceniem otwartego formularza pojawia się potwierdzenie. Zachowanie na rzeczywistym Safari wymaga sprawdzenia na urządzeniu.
+Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu początkowego. Pliki aplikacji są dostępne offline, ale zapis danych konta wymaga połączenia z Supabase. Przycisk „Odśwież aplikację” znajduje się w pasku bocznym na komputerze i nad treścią na telefonie. Sprawdza aktualizację, aktywuje nową wersję offline i przeładowuje aplikację bez kasowania lokalnej bazy. Wymaga internetu; podczas zapisu danych jest niedostępny. Zarządzanie profilami na telefonie znajduje się pod „Opcje profilu”. Usuwanie danych i opuszczanie niezapisanych formularzy wymaga potwierdzenia w aplikacji; zamknięcie karty z niezapisanymi zmianami wywołuje ostrzeżenie przeglądarki. Zachowanie na rzeczywistym Safari wymaga sprawdzenia na urządzeniu.
 
 ## Korzystanie
 

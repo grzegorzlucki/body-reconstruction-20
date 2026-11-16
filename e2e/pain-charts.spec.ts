@@ -1,3 +1,4 @@
+import { openTab, confirmInApp } from "./helpers";
 import { test, expect } from "@playwright/test";
 
 const logs = [
@@ -20,11 +21,10 @@ test("trzy wykresy liniowe: brak danych, wartości, klawiatura i przesuwanie pal
   const errors: string[] = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("./");
-  await page.getByRole("button", { name: "Historia", exact: true }).click();
+  await openTab(page, "Historia");
   await expect(page.getByRole("region", { name: /^Wykres:/ })).toHaveCount(3);
   await expect(page.getByRole("slider")).toHaveCount(0);
-  await page.getByRole("button", { name: "Dane", exact: true }).click();
-  page.once("dialog", (dialog) => dialog.accept());
+  await openTab(page, "Dane");
   await page
     .locator('input[type="file"]')
     .setInputFiles({
@@ -39,8 +39,9 @@ test("trzy wykresy liniowe: brak danych, wartości, klawiatura i przesuwanie pal
         }),
       ),
     });
+  await confirmInApp(page);
   await expect(page.getByRole("status")).toContainText("Kopia odtworzona");
-  await page.getByRole("button", { name: "Historia", exact: true }).click();
+  await openTab(page, "Historia");
   await expect(page.getByRole("slider")).toHaveCount(3);
   const achilles = page.getByRole("slider", {
     name: "Pomiar bólu: Achilles",
@@ -111,8 +112,7 @@ test("pojedynczy pomiar pozostaje widoczny jako punkt bez NaN", async ({
   page,
 }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Dane", exact: true }).click();
-  page.once("dialog", (dialog) => dialog.accept());
+  await openTab(page, "Dane");
   await page
     .locator('input[type="file"]')
     .setInputFiles({
@@ -127,8 +127,9 @@ test("pojedynczy pomiar pozostaje widoczny jako punkt bez NaN", async ({
         }),
       ),
     });
+  await confirmInApp(page);
   await expect(page.getByRole("status")).toContainText("Kopia odtworzona");
-  await page.getByRole("button", { name: "Historia", exact: true }).click();
+  await openTab(page, "Historia");
   const chart = page.getByRole("slider", {
     name: "Pomiar bólu: Achilles",
     exact: true,

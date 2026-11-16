@@ -10,7 +10,7 @@ Zakres: monitor bólu i brakujące pomiary, walidacja importu, odtworzenie bazy,
 
 Komendy: `npm test`, `npm run build`, `npx playwright test`.
 
-Playwright uruchamia podgląd na porcie 4176. Zmienna `VITE_BASE_PATH=/body-reconstruction/` umożliwia sprawdzenie tego samego podkatalogu co w GitHub Pages. Przed testem należy zbudować aplikację z tą samą zmienną i zakończyć wcześniejszy serwer testowy.
+Playwright uruchamia podgląd na porcie 4176. Zmienna `VITE_BASE_PATH=/body-reconstruction-20/` umożliwia sprawdzenie tego samego podkatalogu co w GitHub Pages. Przed testem należy zbudować aplikację z tą samą zmienną i zakończyć wcześniejszy serwer testowy. Pobieranie kopii JSON wymaga wolnego miejsca w katalogu tymczasowym systemu; w razie potrzeby ustaw `TEMP` i `TMP` na katalog z wolnym miejscem przed uruchomieniem testów.
 
 Chromium z emulacją telefonu nie zastępuje testu Safari na rzeczywistym iPhonie. Testy weryfikują zachowanie oprogramowania, nie skuteczność medyczną planu ani progów.
 
@@ -20,7 +20,9 @@ Szablony i migracja: `src/plans.test.ts`, `src/db.test.ts` i `e2e/plans.spec.ts`
 W środowisku chmurowym można użyć zainstalowanego systemowego Chromium przez lokalną konfigurację `.tools/playwright.cloud.config.ts`: `CI=1 npx playwright test --config .tools/playwright.cloud.config.ts`. Emulacja telefonu nie potwierdza działania na fizycznym Safari.
 
 
-`e2e/update.spec.ts` sprawdza rzeczywistą instalację i aktywację nowej wersji service workera w otwartej aplikacji, zachowanie treningu i planu, ponowne działanie offline oraz stałą obecność przycisku wyłącznie na dole zakładki Dane. Test tymczasowo zmienia wygenerowane pliki `dist` i przywraca je w `finally`; testy uruchamiamy z jednym workerem.
+`e2e/update.spec.ts` sprawdza rzeczywistą instalację i aktywację nowej wersji service workera w otwartej aplikacji, zachowanie treningu i planu, ponowne działanie offline oraz dostępność przycisku aktualizacji z paska bocznego lub nad treścią na telefonie. Test tymczasowo zmienia wygenerowane pliki `dist` i przywraca je w `finally`; testy uruchamiamy z jednym workerem.
+
+`e2e/responsive-navigation.spec.ts` sprawdza nawigację, Wstecz, potwierdzenie opuszczenia niezapisanego planu i brak poziomego przewijania przy 320, 390, 768, 1024 i 1440 px. `e2e/profiles.spec.ts` sprawdza, że pomiar zapisany w jednym lokalnym profilu nie pojawia się w drugim po przełączeniu. Test planów sprawdza również, że anulowanie usunięcia zachowuje plan.
 
 
 `e2e/pain-charts.spec.ts` sprawdza trzy osobne wykresy, brak danych i pojedynczy punkt, rzeczywiste odstępy dat, luki w pomiarach, obsługę klawiatury i przesuwanie palcem przez zdarzenia dotykowe Chromium (CDP). Testy używają wyłącznie danych syntetycznych. Działanie na fizycznym Safari wymaga sprawdzenia na urządzeniu.

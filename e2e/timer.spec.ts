@@ -1,10 +1,11 @@
+import { openTab, confirmInApp } from "./helpers";
 import { test, expect } from "@playwright/test";
 test("timer settings, exact phases, pause, navigation and completion", async ({
   page,
 }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Zegar HSR", exact: true }).click();
-  await page.getByLabel("Czas przygotowania", { exact: true }).fill("2");
+  await openTab(page, "Zegar HSR");
+  await page.getByLabel("Przygotowanie przed pierwszą serią", { exact: true }).fill("2");
   await page.getByLabel("Ruch 1", { exact: true }).fill("2");
   await page.getByLabel("Zatrzymanie", { exact: true }).fill("0");
   await page.getByLabel("Ruch 2", { exact: true }).fill("1");
@@ -14,9 +15,9 @@ test("timer settings, exact phases, pause, navigation and completion", async ({
   await page.getByLabel("Dźwięk", { exact: true }).selectOption("silent");
   await expect(page.locator(".timer-summary")).toContainText("00:17");
   await page.reload();
-  await page.getByRole("button", { name: "Zegar HSR", exact: true }).click();
+  await openTab(page, "Zegar HSR");
   await expect(
-    page.getByLabel("Czas przygotowania", { exact: true }),
+    page.getByLabel("Przygotowanie przed pierwszą serią", { exact: true }),
   ).toHaveValue("2");
   await page.clock.install();
   await page.getByRole("button", { name: "Start", exact: true }).click();
@@ -38,9 +39,9 @@ test("timer settings, exact phases, pause, navigation and completion", async ({
   ).toBeVisible();
   await page.getByRole("button", { name: "Dzisiaj", exact: true }).click();
   await page.clock.runFor(4000);
-  await page.getByRole("button", { name: "Zegar HSR", exact: true }).click();
+  await openTab(page, "Zegar HSR");
   await expect(
-    page.getByRole("heading", { name: "Przerwa", exact: true }),
+    page.getByRole("heading", { name: "Przygotowanie", exact: true }),
   ).toBeVisible();
   await page.clock.runFor(9000);
   await expect(
@@ -58,8 +59,8 @@ test("rejects all zero phases and allows skipping first phase", async ({
   page,
 }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Zegar HSR", exact: true }).click();
-  for (const label of ["Czas przygotowania", "Ruch 1", "Zatrzymanie", "Ruch 2"])
+  await openTab(page, "Zegar HSR");
+  for (const label of ["Przygotowanie przed pierwszą serią", "Ruch 1", "Zatrzymanie", "Ruch 2"])
     await page.getByLabel(label, { exact: true }).fill("0");
   await expect(
     page.getByRole("button", { name: "Start", exact: true }),
@@ -69,8 +70,8 @@ test("rejects all zero phases and allows skipping first phase", async ({
   await expect(
     page.getByRole("heading", { name: "Ruch 2", exact: true }),
   ).toBeVisible();
-  page.on("dialog", (dialog) => dialog.accept());
   await page.getByRole("button", { name: "Zakończ", exact: true }).click();
+  await confirmInApp(page);
   await expect(
     page.getByRole("button", { name: "Start", exact: true }),
   ).toBeVisible();
@@ -120,7 +121,7 @@ test("beeps once per second and stays silent while paused", async ({
     });
   });
   await page.goto("./");
-  await page.getByRole("button", { name: "Zegar HSR", exact: true }).click();
+  await openTab(page, "Zegar HSR");
   await page.clock.install();
   await page.getByRole("button", { name: "Start", exact: true }).click();
   await page.clock.runFor(3000);
