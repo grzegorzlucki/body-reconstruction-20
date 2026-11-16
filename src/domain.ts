@@ -292,7 +292,8 @@ export function newSession(
   };
 }
 export function sessionExercises(session: Session) {
-  return [...new Set(session.sets.map((s) => s.exerciseId))].map(exerciseById);
+  return (session.plan?.map((entry) => entry.exerciseId) ??
+    [...new Set(session.sets.map((s) => s.exerciseId))]).map(exerciseById);
 }
 export function sessionPlan(session: Session): PlanEntry[] {
   return (

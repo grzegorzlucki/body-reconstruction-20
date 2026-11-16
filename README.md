@@ -29,15 +29,9 @@ Otwórz http://localhost:4173. Na komputerze, na którym przygotowano projekt, m
 
 ### Supabase
 
-Jeśli po zalogowaniu pojawia się `new row violates row-level security policy for table "profiles"`, uruchom w Supabase SQL Editor kolejno `supabase/migrations/20261115_profiles_auth_users.sql` i `supabase/migrations/20261115_profiles_rls_repair.sql`. Drugi plik zastępuje wyłącznie polityki tabeli `profiles`; nie wymaga klucza `SUPABASE_SECRET_KEY` w przeglądarce. Po opublikowaniu kodu odśwież aplikację przyciskiem w panelu bocznym. Jeżeli błąd trwa, sprawdź w Supabase Authentication, czy konto jest aktywne, oraz w Table Editor, czy `profiles.owner_user_id` ma typ UUID i wskazuje identyfikator tego konta.
+Jeśli pojawia się błąd RLS, brak funkcji zapisu lub błąd klucza obcego ćwiczenia, zastosuj migracje opisane poniżej w podanej kolejności. Starsze pliki `*_rls_repair.sql` służyły do doraźnych napraw i nie należy ich uruchamiać po migracji `20261116_canonical_rls.sql`.
 
-Komunikat `Could not find the function public.save_workout_template(payload)` oznacza brak funkcji w działającej bazie Supabase. Uruchom `20261115_atomic_writes.sql`, a potem `20261115_exercise_timers.sql` w SQL Editor. Błąd RLS przy zapisie `timer_settings` wymaga uruchomienia `20261115_timer_settings_rls_repair.sql` po migracji profili. Same pliki w repozytorium nie wykonują migracji na serwerze.
-
-Jeśli zapis planu kończy się `new row violates row-level security policy for table "workout_templates"`, sprawdź polityki tabeli w Supabase. Gdy nie ma żadnej, uruchom `supabase/migrations/20261115_workout_plans_rls_repair.sql` po migracji profili. Plik nadaje dostęp do planów i ich ćwiczeń wyłącznie właścicielowi profilu.
-
-Jeżeli pojawia się błąd klucza obcego `template_exercises_exercise_id_fkey`, w tabeli `public.exercises` brakuje ćwiczenia użytego w planie. Uruchom `supabase/migrations/20261115_exercise_catalog_seed.sql` w SQL Editor. Migracja uzupełnia 30 identyfikatorów z katalogu aplikacji i nie nadpisuje istniejących wierszy.
-
-Przed włączeniem zapisu w chmurze zastosuj kolejno pliki SQL z `supabase/migrations/` w projekcie Supabase. Zawierają polityki RLS, katalog ćwiczeń i funkcje atomowego zapisu. Sprawdź ich zgodność z faktycznymi tabelami przed uruchomieniem. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
+Przed włączeniem zapisu w chmurze zastosuj SQL zgodnie z [instrukcją bazy Supabase](supabase/README.md). Opisuje osobno istniejącą bazę i nowy projekt oraz kolejność migracji. Nie uruchamiaj wszystkich plików alfabetycznie: starsze funkcje mogą nadpisać obsługę zegara. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
 
 W GitHub **Settings → Secrets and variables → Actions → Variables** ustaw `VITE_SUPABASE_URL` i `VITE_SUPABASE_PUBLISHABLE_KEY`. Workflow wymaga obu wartości. Są publiczne i trafiają do kodu przeglądarki. Lokalnie skopiuj `.env.example` do `.env.local` i uzupełnij te same wartości. Nigdy nie przekazuj `SUPABASE_SECRET_KEY` do Vite ani GitHub Pages.
 

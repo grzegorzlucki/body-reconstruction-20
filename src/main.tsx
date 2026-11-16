@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { db as localDb, exportBackup as exportLocalBackup, importBackup as importLocalBackup, createProfile as createLocalProfile, legacyProfileId, type Profile } from "./db";
-import { cloudDb, createCloudProfile, exportCloudBackup, importCloudBackup } from "./cloudDb";
+import { cloudDb, createCloudProfile, exportCloudBackup, importCloudBackup, saveCloudSessionSets } from "./cloudDb";
 import { supabase } from "./supabase";
 import { AuthGate } from "./AuthGate";
 import {
@@ -50,6 +50,15 @@ const fmt = (d: string) =>
   new Date(d).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 const db = supabase ? cloudDb as unknown as typeof localDb : localDb;
 const createProfile = supabase ? createCloudProfile : createLocalProfile;
+function withTimeout<T>(operation: Promise<T>, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timeout = window.setTimeout(() => reject(Error(message)), 15000);
+    operation.then(
+      (result) => { window.clearTimeout(timeout); resolve(result); },
+      (cause) => { window.clearTimeout(timeout); reject(cause); },
+    );
+  });
+}
 function App({ accountId }: { accountId?: string }) {
   const [localProfiles, setLocalProfiles] = useState<Profile[]>([]);
   const [sourceProfileId, setSourceProfileId] = useState(legacyProfileId);
@@ -161,17 +170,18 @@ function App({ accountId }: { accountId?: string }) {
     setLoadingData(true);
     setError("");
     try {
-      const available = await Promise.race([
-        db.profiles.toArray(),
-        new Promise<Profile[]>((_, reject) => window.setTimeout(() => reject(Error("Przekroczono czas połączenia z Supabase. Sprawdź sieć i tabelę profiles.")), 15000)),
-      ]);
+      const available = await withTimeout(db.profiles.toArray(),
+        "Przekroczono czas odczytu profili. Sprawdź połączenie i spróbuj ponownie.");
       setProfiles(available);
       const currentId = available.some((p) => p.id === profileId) ? profileId : available[0]?.id ?? legacyProfileId;
       if (currentId !== profileId) setProfileId(currentId);
-      const stored = await db.sessions.where("profileId").equals(currentId).sortBy("started");
-      setLogs(await db.logs.where("profileId").equals(currentId).sortBy("date"));
+      const [stored, loadedLogs, savedTemplates] = await withTimeout(Promise.all([
+        db.sessions.where("profileId").equals(currentId).sortBy("started"),
+        db.logs.where("profileId").equals(currentId).sortBy("date"),
+        db.templates.where("profileId").equals(currentId).toArray(),
+      ]), "Przekroczono czas pobierania danych profilu. Spróbuj ponownie.");
+      setLogs(loadedLogs);
       setSessions(stored);
-      const savedTemplates = await db.templates.where("profileId").equals(currentId).toArray();
       setTemplates(savedTemplates);
       if (!ready && savedTemplates.length) {
         setWorkout(
@@ -227,13 +237,16 @@ function App({ accountId }: { accountId?: string }) {
     setProfileId(nextId);
     localStorage.setItem("rehab-active-profile", nextId);
     try {
-      const savedTemplates = await db.templates.where("profileId").equals(nextId).toArray();
-      const stored = await db.sessions.where("profileId").equals(nextId).sortBy("started");
+      const [savedTemplates, stored, loadedLogs] = await withTimeout(Promise.all([
+        db.templates.where("profileId").equals(nextId).toArray(),
+        db.sessions.where("profileId").equals(nextId).sortBy("started"),
+        db.logs.where("profileId").equals(nextId).sortBy("date"),
+      ]), "Przekroczono czas pobierania danych profilu. Spróbuj ponownie.");
       setTemplates(savedTemplates);
       setWorkout(structuredClone(savedTemplates[0] ?? defaultTemplate()));
       setWorkoutDirty(false);
       setSessions(stored);
-      setLogs(await db.logs.where("profileId").equals(nextId).sortBy("date"));
+      setLogs(loadedLogs);
       setReady(true);
       setError("");
       setNotice("");
@@ -344,13 +357,31 @@ function App({ accountId }: { accountId?: string }) {
     });
   }
   async function updateTraining(next: Session) {
-    await action(async () => {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
       const validated = sessionSchema.parse(next);
-      setSessions((stored) =>
-        stored.map((row) => (row.id === validated.id ? validated : row)),
-      );
-      await db.sessions.put(validated);
-    });
+      const previous = sessions.find((row) => row.id === validated.id);
+      const sameRows = previous?.sets.length === validated.sets.length &&
+        validated.sets.every((row, index) => {
+          const old = previous!.sets[index];
+          return old.exerciseId === row.exerciseId && old.side === row.side && old.index === row.index;
+        });
+      const changed = sameRows ? validated.sets.filter((row, index) => {
+        const old = previous!.sets[index];
+        return old.weight !== row.weight || old.reps !== row.reps || old.done !== row.done;
+      }) : [];
+      if (supabase && sameRows && changed.length > 0 && changed.length <= 2)
+        await saveCloudSessionSets(validated, changed);
+      else
+        await db.sessions.put(validated);
+      setSessions((stored) => stored.map((row) => row.id === validated.id ? validated : row));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Nie udało się zapisać serii.");
+    } finally {
+      setBusy(false);
+    }
   }
   async function download() {
     await action(async () => {

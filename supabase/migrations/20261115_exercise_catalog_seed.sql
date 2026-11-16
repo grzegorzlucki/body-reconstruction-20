@@ -1,5 +1,9 @@
 -- Apply in Supabase SQL Editor when plan saves fail on
 -- template_exercises_exercise_id_fkey. Safe to run more than once.
+INSERT INTO public.pain_sites (id, name) VALUES
+  ('achilles', 'Achilles'), ('pht', 'PHT'), ('quadriceps', 'Czworogłowy')
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO public.exercises (id, name, detail, unilateral) VALUES
   ('calf', 'Wspięcia na palce', '', true),
   ('rdl', 'Rumuński martwy ciąg', '', false),

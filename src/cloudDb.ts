@@ -1,8 +1,45 @@
 import { supabase } from "./supabase";
-import { backupSchema, defaultTemplate, exerciseById, sessionPlan, type PainLog, type Session, type WorkoutTemplate } from "./domain";
+import { backupSchema, defaultTemplate, exerciseById, sessionPlan, type PainLog, type Session, type SetLog, type WorkoutTemplate } from "./domain";
 import type { Profile } from "./db";
 
 type Row = Record<string, any>;
+const pageSize = 500;
+async function allPages(page: (start: number, end: number) => Promise<{
+  data: Row[] | null; error: { message: string } | null;
+}>): Promise<Row[]> {
+  const rows: Row[] = [];
+  for (let start = 0; ; start += pageSize) {
+    const batch = checked(await page(start, start + pageSize - 1));
+    rows.push(...batch);
+    if (batch.length < pageSize) return rows;
+  }
+}
+async function rowsForIds(table: string, column: string, ids: string[], order: string[]): Promise<Row[]> {
+  const rows: Row[] = [];
+  const batches: string[][] = [];
+  for (let offset = 0; offset < ids.length; offset += 50)
+    batches.push(ids.slice(offset, offset + 50));
+  for (let offset = 0; offset < batches.length; offset += 4) {
+    const group = await Promise.all(batches.slice(offset, offset + 4).map((batchIds) =>
+      allPages(async (start, end) => {
+        let query = client().from(table).select("*").in(column, batchIds);
+        for (const field of order) query = query.order(field);
+        return await query.range(start, end);
+      })));
+    for (const batch of group) rows.push(...batch);
+  }
+  return rows;
+}
+function groupRows(rows: Row[], key: string): Map<string, Row[]> {
+  const grouped = new Map<string, Row[]>();
+  for (const row of rows) {
+    const id = String(row[key]);
+    const group = grouped.get(id) ?? [];
+    group.push(row);
+    grouped.set(id, group);
+  }
+  return grouped;
+}
 const client = () => {
   if (!supabase) throw Error("Brak konfiguracji Supabase.");
   return supabase;
@@ -18,45 +55,58 @@ const userId = async () => {
 };
 const siteIds = ["achilles", "pht", "quadriceps"];
 
+async function insertProfileWithStarter(id: string, name: string) {
+  const template = { ...defaultTemplate(), id: crypto.randomUUID() };
+  const result = await client().rpc("create_profile_with_template", {
+    payload: { id, name, template },
+  });
+  if (!result.error) return;
+  if (result.error.code !== "PGRST202") throw Error(`Tworzenie profilu: ${result.error.message}`);
+  // Older databases retain the previous two-step flow until the migration runs.
+  const owner = await userId();
+  checked(await client().from("profiles").insert({ id, owner_user_id: owner, name }));
+  await putTemplate({ ...template, profileId: id });
+}
+
 async function profiles(): Promise<Profile[]> {
   const owner = await userId();
   let rows: Profile[];
   try {
-    rows = checked(await client().from("profiles").select("id,name").eq("owner_user_id", owner));
+    rows = await allPages(async (start, end) => await client().from("profiles")
+      .select("id,name").eq("owner_user_id", owner).order("id").range(start, end)) as Profile[];
   } catch (error) {
     throw Error(`Odczyt profili: ${error instanceof Error ? error.message : String(error)}`);
   }
   if (!rows.length) {
-    const id = crypto.randomUUID();
+    const id = owner;
     try {
-      checked(await client().from("profiles").insert({ id, owner_user_id: owner, name: "Profil główny" }));
+      await insertProfileWithStarter(id, "Profil główny");
     } catch (error) {
-      throw Error(`Tworzenie profilu: ${error instanceof Error ? error.message : String(error)}`);
+      // A second tab may have created the same deterministic profile first.
+      if (!(error instanceof Error) || !error.message.includes("duplicate key")) throw error;
     }
-    try {
-      await putTemplate({ ...defaultTemplate(), id: crypto.randomUUID(), profileId: id });
-    } catch (error) {
-      throw Error(`Tworzenie planu startowego: ${error instanceof Error ? error.message : String(error)}`);
-    }
-    rows = [{ id, name: "Profil główny" }];
+    rows = await allPages(async (start, end) => await client().from("profiles")
+      .select("id,name").eq("owner_user_id", owner).order("id").range(start, end)) as Profile[];
+    if (!rows.length) throw Error("Nie udało się utworzyć profilu głównego.");
   }
   return rows;
 }
 async function createProfile(name: string): Promise<Profile> {
   const clean = name.trim();
   if (!clean || clean.length > 80) throw Error("Nazwa profilu musi mieć od 1 do 80 znaków.");
-  const row = { id: crypto.randomUUID(), name: clean, owner_user_id: await userId() };
-  checked(await client().from("profiles").insert(row));
-  await putTemplate({ ...defaultTemplate(), id: crypto.randomUUID(), profileId: row.id });
-  return { id: row.id, name: row.name };
+  const id = crypto.randomUUID();
+  await insertProfileWithStarter(id, clean);
+  return { id, name: clean };
 }
 
 async function templates(profileId: string): Promise<WorkoutTemplate[]> {
-  const rows = checked(await client().from("workout_templates").select("id,name").eq("profile_id", profileId));
+  const rows = await allPages(async (start, end) => await client().from("workout_templates")
+    .select("id,name").eq("profile_id", profileId).order("id").range(start, end));
   if (!rows.length) return [];
-  const entries = checked(await client().from("template_exercises").select("*").in("template_id", rows.map((r) => r.id)).order("position"));
+  const entries = await rowsForIds("template_exercises", "template_id", rows.map((r) => r.id), ["template_id", "position"]);
+  const byTemplate = groupRows(entries, "template_id");
   return rows.map((row) => ({ id: row.id, name: row.name, profileId,
-    entries: entries.filter((e) => e.template_id === row.id).map((e) => ({
+    entries: (byTemplate.get(row.id) ?? []).map((e) => ({
       exerciseId: e.exercise_id, sets: e.set_count, weight: Number(e.weight), reps: e.reps, note: e.note,
       ...(e.timer_config ? { timer: e.timer_config } : {}),
     })),
@@ -76,12 +126,14 @@ async function putTemplate(template: WorkoutTemplate) {
 }
 
 async function logs(profileId: string): Promise<PainLog[]> {
-  const rows = checked(await client().from("pain_logs").select("*").eq("profile_id", profileId).order("log_date"));
+  const rows = await allPages(async (start, end) => await client().from("pain_logs")
+    .select("*").eq("profile_id", profileId).order("log_date").order("id").range(start, end));
   if (!rows.length) return [];
-  const values = checked(await client().from("pain_log_values").select("*").in("pain_log_id", rows.map((r) => r.id)));
+  const values = await rowsForIds("pain_log_values", "pain_log_id", rows.map((r) => r.id), ["pain_log_id", "site_id"]);
+  const byLog = groupRows(values, "pain_log_id");
   return rows.map((row) => ({ id: row.id, profileId, date: row.log_date,
     at: row.measured_at, context: row.context, note: row.note,
-    values: siteIds.map((site) => values.find((v) => v.pain_log_id === row.id && v.site_id === site)?.value ?? 0),
+    values: siteIds.map((site) => (byLog.get(row.id) ?? []).find((v) => v.site_id === site)?.value ?? 0),
   }));
 }
 async function putLog(log: PainLog) {
@@ -90,11 +142,16 @@ async function putLog(log: PainLog) {
 }
 
 async function sessions(profileId: string): Promise<Session[]> {
-  const rows = checked(await client().from("workout_sessions").select("*").eq("profile_id", profileId).order("started_at"));
+  const rows = await allPages(async (start, end) => await client().from("workout_sessions")
+    .select("*").eq("profile_id", profileId).order("started_at").order("id").range(start, end));
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
-  const plans = checked(await client().from("session_exercises").select("*").in("session_id", ids).order("position"));
-  const sets = checked(await client().from("session_sets").select("*").in("session_id", ids));
+  const [plans, sets] = await Promise.all([
+    rowsForIds("session_exercises", "session_id", ids, ["session_id", "position"]),
+    rowsForIds("session_sets", "session_id", ids, ["session_id", "exercise_id", "side", "set_index"]),
+  ]);
+  const plansBySession = groupRows(plans, "session_id");
+  const setsBySession = groupRows(sets, "session_id");
   return rows.map((row) => ({
     id: row.id, profileId, started: row.started_at, ...(row.ended_at ? { ended: row.ended_at } : {}),
     note: row.note, ...(row.plan_name ? { planName: row.plan_name } : {}),
@@ -103,10 +160,10 @@ async function sessions(profileId: string): Promise<Session[]> {
     ...(row.rule_version ? { ruleVersion: row.rule_version } : {}),
     ...(row.edited_at ? { editedAt: row.edited_at } : {}),
     exerciseProgress: row.exercise_progress ?? [],
-    plan: plans.filter((p) => p.session_id === row.id).map((p) => ({ exerciseId: p.exercise_id,
+    plan: (plansBySession.get(row.id) ?? []).map((p) => ({ exerciseId: p.exercise_id,
       sets: p.planned_sets, weight: Number(p.planned_weight), reps: p.planned_reps, note: p.note,
       ...(p.timer_config ? { timer: p.timer_config } : {}) })),
-    sets: sets.filter((s) => s.session_id === row.id).map((s) => ({ exerciseId: s.exercise_id,
+    sets: (setsBySession.get(row.id) ?? []).map((s) => ({ exerciseId: s.exercise_id,
       side: s.side as "L" | "P" | "both", index: s.set_index, weight: Number(s.weight), reps: s.reps, done: s.done })),
   }));
 }
@@ -120,6 +177,19 @@ async function putSession(session: Session) {
       unilateral: exerciseById(entry.exerciseId).unilateral,
     })),
   } }));
+}
+
+export async function saveCloudSessionSets(session: Session, changed: SetLog[]) {
+  const result = await client().rpc("update_session_sets", {
+    payload: { sessionId: session.id, sets: changed },
+  });
+  if (!result.error) return;
+  // Existing deployments may not have the targeted-write migration yet.
+  if (result.error.code === "PGRST202") {
+    await putSession(session);
+    return;
+  }
+  throw Error(`Nie udało się zapisać serii: ${result.error.message}`);
 }
 
 export const cloudDb = {
