@@ -54,6 +54,13 @@ const userId = async () => {
   return user.id;
 };
 const siteIds = ["achilles", "pht", "quadriceps"];
+// PostgreSQL returns timestamptz with an offset (often +00:00), while the
+// application stores timestamps as canonical UTC ISO strings ending in Z.
+export function cloudTimestamp(value: string): string {
+  const timestamp = new Date(value);
+  if (Number.isNaN(timestamp.getTime())) throw Error(`Nieprawidłowa data z Supabase: ${value}`);
+  return timestamp.toISOString();
+}
 
 async function insertProfileWithStarter(id: string, name: string) {
   const template = { ...defaultTemplate(), id: crypto.randomUUID() };
@@ -132,7 +139,7 @@ async function logs(profileId: string): Promise<PainLog[]> {
   const values = await rowsForIds("pain_log_values", "pain_log_id", rows.map((r) => r.id), ["pain_log_id", "site_id"]);
   const byLog = groupRows(values, "pain_log_id");
   return rows.map((row) => ({ id: row.id, profileId, date: row.log_date,
-    at: row.measured_at, context: row.context, note: row.note,
+    at: cloudTimestamp(row.measured_at), context: row.context, note: row.note,
     values: siteIds.map((site) => (byLog.get(row.id) ?? []).find((v) => v.site_id === site)?.value ?? 0),
   }));
 }
@@ -153,12 +160,13 @@ async function sessions(profileId: string): Promise<Session[]> {
   const plansBySession = groupRows(plans, "session_id");
   const setsBySession = groupRows(sets, "session_id");
   return rows.map((row) => ({
-    id: row.id, profileId, started: row.started_at, ...(row.ended_at ? { ended: row.ended_at } : {}),
+    id: row.id, profileId, started: cloudTimestamp(row.started_at),
+    ...(row.ended_at ? { ended: cloudTimestamp(row.ended_at) } : {}),
     note: row.note, ...(row.plan_name ? { planName: row.plan_name } : {}),
     ...(row.source_template_id ? { templateId: row.source_template_id } : {}),
     ...(row.decision ? { decision: row.decision } : {}),
     ...(row.rule_version ? { ruleVersion: row.rule_version } : {}),
-    ...(row.edited_at ? { editedAt: row.edited_at } : {}),
+    ...(row.edited_at ? { editedAt: cloudTimestamp(row.edited_at) } : {}),
     exerciseProgress: row.exercise_progress ?? [],
     plan: (plansBySession.get(row.id) ?? []).map((p) => ({ exerciseId: p.exercise_id,
       sets: p.planned_sets, weight: Number(p.planned_weight), reps: p.planned_reps, note: p.note,
