@@ -30,9 +30,9 @@ import { useBackupActions } from "./app/useBackupActions";
 import type { AppRepository } from "./app/repository";
 import { useConfirmation } from "./app/useConfirmation";
 import { ProfileSettingsView } from "./views/ProfileSettingsView";
+import { AnalyticsView } from "./views/AnalyticsView";
 const Calendar = React.lazy(() => import("./Calendar").then((module) => ({ default: module.Calendar })));
 const HistoryView = React.lazy(() => import("./views/HistoryView").then((module) => ({ default: module.HistoryView })));
-const AnalyticsView = React.lazy(() => import("./views/AnalyticsView").then((module) => ({ default: module.AnalyticsView })));
 const DataView = React.lazy(() => import("./views/DataView").then((module) => ({ default: module.DataView })));
 import {
   validateHistoricalSession,
@@ -314,11 +314,9 @@ function App({ accountId }: { accountId?: string }) {
               </React.Suspense>
             )}
             {tab === "Analizy" && (
-              <React.Suspense fallback={<p role="status">Ładowanie analiz…</p>}>
                 <AnalyticsView logs={logs} sessions={sessions}
                   sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []}
                   injuries={selectedProfile?.injuries ?? []} />
-              </React.Suspense>
             )}
             {tab === "Plany" && (
               <Plans
