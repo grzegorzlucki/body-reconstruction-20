@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { validTimer, type TimerSettings } from "./intervalTimer";
 export const defaultRehabSites: RehabSite[] = [
-  { id: "achilles", name: "Achilles", bodyArea: "Staw skokowy", position: 0, active: true },
-  { id: "pht", name: "PHT", bodyArea: "Tył uda", position: 1, active: true },
-  { id: "quadriceps", name: "Czworogłowy", bodyArea: "Przód uda", position: 2, active: true },
+  { id: "achilles", name: "Achilles", bodyArea: "Staw skokowy", position: 0, active: true, archived: false },
+  { id: "pht", name: "PHT", bodyArea: "Tył uda", position: 1, active: true, archived: false },
+  { id: "quadriceps", name: "Czworogłowy", bodyArea: "Przód uda", position: 2, active: true, archived: false },
 ];
 export const defaultPainContexts: PainContext[] = [
   { value: "spacer", label: "Spacer", position: 0, active: true },
@@ -17,6 +17,7 @@ export const rehabSiteSchema = z.object({
   bodyArea: z.string().trim().min(1).max(100),
   position: z.number().int().min(0).max(100),
   active: z.boolean(),
+  archived: z.boolean().default(false),
 });
 export type RehabSite = z.infer<typeof rehabSiteSchema>;
 export const painContextSchema = z.object({
@@ -50,7 +51,8 @@ export const profileSettingsSchema = z.object({
     ctx.addIssue({ code: "custom", message: "Powtórzony identyfikator obszaru rehabilitacji" });
   if (new Set(settings.rehabSites.map((site) => site.name.toLocaleLowerCase())).size !== settings.rehabSites.length)
     ctx.addIssue({ code: "custom", message: "Nazwy obszarów rehabilitacji muszą być unikalne" });
-  if (new Set(settings.rehabSites.map((site) => site.position)).size !== settings.rehabSites.length)
+  const editableSites = settings.rehabSites.filter((site) => !site.archived);
+  if (new Set(editableSites.map((site) => site.position)).size !== editableSites.length)
     ctx.addIssue({ code: "custom", message: "Pozycje obszarów rehabilitacji muszą być unikalne" });
   if (new Set(settings.painContexts.map((context) => context.value)).size !== settings.painContexts.length)
     ctx.addIssue({ code: "custom", message: "Powtórzony kontekst pomiaru" });
@@ -58,8 +60,10 @@ export const profileSettingsSchema = z.object({
     ctx.addIssue({ code: "custom", message: "Pozycje kontekstów muszą być unikalne" });
   if (new Set(settings.painContexts.map((context) => context.label.toLocaleLowerCase())).size !== settings.painContexts.length)
     ctx.addIssue({ code: "custom", message: "Nazwy kontekstów muszą być unikalne" });
-  if (!settings.rehabSites.some((site) => site.active))
+  if (!editableSites.length || !editableSites.some((site) => site.active))
     ctx.addIssue({ code: "custom", message: "Wybierz co najmniej jeden obszar do monitorowania" });
+  if (settings.rehabSites.some((site) => site.archived && site.active))
+    ctx.addIssue({ code: "custom", message: "Usunięty obszar nie może być aktywny" });
   if (new Set(settings.injuries.map((injury) => injury.id)).size !== settings.injuries.length)
     ctx.addIssue({ code: "custom", message: "Powtórzony identyfikator kontuzji" });
   for (const injury of settings.injuries) {

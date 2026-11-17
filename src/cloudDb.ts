@@ -97,7 +97,7 @@ async function profiles(): Promise<Profile[]> {
   const profileIds = rows.map((row) => row.id as string);
   const [sites, contexts, injuries, injurySites] = profileIds.length ? await Promise.all([
     allPages(async (start, end) => await client().from("profile_rehab_sites")
-      .select("profile_id,id,name,body_area,position,active").in("profile_id", profileIds)
+      .select("profile_id,id,name,body_area,position,active,archived").in("profile_id", profileIds)
       .order("profile_id").order("position").range(start, end)),
     allPages(async (start, end) => await client().from("profile_pain_contexts")
       .select("profile_id,value,label,position,active").in("profile_id", profileIds)
@@ -118,7 +118,7 @@ async function profiles(): Promise<Profile[]> {
     checkInTime: String(row.check_in_time).slice(0, 5),
     rehabSites: (sitesByProfile.get(row.id) ?? []).map((site) => ({
       id: site.id, name: site.name, bodyArea: site.body_area,
-      position: site.position, active: site.active,
+      position: site.position, active: site.active, archived: site.archived,
     })),
     painContexts: (contextsByProfile.get(row.id) ?? []).map((context) => ({
       value: context.value, label: context.label, position: context.position, active: context.active,
@@ -237,8 +237,8 @@ export async function saveCloudSessionSets(session: Session, changed: SetLog[]) 
 export const cloudDb = {
   profiles: { toArray: profiles, update: async (id: string, changes: ProfileSettings) => {
     const settings = profileSettingsSchema.parse(changes);
-    const result = await client().rpc("save_profile_settings_with_injuries", { payload: { profileId: id, ...settings } });
-    if (result.error?.code === "PGRST202") throw Error("Brak migracji kontuzji i analiz. Zastosuj 20261117_injuries_analytics.sql w Supabase SQL Editor.");
+    const result = await client().rpc("save_profile_settings_with_archiving", { payload: { profileId: id, ...settings } });
+    if (result.error?.code === "PGRST202") throw Error("Brak migracji archiwizacji obszarów. Zastosuj 20261118_rehab_site_archiving.sql w Supabase SQL Editor.");
     checked(result);
   } },
   templates: { where: (_field: string) => ({ equals: (id: string) => ({ toArray: () => templates(id) }) }),

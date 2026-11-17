@@ -7,7 +7,7 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 | Task | Start here | Related modules |
 |---|---|---|
 | Compose app, select views, wire persistence/actions | `src/main.tsx` | `src/app/`, `src/views/` |
-| Account profile settings and tracked body areas | `src/views/ProfileSettingsView.tsx` | `src/domain.ts`, `src/cloudDb.ts`, `supabase/migrations/20261116_account_profile_settings.sql` |
+| Account profile settings and tracked body areas | `src/views/ProfileSettingsView.tsx` | `src/domain.ts`, `src/db.ts`, `src/cloudDb.ts`, `supabase/migrations/20261116_account_profile_settings.sql`, `supabase/migrations/20261118_rehab_site_archiving.sql` |
 | Injury episodes and report associations | `src/views/ProfileSettingsView.tsx`, `src/views/DiaryView.tsx` | `src/domain.ts`, `src/cloudDb.ts`, `supabase/migrations/20261117_injuries_analytics.sql` |
 | User progress analytics | `src/views/AnalyticsView.tsx`, `src/analytics.ts` | `src/main.tsx`, `src/views/TodayView.tsx`, `src/PainCharts.tsx` |
 | Profile-scoped loading and storage adapters | `src/app/useProfileData.ts`, `src/app/repository.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/profileRepository.ts` |
@@ -20,8 +20,8 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 
 ## Data Ownership and Flow
 
-- Every authenticated Supabase user owns exactly one `public.profiles` row. The profile ID is resolved from the database at startup; there is no account-profile picker or add/rename dialog. Profile configuration is changed in the Settings view and persisted with `save_profile_settings`.
-- The profile stores its display name, weekly workout target, default diary check-in time, ordered monitored rehabilitation areas, and diary context choices. `profile_rehab_sites` and `profile_pain_contexts` are profile-owned rows protected by RLS. Deactivating an area hides it from future diary forms but preserves its identity and historic pain values.
+- Every authenticated Supabase user owns exactly one `public.profiles` row. The profile ID is resolved from the database at startup; there is no account-profile picker or add/rename dialog. Profile configuration is changed in the Settings view and persisted atomically through `save_profile_settings_with_archiving`.
+- The profile stores its display name, weekly workout target, default diary check-in time, ordered monitored rehabilitation areas, and diary context choices. `profile_rehab_sites` and `profile_pain_contexts` are profile-owned rows protected by RLS. Deactivating an area hides it from future diary forms; archiving removes it from settings and new forms while preserving its identity, injury links, and historic pain values. Dexie v6 defaults old areas to unarchived; Supabase migration `20261118_rehab_site_archiving.sql` adds the cloud column and atomic settings RPC.
 - Diary `PainLog.values` is a list of `{ siteId, value }`, so user-defined tracked areas work throughout the form, history, calendar, workout comparison, charts, and backup. The domain schema and Dexie migration accept the former fixed three-number format and convert it to the standard IDs. Backups are version 5; versions 1–4 remain readable.
 - Profile settings contain injury episodes with status, dates, side, notes, and links to monitored areas. Diary logs can reference multiple injuries through `injuryIds`; Supabase stores these links in `pain_log_injuries` while local Dexie and backup v5 keep the same app-level shape. Earlier backups remain importable with no injury associations.
 - Progress summaries are derived from the profile's already loaded diary logs, sessions, contexts, and area definitions. `src/analytics.ts` owns period calculations; `AnalyticsView.tsx` supplies filters and detailed report/statistic views; `TodayView.tsx` shows a compact seven-day summary. These are descriptive measurements, not medical interpretation.
@@ -35,7 +35,7 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 
 ## Supabase Setup
 
-For an existing project, apply the migration sequence in `supabase/README.md`, ending with `20261117_injuries_analytics.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
+For an existing project, apply the migration sequence in `supabase/README.md`, ending with `20261118_rehab_site_archiving.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
 
 ## Checks
 

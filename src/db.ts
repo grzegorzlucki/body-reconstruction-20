@@ -83,6 +83,16 @@ class RehabDB extends Dexie {
         log.injuryIds ??= [];
       });
     });
+    this.version(6).stores({
+      logs: "id,[profileId+date],profileId",
+      sessions: "id,[profileId+started],profileId",
+      templates: "id,[profileId+name],profileId",
+      profiles: "id,name",
+    }).upgrade(async (tx) => {
+      await tx.table("profiles").toCollection().modify((profile: Profile) => {
+        profile.rehabSites.forEach((site) => { site.archived ??= false; });
+      });
+    });
     this.on("populate", (tx) => {
       tx.table("profiles").add({ id: legacyProfileId, ...defaultProfileSettings("Profil główny") });
       tx.table("templates").add(starter(legacyProfileId));

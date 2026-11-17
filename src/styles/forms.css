@@ -300,12 +300,18 @@ a:hover { color: var(--color-accent); }
 .profile-settings section { display: grid; gap: 16px; }
 .profile-settings h2 { margin: 0; }
 .profile-config-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto auto; align-items: end; gap: 14px; border: 1px solid var(--color-border); border-radius: var(--radius-card); padding: 16px; min-width: 0; }
+.rehab-site-config { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.site-config-controls { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.site-config-controls .profile-config-toggle { margin-right: auto; }
 .profile-config-toggle { display: flex; align-items: center; gap: 8px; min-height: 44px; }
 .profile-config-toggle input { width: 20px; min-height: 20px; }
+.remove-site { min-height: 44px; padding: 10px 14px; color: var(--color-danger-text); background: transparent; border: 1px solid var(--color-danger-border); border-radius: var(--radius-button); }
+.remove-site:hover:not(:disabled) { background: var(--color-surface-warning); }
+.remove-site:disabled { opacity: .55; cursor: not-allowed; }
 .pain-history-values { display: flex; gap: 8px; flex-wrap: wrap; margin-block: 12px; }
 .pain-history-values span { display: grid; min-width: 52px; gap: 2px; padding: 8px; border-radius: var(--radius-control); background: var(--color-surface-soft); text-align: center; }
 .pain-chart svg { width: 100%; height: auto; overflow: visible; }
-@media (max-width: 640px) { .profile-config-row { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 640px) { .profile-config-row, .rehab-site-config { grid-template-columns: minmax(0, 1fr); } .site-config-controls { grid-column: auto; } }
 
 .profile-order-actions { display: flex; gap: 8px; }
 .profile-order-actions button { min-width: 44px; padding-inline: 10px; }

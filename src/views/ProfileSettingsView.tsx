@@ -39,6 +39,16 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
     setSettings((current) => ({ ...current, rehabSites: current.rehabSites.map((site) =>
       site.id === id ? { ...site, ...patch } : site) }));
   }
+  function archiveSite(id: string) {
+    setSettings((current) => {
+      const visible = current.rehabSites.filter((site) => !site.archived && site.id !== id)
+        .sort((a, b) => a.position - b.position);
+      const positions = new Map(visible.map((site, position) => [site.id, position]));
+      return { ...current, rehabSites: current.rehabSites.map((site) => site.id === id
+        ? { ...site, archived: true, active: false }
+        : positions.has(site.id) ? { ...site, position: positions.get(site.id)! } : site) };
+    });
+  }
   function updateContext(value: string, patch: Partial<ProfileSettings["painContexts"][number]>) {
     setSettings((current) => ({ ...current, painContexts: current.painContexts.map((context) =>
       context.value === value ? { ...context, ...patch } : context) }));
@@ -49,12 +59,14 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
   }
   function moveSite(id: string, delta: number) {
     setSettings((current) => {
-      const index = current.rehabSites.findIndex((site) => site.id === id);
+      const visible = current.rehabSites.filter((site) => !site.archived).sort((a, b) => a.position - b.position);
+      const index = visible.findIndex((site) => site.id === id);
       const next = index + delta;
-      if (index < 0 || next < 0 || next >= current.rehabSites.length) return current;
-      const rehabSites = [...current.rehabSites];
-      [rehabSites[index], rehabSites[next]] = [rehabSites[next], rehabSites[index]];
-      return { ...current, rehabSites: rehabSites.map((site, position) => ({ ...site, position })) };
+      if (index < 0 || next < 0 || next >= visible.length) return current;
+      [visible[index], visible[next]] = [visible[next], visible[index]];
+      const positions = new Map(visible.map((site, position) => [site.id, position]));
+      return { ...current, rehabSites: current.rehabSites.map((site) => positions.has(site.id)
+        ? { ...site, position: positions.get(site.id)! } : site) };
     });
   }
   function moveContext(value: string, delta: number) {
@@ -151,10 +163,10 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
           </label>}
           <fieldset className="injury-sites"><legend>Powiązane ścięgna i obszary</legend>
             {settings.rehabSites.map((site) => <label className="profile-config-toggle" key={site.id}>
-              <input type="checkbox" checked={injury.siteIds.includes(site.id)}
+              <input type="checkbox" checked={injury.siteIds.includes(site.id)} disabled={site.archived}
                 onChange={(event) => updateInjury(injury.id, { siteIds: event.target.checked
                   ? [...injury.siteIds, site.id] : injury.siteIds.filter((id) => id !== site.id) })} />
-              {site.name} · {site.bodyArea}
+              {site.name} · {site.bodyArea}{site.archived ? " (usunięty — historia zachowana)" : ""}
             </label>)}
           </fieldset>
           <label className="injury-note">Notatka (opcjonalnie)
@@ -173,11 +185,11 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
         <div className="section-title"><h2>Monitorowane ścięgna i obszary</h2>
           <button type="button" className="secondary" disabled={busy || settings.rehabSites.length >= 50} onClick={() => setSettings((current) => ({
             ...current,
-            rehabSites: [...current.rehabSites, { id: crypto.randomUUID(), name: "", bodyArea: "", position: current.rehabSites.length, active: true }],
+            rehabSites: [...current.rehabSites, { id: crypto.randomUUID(), name: "", bodyArea: "", position: current.rehabSites.filter((site) => !site.archived).length, active: true, archived: false }],
           }))}>Dodaj obszar</button>
         </div>
-        <p>Wyłączony obszar znika z nowych pomiarów, a wcześniejsze wartości pozostają w historii.</p>
-        {settings.rehabSites.map((site) => <fieldset className="profile-config-row" key={site.id}>
+        <p>Wyłączony obszar znika z nowych pomiarów. Usunięcie chowa go z ustawień, ale zachowuje wcześniejsze pomiary i nazwy w historii.</p>
+        {settings.rehabSites.filter((site) => !site.archived).sort((a, b) => a.position - b.position).map((site, index, visibleSites) => <fieldset className="profile-config-row rehab-site-config" key={site.id}>
           <legend className="visually-hidden">Obszar rehabilitacji</legend>
           <label>Nazwa obszaru
             <input required maxLength={100} value={site.name}
@@ -187,13 +199,18 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
             <input required maxLength={100} value={site.bodyArea}
               onChange={(event) => updateSite(site.id, { bodyArea: event.target.value })} />
           </label>
-          <label className="profile-config-toggle"><input type="checkbox" checked={site.active}
-            onChange={(event) => updateSite(site.id, { active: event.target.checked })} /> Monitoruj</label>
-          <div className="profile-order-actions">
-            <button type="button" className="secondary" disabled={busy || site.position === 0} aria-label="Move area up" onClick={() => moveSite(site.id, -1)}>Up</button>
-            <button type="button" className="secondary" disabled={busy || site.position === settings.rehabSites.length - 1} aria-label="Move area down" onClick={() => moveSite(site.id, 1)}>Down</button>
+          <div className="site-config-controls">
+            <label className="profile-config-toggle"><input type="checkbox" checked={site.active}
+              onChange={(event) => updateSite(site.id, { active: event.target.checked })} /> Monitoruj</label>
+            <div className="profile-order-actions">
+              <button type="button" className="secondary" disabled={busy || index === 0} aria-label="Przenieś obszar wyżej" onClick={() => moveSite(site.id, -1)}>Góra</button>
+              <button type="button" className="secondary" disabled={busy || index === visibleSites.length - 1} aria-label="Przenieś obszar niżej" onClick={() => moveSite(site.id, 1)}>Dół</button>
+            </div>
+            <button type="button" className="remove-site" disabled={busy || (site.active && settings.rehabSites.filter((item) => !item.archived && item.active).length <= 1)}
+              aria-label={`Usuń obszar ${site.name || "bez nazwy"}`} onClick={() => archiveSite(site.id)}>Usuń obszar</button>
           </div>
         </fieldset>)}
+        {!settings.rehabSites.some((site) => !site.archived) && <p>Dodaj nowy obszar, aby monitorować pomiary.</p>}
       </section>
 
       <section>
