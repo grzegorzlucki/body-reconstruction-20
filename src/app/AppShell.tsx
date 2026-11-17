@@ -29,11 +29,15 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, onSig
         <span className="brand-icon" aria-hidden="true">↗</span> Body<br /><span>Reconstruction</span>
       </button>
       <p className="eyebrow">TWÓJ PROCES. TWOJE TEMPO.</p>
-      <AppNavigation current={tab} onNavigate={onNavigate} />
-      <div className="sidebar-updater"><AppUpdater disabled={busy} hasUnsavedChanges={dirty} confirmAction={confirmAction} onApprovedReload={onApprovedReload} /></div>
+      <div className="sidebar-navigation">
+        <AppNavigation current={tab} onNavigate={onNavigate} />
+      </div>
+      <div className="sidebar-footer">
+        <div className="sidebar-updater"><AppUpdater disabled={busy} hasUnsavedChanges={dirty} confirmAction={confirmAction} onApprovedReload={onApprovedReload} /></div>
       <div className="local">
         <i aria-hidden="true" /> {cloud ? "Dane na koncie" : "Dane na tym urządzeniu"}
         <small>{cloud ? ready && !error ? "Dane załadowane" : loadingData ? "Łączenie z Supabase" : "Błąd połączenia" : "Tryb lokalny"}</small>
+      </div>
       </div>
     </aside>
     <main id="main-content" tabIndex={-1}>

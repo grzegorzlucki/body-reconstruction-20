@@ -7,8 +7,8 @@
 aside {
   position: sticky;
   top: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   grid-column: 1;
   grid-row: 1 / span 2;
   height: 100dvh;
@@ -63,11 +63,17 @@ nav {
   max-height: calc(100dvh - 285px);
   overflow-y: auto;
 }
-aside > .desktop-nav {
+.sidebar-navigation {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+.sidebar-navigation .desktop-nav {
   flex: 1 1 auto;
   min-height: 0;
   max-height: none;
-  margin: clamp(24px, 5vh, 48px) 0 12px;
+  margin: clamp(20px, 4vh, 36px) 0 12px;
   overscroll-behavior: contain;
 }
 nav button {
@@ -90,7 +96,7 @@ nav button.selected {
 .local {
   position: static;
   flex: 0 0 auto;
-  margin-top: 14px;
+  margin-top: 0;
   padding-top: 12px;
   font-size: 12px;
   color: var(--color-text-secondary);
@@ -112,8 +118,9 @@ nav button.selected {
 .sidebar-updater {
   position: static;
   flex: 0 0 auto;
-  margin-top: 12px;
+  margin-top: 0;
 }
+.sidebar-footer { display: grid; gap: 8px; min-width: 0; }
 .sidebar-updater button { width: 100%; font-size: 13px; }
 .sidebar-updater [role="alert"],
 .sidebar-updater [role="status"] { font-size: 11px; }

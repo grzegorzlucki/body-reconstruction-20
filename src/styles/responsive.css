@@ -47,6 +47,8 @@
 }
 @media (max-width: 700px) {
   .sidebar-updater { display: none; }
+  .sidebar-footer { display: none; }
+  .sidebar-navigation { display: block; overflow: visible; }
   .mobile-updater { display: block; margin: 12px 0; }
   input,
   select,
