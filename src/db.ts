@@ -19,6 +19,7 @@ const defaultProfileSettings = (name: string): ProfileSettings => ({
   checkInTime: "08:00",
   rehabSites: structuredClone(defaultRehabSites),
   painContexts: structuredClone(defaultPainContexts),
+  injuries: [],
 });
 
 const starter = (profileId: string): WorkoutTemplate => ({
@@ -69,6 +70,19 @@ class RehabDB extends Dexie {
         }
       });
     });
+    this.version(5).stores({
+      logs: "id,[profileId+date],profileId",
+      sessions: "id,[profileId+started],profileId",
+      templates: "id,[profileId+name],profileId",
+      profiles: "id,name",
+    }).upgrade(async (tx) => {
+      await tx.table("profiles").toCollection().modify((profile: Profile) => {
+        profile.injuries ??= [];
+      });
+      await tx.table("logs").toCollection().modify((log: PainLog) => {
+        log.injuryIds ??= [];
+      });
+    });
     this.on("populate", (tx) => {
       tx.table("profiles").add({ id: legacyProfileId, ...defaultProfileSettings("Profil główny") });
       tx.table("templates").add(starter(legacyProfileId));
@@ -94,7 +108,7 @@ export async function exportBackup(profileId = legacyProfileId) {
     const profile = await db.profiles.get(profileId);
     if (!profile) throw Error("Nie znaleziono profilu.");
     return {
-      version: 4 as const,
+      version: 5 as const,
       profileName: profile.name,
       profileSettings: {
         name: profile.name,
@@ -102,6 +116,7 @@ export async function exportBackup(profileId = legacyProfileId) {
         checkInTime: profile.checkInTime,
         rehabSites: profile.rehabSites,
         painContexts: profile.painContexts,
+        injuries: profile.injuries,
       },
       exportedAt: new Date().toISOString(),
       templates: (await db.templates.where("profileId").equals(profileId).toArray()).map(({ profileId: _id, ...row }) => row),

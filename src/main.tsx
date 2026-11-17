@@ -32,6 +32,7 @@ import { useConfirmation } from "./app/useConfirmation";
 import { ProfileSettingsView } from "./views/ProfileSettingsView";
 const Calendar = React.lazy(() => import("./Calendar").then((module) => ({ default: module.Calendar })));
 const HistoryView = React.lazy(() => import("./views/HistoryView").then((module) => ({ default: module.HistoryView })));
+const AnalyticsView = React.lazy(() => import("./views/AnalyticsView").then((module) => ({ default: module.AnalyticsView })));
 const DataView = React.lazy(() => import("./views/DataView").then((module) => ({ default: module.DataView })));
 import {
   validateHistoricalSession,
@@ -218,10 +219,11 @@ function App({ accountId }: { accountId?: string }) {
     ? (Date.now() - new Date(last.ended!).getTime()) / 36e5
     : Infinity;
   const selectedProfile = profiles.find((profile) => profile.id === profileId);
-  const { date, time, pain, context, note, editDate, savePain, removePain,
-    setTime, setPain, setContext, setNote } = usePainLogActions({
+  const { date, time, pain, context, note, injuryIds, editDate, savePain, removePain,
+    setTime, setPain, setContext, setNote, setInjuryIds } = usePainLogActions({
     database: db, logs, profileId, cloud: !!supabase,
     sites: selectedProfile?.rehabSites ?? [], contexts: selectedProfile?.painContexts ?? [],
+    injuries: selectedProfile?.injuries ?? [],
     defaultTime: selectedProfile?.checkInTime ?? "08:00", action, setNotice, confirmAction,
   });
   const { begin, savePreparedWorkout, updateTraining, finishExercise,
@@ -252,16 +254,19 @@ function App({ accountId }: { accountId?: string }) {
               confirmAction={confirmAction} />
             {tab === "Dzisiaj" && (
               <TodayView active={active} sessions={sessions} today={today} hours={hours}
+                logs={logs} injuries={selectedProfile?.injuries ?? []}
                 sites={selectedProfile?.rehabSites ?? []} weeklyGoal={selectedProfile?.weeklyGoal ?? 2}
                 onWorkout={() => { navigate("Trening"); }}
-                onDiary={async () => { if (await navigate("Dziennik")) editDate(day(new Date())); }} />
+                onDiary={async () => { if (await navigate("Dziennik")) editDate(day(new Date())); }}
+                onAnalytics={() => { void navigate("Analizy"); }} />
             )}
             {tab === "Dziennik" && (
-              <DiaryView date={date} time={time} pain={pain} context={context} note={note}
+              <DiaryView date={date} time={time} pain={pain} context={context} note={note} injuryIds={injuryIds}
                 sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []}
+                injuries={selectedProfile?.injuries ?? []}
                 logs={logs} busy={busy} onDate={editDate} onTime={setTime}
                 onPain={(siteId, value) => setPain((values) => ({ ...values, [siteId]: value }))}
-                onContext={setContext} onNote={setNote}
+                onContext={setContext} onInjuries={setInjuryIds} onNote={setNote}
                 onSave={(event) => void savePain(event)} onRemove={() => void removePain()} />
             )}
             {tab === "Trening" && (
@@ -303,9 +308,16 @@ function App({ accountId }: { accountId?: string }) {
             )}
             {tab === "Historia" && (
               <React.Suspense fallback={<p role="status">Ładowanie historii…</p>}>
-              <HistoryView logs={logs} sessions={sessions} sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []} historyExercise={historyExercise}
+              <HistoryView logs={logs} sessions={sessions} sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []} injuries={selectedProfile?.injuries ?? []} historyExercise={historyExercise}
                 setHistoryExercise={setHistoryExercise} openSessionEditor={openSessionEditor}
                 editDate={editDate} navigate={navigate} />
+              </React.Suspense>
+            )}
+            {tab === "Analizy" && (
+              <React.Suspense fallback={<p role="status">Ładowanie analiz…</p>}>
+                <AnalyticsView logs={logs} sessions={sessions}
+                  sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []}
+                  injuries={selectedProfile?.injuries ?? []} />
               </React.Suspense>
             )}
             {tab === "Plany" && (

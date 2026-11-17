@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import { backupSchema, defaultTemplate, exerciseById, sessionPlan, type PainLog, type Session, type SetLog, type WorkoutTemplate } from "./domain";
+import { backupSchema, defaultTemplate, exerciseById, sessionPlan, type Injury, type PainLog, type Session, type SetLog, type WorkoutTemplate } from "./domain";
 import type { Profile } from "./db";
 import { profileSettingsSchema, type ProfileSettings } from "./domain";
 
@@ -95,15 +95,22 @@ async function profiles(): Promise<Profile[]> {
     if (!rows.length) throw Error("Nie udało się utworzyć profilu głównego.");
   }
   const profileIds = rows.map((row) => row.id as string);
-  const [sites, contexts] = profileIds.length ? await Promise.all([
+  const [sites, contexts, injuries, injurySites] = profileIds.length ? await Promise.all([
     allPages(async (start, end) => await client().from("profile_rehab_sites")
       .select("profile_id,id,name,body_area,position,active").in("profile_id", profileIds)
       .order("profile_id").order("position").range(start, end)),
     allPages(async (start, end) => await client().from("profile_pain_contexts")
       .select("profile_id,value,label,position,active").in("profile_id", profileIds)
       .order("profile_id").order("position").range(start, end)),
-  ]) : [[], []];
-  const sitesByProfile = groupRows(sites, "profile_id"), contextsByProfile = groupRows(contexts, "profile_id");
+    allPages(async (start, end) => await client().from("profile_injuries")
+      .select("profile_id,id,name,side,started_on,resolved_on,status,note,position")
+      .in("profile_id", profileIds).order("profile_id").order("position").range(start, end)),
+    allPages(async (start, end) => await client().from("injury_rehab_sites")
+      .select("profile_id,injury_id,site_id").in("profile_id", profileIds)
+      .order("profile_id").order("site_id").range(start, end)),
+  ]) : [[], [], [], []];
+  const sitesByProfile = groupRows(sites, "profile_id"), contextsByProfile = groupRows(contexts, "profile_id"),
+    injuriesByProfile = groupRows(injuries, "profile_id"), injurySitesById = groupRows(injurySites, "injury_id");
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
@@ -116,6 +123,14 @@ async function profiles(): Promise<Profile[]> {
     painContexts: (contextsByProfile.get(row.id) ?? []).map((context) => ({
       value: context.value, label: context.label, position: context.position, active: context.active,
     })),
+    injuries: (injuriesByProfile.get(row.id) ?? []).map((injury) => ({
+      id: injury.id, name: injury.name, side: injury.side, startedOn: injury.started_on,
+      ...(injury.resolved_on ? { resolvedOn: injury.resolved_on } : {}),
+      status: injury.status, note: injury.note,
+      position: injury.position,
+      siteIds: (injurySitesById.get(injury.id) ?? []).filter((link) => link.profile_id === row.id)
+        .map((link) => link.site_id),
+    } satisfies Injury)),
   }));
 }
 async function templates(profileId: string): Promise<WorkoutTemplate[]> {
@@ -148,16 +163,23 @@ async function logs(profileId: string): Promise<PainLog[]> {
   const rows = await allPages(async (start, end) => await client().from("pain_logs")
     .select("*").eq("profile_id", profileId).order("log_date").order("id").range(start, end));
   if (!rows.length) return [];
-  const values = await rowsForIds("pain_log_values", "pain_log_id", rows.map((r) => r.id), ["pain_log_id", "site_id"]);
+  const [values, injuryLinks] = await Promise.all([
+    rowsForIds("pain_log_values", "pain_log_id", rows.map((r) => r.id), ["pain_log_id", "site_id"]),
+    rowsForIds("pain_log_injuries", "pain_log_id", rows.map((r) => r.id), ["pain_log_id", "injury_id"]),
+  ]);
   const byLog = groupRows(values, "pain_log_id");
+  const injuriesByLog = groupRows(injuryLinks, "pain_log_id");
   return rows.map((row) => ({ id: row.id, profileId, date: row.log_date,
     at: cloudTimestamp(row.measured_at), context: row.context, note: row.note,
+    injuryIds: (injuriesByLog.get(row.id) ?? []).map((link) => link.injury_id),
     values: (byLog.get(row.id) ?? []).map((value) => ({ siteId: value.site_id, value: value.value })),
   }));
 }
 async function putLog(log: PainLog) {
   if (!log.profileId) throw Error("Brak profilu pomiaru.");
-  checked(await client().rpc("save_pain_log", { payload: log }));
+  const result = await client().rpc("save_pain_log_with_injuries", { payload: log });
+  if (result.error?.code === "PGRST202") throw Error("Brak migracji kontuzji i analiz. Zastosuj 20261117_injuries_analytics.sql w Supabase SQL Editor.");
+  checked(result);
 }
 
 async function sessions(profileId: string): Promise<Session[]> {
@@ -215,7 +237,9 @@ export async function saveCloudSessionSets(session: Session, changed: SetLog[]) 
 export const cloudDb = {
   profiles: { toArray: profiles, update: async (id: string, changes: ProfileSettings) => {
     const settings = profileSettingsSchema.parse(changes);
-    checked(await client().rpc("save_profile_settings", { payload: { profileId: id, ...settings } }));
+    const result = await client().rpc("save_profile_settings_with_injuries", { payload: { profileId: id, ...settings } });
+    if (result.error?.code === "PGRST202") throw Error("Brak migracji kontuzji i analiz. Zastosuj 20261117_injuries_analytics.sql w Supabase SQL Editor.");
+    checked(result);
   } },
   templates: { where: (_field: string) => ({ equals: (id: string) => ({ toArray: () => templates(id) }) }),
     put: putTemplate, delete: async (id: string) => { checked(await client().from("workout_templates").delete().eq("id", id)); } },
@@ -230,9 +254,10 @@ export async function exportCloudBackup(profileId: string) {
   const profile = (await profiles()).find((row) => row.id === profileId);
   if (!profile) throw Error("Nie znaleziono profilu.");
   const strip = <T extends { profileId?: string }>(rows: T[]) => rows.map(({ profileId: _id, ...row }) => row);
-  return { version: 4 as const, profileName: profile.name,
+  return { version: 5 as const, profileName: profile.name,
     profileSettings: { name: profile.name, weeklyGoal: profile.weeklyGoal,
-      checkInTime: profile.checkInTime, rehabSites: profile.rehabSites, painContexts: profile.painContexts },
+      checkInTime: profile.checkInTime, rehabSites: profile.rehabSites, painContexts: profile.painContexts,
+      injuries: profile.injuries },
     exportedAt: new Date().toISOString(),
     templates: strip(await templates(profileId)), logs: strip(await logs(profileId)), sessions: strip(await sessions(profileId)) };
 }
@@ -254,5 +279,7 @@ export async function importCloudBackup(raw: unknown, profileId: string) {
       })),
     })),
   };
-  checked(await client().rpc("replace_profile_data", { target_profile: profileId, payload }));
+  const result = await client().rpc("replace_profile_data_with_injuries", { target_profile: profileId, payload });
+  if (result.error?.code === "PGRST202") throw Error("Brak migracji kontuzji i analiz. Zastosuj 20261117_injuries_analytics.sql w Supabase SQL Editor.");
+  checked(result);
 }

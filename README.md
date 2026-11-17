@@ -27,6 +27,8 @@ Otwórz http://localhost:4173. Na komputerze, na którym przygotowano projekt, m
 
 ## GitHub Pages
 
+Zakładka **Analizy** porównuje zapisane raporty bólu i ukończone treningi; na stronie „Dzisiaj” dostępne jest ich krótkie podsumowanie. Kontuzje i ich powiązane obszary konfiguruje się w ustawieniach profilu, a raport można przypisać do jednej lub kilku kontuzji.
+
 Widoki aplikacji używają adresów `?view=...`, dzięki czemu przycisk Wstecz działa między zakładkami. Na telefonie cztery główne widoki są w dolnej nawigacji, a Historia, Kalendarz, Zegar HSR i Dane znajdują się pod **Więcej**. Strona startowa oraz widoki otwarte z parametrem `view` działają także po ponownym uruchomieniu aplikacji offline, jeżeli nowa wersja została wcześniej pobrana.
 
 ### Supabase
@@ -61,7 +63,7 @@ W zakladce Trening ukladasz plany nalezace do profilu konta. W Supabase plany sa
 - Kalendarz: zielona kropka oznacza ukończony trening, pomarańczowa pomiar, obwódka trening w trakcie. Wybrany dzień otwiera formularze.
 - Dziennik: codzienna ocena z datą, godziną i kontekstem. Wpisy można poprawić lub usunąć.
 - Zegar HSR: konfigurowalne przygotowanie, trzy fazy (Ruch 1 / Zatrzymanie / Ruch 2), powtórzenia, serie i przerwy. Wartość 0 pomija fazę; co najmniej jedna faza musi trwać dłużej niż 0 s. Piknięcia co sekundę lub cisza, pauza i wznowienie, automatyczny zapis ustawień na urządzeniu. Odliczanie trwa po zmianie zakładki aplikacji, ale nie jest wznawiane po zamknięciu lub przeładowaniu strony. Przygotowanie przed pierwszą serią i w końcówce każdej przerwy, bez przerwy po ostatniej. Zegar nie zapisuje wykonanych serii w dzienniku treningu. Podczas używania pozostaw aplikację na ekranie; dźwięk i podtrzymywanie ekranu na rzeczywistym iPhonie wymagają próby na urządzeniu. Ogólne ustawienia zegara nie wchodzą do eksportu; ustawienia przypisane do ćwiczeń w planach i sesjach są eksportowane.
-- Profile: each Supabase account has one database-backed profile with configurable name, weekly workout goal, check-in time, rehabilitation areas, and diary contexts. Local profiles remain available only as migration sources. JSON backup v4 includes these settings and dynamic diary values; imports accept v1-v3 too.
+- Profile: each Supabase account has one database-backed profile with configurable name, weekly workout goal, check-in time, rehabilitation areas, diary contexts, and injury episodes. Reports can be linked to injuries. The Analyses tab summarizes diary and training data; the home screen shows a compact seven-day summary. JSON backup v5 includes profile settings, injuries, and report links; imports accept earlier versions too.
 
 Aplikacja pokazuje zapisane pomiary bólu bez automatycznych sugestii progresji lub regresji. Decyzję o obciążeniu podejmuje użytkownik.
 

@@ -1,10 +1,10 @@
-export const tabs = ["Dzisiaj", "Trening", "Dziennik", "Kalendarz", "Historia", "Plany", "Zegar HSR", "Dane", "Ustawienia"] as const;
+export const tabs = ["Dzisiaj", "Trening", "Dziennik", "Kalendarz", "Historia", "Analizy", "Plany", "Zegar HSR", "Dane", "Ustawienia"] as const;
 export type MainTab = typeof tabs[number];
 export type Tab = MainTab | "Edytor treningu";
 
 const slugs: Record<Tab, string> = {
   Dzisiaj: "today", Trening: "workout", Dziennik: "diary",
-  Kalendarz: "calendar", Historia: "history", Plany: "plans",
+  Kalendarz: "calendar", Historia: "history", Analizy: "analytics", Plany: "plans",
   "Zegar HSR": "timer", Dane: "data", Ustawienia: "settings", "Edytor treningu": "session-editor",
 };
 

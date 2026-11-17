@@ -1,12 +1,13 @@
 import type { FormEvent } from "react";
-import { day, type PainContext, type PainLog, type RehabSite } from "../domain";
+import { day, type Injury, type PainContext, type PainLog, type RehabSite } from "../domain";
 
-export function DiaryView({ date, time, pain, context, note, logs, sites, contexts, busy,
-  onDate, onTime, onPain, onContext, onNote, onSave, onRemove }: {
+export function DiaryView({ date, time, pain, context, note, logs, sites, contexts, injuries, injuryIds, busy,
+  onDate, onTime, onPain, onContext, onInjuries, onNote, onSave, onRemove }: {
   date: string; time: string; pain: Record<string, string>; context: string; note: string;
-  logs: PainLog[]; sites: RehabSite[]; contexts: PainContext[]; busy: boolean;
+  logs: PainLog[]; sites: RehabSite[]; contexts: PainContext[]; injuries: Injury[]; injuryIds: string[]; busy: boolean;
   onDate: (date: string) => void; onTime: (time: string) => void;
   onPain: (siteId: string, value: string) => void; onContext: (context: string) => void;
+  onInjuries: (ids: string[]) => void;
   onNote: (note: string) => void; onSave: (event: FormEvent) => void; onRemove: () => void;
 }) {
   const activeSites = sites.filter((site) => site.active);
@@ -26,6 +27,18 @@ export function DiaryView({ date, time, pain, context, note, logs, sites, contex
           {Array.from({ length: 11 }, (_, value) => <option key={value} value={value}>{value} / 10</option>)}
         </select>
       </label>)}
+      <fieldset className="diary-injuries">
+        <legend>Powiąż raport z kontuzją (opcjonalnie)</legend>
+        {!injuries.length && <p>Dodaj kontuzję w Ustawieniach profilu, aby móc przypisywać do niej raporty.</p>}
+        {injuries.filter((injury) => injury.status !== "resolved" || injuryIds.includes(injury.id)).map((injury) =>
+          <label key={injury.id} className="profile-config-toggle">
+            <input type="checkbox" checked={injuryIds.includes(injury.id)}
+              onChange={(event) => onInjuries(event.target.checked
+                ? [...injuryIds, injury.id] : injuryIds.filter((id) => id !== injury.id))} />
+            {injury.name} · {injury.siteIds.map((id) => sites.find((site) => site.id === id)?.name ?? id).join(", ")}
+            {injury.status === "resolved" ? " (zakończona)" : injury.status === "paused" ? " (wstrzymana)" : ""}
+          </label>)}
+      </fieldset>
       <label>Kontekst pomiaru
         <select value={context} onChange={(event) => onContext(event.target.value)}>
           <option value="">Nie podano</option>

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { Profile } from "../db";
-import { profileSettingsSchema, type ProfileSettings } from "../domain";
+import { day, profileSettingsSchema, type ProfileSettings } from "../domain";
 
 export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
   profile: Profile;
@@ -40,6 +40,10 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
   function updateContext(value: string, patch: Partial<ProfileSettings["painContexts"][number]>) {
     setSettings((current) => ({ ...current, painContexts: current.painContexts.map((context) =>
       context.value === value ? { ...context, ...patch } : context) }));
+  }
+  function updateInjury(id: string, patch: Partial<ProfileSettings["injuries"][number]>) {
+    setSettings((current) => ({ ...current, injuries: current.injuries.map((injury) =>
+      injury.id === id ? { ...injury, ...patch } : injury) }));
   }
   function moveSite(id: string, delta: number) {
     setSettings((current) => {
@@ -100,6 +104,67 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
               onChange={(event) => setSettings((current) => ({ ...current, checkInTime: event.target.value }))} />
           </label>
         </div>
+      </section>
+
+      <section>
+        <div className="section-title"><h2>Kontuzje i leczone obszary</h2>
+          <button type="button" className="secondary" disabled={busy || settings.injuries.length >= 50} onClick={() => setSettings((current) => ({
+            ...current,
+            injuries: [...current.injuries, {
+              id: crypto.randomUUID(), name: "", side: "unspecified", startedOn: day(new Date()),
+              status: "active", siteIds: [], note: "", position: current.injuries.length,
+            }],
+          }))}>Dodaj kontuzję</button>
+        </div>
+        <p>Kontuzje łączą raporty z konkretnymi ścięgnami lub obszarami. Zakończone wpisy pozostają w historii.</p>
+        {!settings.injuries.length && <p>Nie dodano jeszcze kontuzji.</p>}
+        {settings.injuries.map((injury) => <fieldset className="profile-config-row injury-config" key={injury.id}>
+          <legend className="visually-hidden">Kontuzja</legend>
+          <label>Nazwa lub rozpoznanie
+            <input required maxLength={100} value={injury.name}
+              onChange={(event) => updateInjury(injury.id, { name: event.target.value })} />
+          </label>
+          <label>Strona ciała
+            <select value={injury.side} onChange={(event) => updateInjury(injury.id, { side: event.target.value as typeof injury.side })}>
+              <option value="unspecified">Nie określono</option><option value="left">Lewa</option>
+              <option value="right">Prawa</option><option value="both">Obie</option>
+            </select>
+          </label>
+          <label>Od kiedy
+            <input required type="date" value={injury.startedOn}
+              onChange={(event) => updateInjury(injury.id, { startedOn: event.target.value })} />
+          </label>
+          <label>Status
+            <select value={injury.status} onChange={(event) => updateInjury(injury.id, {
+              status: event.target.value as typeof injury.status,
+              resolvedOn: event.target.value === "resolved" ? (injury.resolvedOn ?? day(new Date())) : undefined,
+            })}>
+              <option value="active">Aktywna</option><option value="paused">Wstrzymana</option>
+              <option value="resolved">Zakończona</option>
+            </select>
+          </label>
+          {injury.status === "resolved" && <label>Data zakończenia
+            <input type="date" min={injury.startedOn} value={injury.resolvedOn ?? ""}
+              onChange={(event) => updateInjury(injury.id, { resolvedOn: event.target.value || undefined })} />
+          </label>}
+          <fieldset className="injury-sites"><legend>Powiązane ścięgna i obszary</legend>
+            {settings.rehabSites.map((site) => <label className="profile-config-toggle" key={site.id}>
+              <input type="checkbox" checked={injury.siteIds.includes(site.id)}
+                onChange={(event) => updateInjury(injury.id, { siteIds: event.target.checked
+                  ? [...injury.siteIds, site.id] : injury.siteIds.filter((id) => id !== site.id) })} />
+              {site.name} · {site.bodyArea}
+            </label>)}
+          </fieldset>
+          <label className="injury-note">Notatka (opcjonalnie)
+            <textarea maxLength={1000} value={injury.note}
+              onChange={(event) => updateInjury(injury.id, { note: event.target.value })} />
+          </label>
+          <button type="button" className="text-button" disabled={busy} onClick={() => {
+            if (profile.injuries.some((saved) => saved.id === injury.id))
+              updateInjury(injury.id, { status: "resolved", resolvedOn: day(new Date()) });
+            else setSettings((current) => ({ ...current, injuries: current.injuries.filter((item) => item.id !== injury.id) }));
+          }}>{profile.injuries.some((saved) => saved.id === injury.id) ? "Zakończ kontuzję" : "Usuń szkic"}</button>
+        </fieldset>)}
       </section>
 
       <section>

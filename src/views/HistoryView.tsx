@@ -1,12 +1,13 @@
 import { PainCharts } from "../PainCharts";
-import { exerciseCatalog, sessionExercises, sessionPlan, completedGroups, visibleSets, type PainLog, type Session, type RehabSite, type PainContext } from "../domain";
+import { exerciseCatalog, sessionExercises, sessionPlan, completedGroups, visibleSets, type Injury, type PainLog, type Session, type RehabSite, type PainContext } from "../domain";
 
 const fmt = (date: string) => new Date(date).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 
-export function HistoryView({ logs, sessions, sites, contexts, historyExercise, setHistoryExercise, openSessionEditor, editDate, navigate }: {
+export function HistoryView({ logs, sessions, sites, contexts, injuries, historyExercise, setHistoryExercise, openSessionEditor, editDate, navigate }: {
   logs: PainLog[];
   sites: RehabSite[];
   contexts: PainContext[];
+  injuries: Injury[];
   sessions: Session[];
   historyExercise: string;
   setHistoryExercise: (value: string) => void;
@@ -46,7 +47,8 @@ export function HistoryView({ logs, sessions, sites, contexts, historyExercise, 
                         {l.values.map((value) => `${sites.find((site) => site.id === value.siteId)?.name ?? value.siteId}: ${value.value}`).join(" / ")}
                       </p>
                       <small>
-                        {(contexts.find((item) => item.value === l.context)?.label ?? l.context) || "Bez kontekstu"} {l.note && `· ${l.note}`}
+                        {(contexts.find((item) => item.value === l.context)?.label ?? l.context) || "Bez kontekstu"}
+                        {l.injuryIds?.length ? ` · ${l.injuryIds.map((id) => injuries.find((injury) => injury.id === id)?.name ?? id).join(", ")}` : ""} {l.note && `· ${l.note}`}
                       </small>
                     </div>
                     <button

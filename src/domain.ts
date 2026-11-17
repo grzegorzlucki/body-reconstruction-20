@@ -26,12 +26,25 @@ export const painContextSchema = z.object({
   active: z.boolean(),
 });
 export type PainContext = z.infer<typeof painContextSchema>;
+export const injurySchema = z.object({
+  id: z.string().min(1).max(80),
+  name: z.string().trim().min(1).max(100),
+  side: z.enum(["left", "right", "both", "unspecified"]),
+  startedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  resolvedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  status: z.enum(["active", "paused", "resolved"]),
+  siteIds: z.array(z.string().min(1).max(80)).min(1, "Przypisz co najmniej jeden monitorowany obszar do każdej kontuzji.").max(50),
+  note: z.string().max(1000),
+  position: z.number().int().min(0).max(100),
+});
+export type Injury = z.infer<typeof injurySchema>;
 export const profileSettingsSchema = z.object({
   name: z.string().trim().min(1).max(80),
   weeklyGoal: z.number().int().min(0).max(14),
   checkInTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),
   rehabSites: z.array(rehabSiteSchema).min(1).max(50),
   painContexts: z.array(painContextSchema).max(30),
+  injuries: z.array(injurySchema).max(50).default([]),
 }).superRefine((settings, ctx) => {
   if (new Set(settings.rehabSites.map((site) => site.id)).size !== settings.rehabSites.length)
     ctx.addIssue({ code: "custom", message: "Powtórzony identyfikator obszaru rehabilitacji" });
@@ -47,6 +60,16 @@ export const profileSettingsSchema = z.object({
     ctx.addIssue({ code: "custom", message: "Nazwy kontekstów muszą być unikalne" });
   if (!settings.rehabSites.some((site) => site.active))
     ctx.addIssue({ code: "custom", message: "Wybierz co najmniej jeden obszar do monitorowania" });
+  if (new Set(settings.injuries.map((injury) => injury.id)).size !== settings.injuries.length)
+    ctx.addIssue({ code: "custom", message: "Powtórzony identyfikator kontuzji" });
+  for (const injury of settings.injuries) {
+    if (new Set(injury.siteIds).size !== injury.siteIds.length)
+      ctx.addIssue({ code: "custom", message: "Obszar nie może być przypisany do kontuzji więcej niż raz" });
+    if (injury.siteIds.some((id) => !settings.rehabSites.some((site) => site.id === id)))
+      ctx.addIssue({ code: "custom", message: "Kontuzja wskazuje nieznany obszar monitorowania" });
+    if (injury.resolvedOn && injury.resolvedOn < injury.startedOn)
+      ctx.addIssue({ code: "custom", message: "Data zakończenia nie może poprzedzać daty rozpoczęcia" });
+  }
 });
 export type ProfileSettings = z.infer<typeof profileSettingsSchema>;
 import {
@@ -137,11 +160,14 @@ export const logSchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   at: z.string().datetime(),
   values: painValuesSchema,
+  injuryIds: z.array(z.string().min(1).max(80)).max(50).optional(),
   context: z.string().max(100),
   note: z.string().max(2000),
 }).superRefine((log, ctx) => {
   if (new Set(log.values.map((item) => item.siteId)).size !== log.values.length)
     ctx.addIssue({ code: "custom", message: "Duplicate tracked area in diary entry" });
+  if (new Set(log.injuryIds ?? []).size !== (log.injuryIds ?? []).length)
+    ctx.addIssue({ code: "custom", message: "Duplicate injury link in diary entry" });
 });
 export type PainLog = z.infer<typeof logSchema>;
 export const setSchema = z.object({
@@ -262,7 +288,7 @@ export function validateHistoricalSession(
 }
 export const backupSchema = z
   .object({
-    version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+    version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
     profileName: z.string().trim().min(1).max(80).optional(),
     profileSettings: profileSettingsSchema.optional(),
     templates: z.array(templateSchema).max(200).optional(),
@@ -271,7 +297,7 @@ export const backupSchema = z
     sessions: z.array(sessionSchema).max(10000),
   })
   .superRefine((data, ctx) => {
-    if (data.version === 4 && !data.profileSettings)
+    if ((data.version === 4 || data.version === 5) && !data.profileSettings)
       ctx.addIssue({ code: "custom", message: "Missing profile settings" });
     if (data.version !== 1 && !data.templates)
       ctx.addIssue({ code: "custom", message: "Brak planów w kopii" });

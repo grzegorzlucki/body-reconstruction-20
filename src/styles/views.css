@@ -70,6 +70,30 @@
   gap: 6px;
   align-items: center;
 }
+.analytics-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: end;
+}
+.analytics-summary > article strong { font-size: clamp(28px, 4vw, 42px); }
+.analytics-table { width: 100%; border-collapse: collapse; min-width: 540px; }
+.analytics-table th, .analytics-table td { padding: 12px; border-bottom: 1px solid var(--color-border); text-align: left; }
+.analytics-table th[scope="row"] small, .analytics-table td small { display: block; margin-top: 4px; color: var(--color-text-subtle); font-weight: 400; }
+.table-scroll { max-width: 100%; overflow-x: auto; }
+.analytics-contexts { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+.analytics-contexts li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--color-border); }
+.analytics-report-list { display: grid; gap: 8px; }
+.home-analytics-summary { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 24px 0; padding: 18px 22px; border: 1px solid var(--color-border); border-radius: 14px; background: var(--color-surface); }
+.home-analytics-summary > div { display: grid; gap: 4px; }
+.home-analytics-summary .eyebrow { margin: 0; }
+.home-analytics-summary span { color: var(--color-text-subtle); font-size: var(--font-size-meta); }
+.diary-injuries, .injury-sites { display: grid; gap: 10px; border: 1px solid var(--color-border-control); border-radius: 12px; padding: 14px; }
+.diary-injuries legend, .injury-sites legend { padding: 0 6px; font-weight: 650; }
+.injury-sites { grid-column: 1 / -1; }
+.injury-sites label { margin: 0; }
+.injury-note { grid-column: 1 / -1; }
+.injury-config { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 @media (max-width: 700px) {
   .calendar-day {
     min-height: 56px;
@@ -84,6 +108,9 @@
     align-items: flex-start;
     flex-wrap: wrap;
   }
+  .analytics-filters, .injury-config { grid-template-columns: minmax(0, 1fr); }
+  .home-analytics-summary { align-items: stretch; flex-direction: column; }
+  .analytics-table { min-width: 500px; }
 }
 
 .plan-fieldset {
