@@ -7,6 +7,8 @@
 aside {
   position: sticky;
   top: 0;
+  display: flex;
+  flex-direction: column;
   grid-column: 1;
   grid-row: 1 / span 2;
   height: 100dvh;
@@ -61,6 +63,13 @@ nav {
   max-height: calc(100dvh - 285px);
   overflow-y: auto;
 }
+aside > .desktop-nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  margin: clamp(24px, 5vh, 48px) 0 12px;
+  overscroll-behavior: contain;
+}
 nav button {
   text-align: left;
   background: transparent;
@@ -79,8 +88,10 @@ nav button.selected {
   font-weight: 700;
 }
 .local {
-  position: absolute;
-  bottom: 28px;
+  position: static;
+  flex: 0 0 auto;
+  margin-top: 14px;
+  padding-top: 12px;
   font-size: 12px;
   color: var(--color-text-secondary);
 }
@@ -99,10 +110,9 @@ nav button.selected {
   color: var(--color-text-subtle);
 }
 .sidebar-updater {
-  position: absolute;
-  left: 26px;
-  right: 26px;
-  bottom: 92px;
+  position: static;
+  flex: 0 0 auto;
+  margin-top: 12px;
 }
 .sidebar-updater button { width: 100%; font-size: 13px; }
 .sidebar-updater [role="alert"],
