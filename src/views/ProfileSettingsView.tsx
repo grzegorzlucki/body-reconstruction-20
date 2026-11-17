@@ -14,6 +14,7 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
     checkInTime: profile.checkInTime,
     rehabSites: structuredClone(profile.rehabSites),
     painContexts: structuredClone(profile.painContexts),
+    injuries: structuredClone(profile.injuries ?? []),
   }));
   const [initial, setInitial] = useState(() => JSON.stringify(settings));
   const [validationError, setValidationError] = useState("");
@@ -27,6 +28,7 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
       checkInTime: profile.checkInTime,
       rehabSites: structuredClone(profile.rehabSites),
       painContexts: structuredClone(profile.painContexts),
+      injuries: structuredClone(profile.injuries ?? []),
     };
     setSettings(next);
     setInitial(JSON.stringify(next));
