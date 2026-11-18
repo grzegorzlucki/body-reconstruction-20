@@ -26,7 +26,7 @@
   background: var(--color-surface-hero-pill);
   padding: 7px 10px;
   border-radius: 20px;
-  color: var(--color-accent-soft-light);
+  color: var(--color-text);
 }
 .light {
   background: var(--color-accent-light);
@@ -64,7 +64,7 @@
 }
 .hero-art > span {
   font-size: 76px;
-  color: var(--color-accent-soft-light);
+  color: var(--color-text);
   font-weight: 400;
   z-index: 1;
 }

@@ -42,7 +42,7 @@ aside {
   top: 0;
   background: var(--color-accent-fill);
   border-radius: 10px;
-  color: var(--color-accent-soft-light);
+  color: var(--color-accent-ink);
   font-size: 28px;
   padding: 5px 10px;
 }
