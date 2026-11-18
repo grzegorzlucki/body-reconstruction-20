@@ -1,5 +1,19 @@
 /* Focused when a newly started workout replaces the preparation form. */
 #workout-heading { scroll-margin-top: 16px; }
+.today-heading { margin-block: 24px; }
+.today-heading h1 { margin-block: 0 8px; }
+.today-heading p { margin: 0; }
+.hero.today-hero { min-height: 0; padding: 24px; }
+.today-hero .workout-progress { font-weight: 600; color: var(--color-text); }
+.today-diary-action { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.today-diary-action h2 { font-size: 22px; margin: 0; }
+.today-diary-action p { margin: 8px 0 0; }
+@media (max-width: 700px) {
+  .hero.today-hero { min-height: 0; padding: 20px; }
+  .today-hero h2 { margin-block: 12px 8px; }
+  .today-diary-action { align-items: stretch; flex-direction: column; }
+  .today-diary-action button, .today-hero .light { width: 100%; min-width: 0; }
+}
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
