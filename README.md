@@ -61,6 +61,8 @@ Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu pocz
 
 ## Korzystanie
 
+Zegar HSR obsługuje tryb **Ćwiczenie jednostronne — obie strony po kolei**: wykonuje wszystkie powtórzenia na pierwszą stronę, odlicza przygotowanie do zmiany strony, wykonuje powtórzenia na drugą stronę i dopiero rozpoczyna przerwę. Można wybrać pierwszą stronę i czas przygotowania. Jedna seria obejmuje obie strony. Opcja jest dostępna także w zegarze ćwiczenia w planie. Dla zapisu ustawień samodzielnego zegara w Supabase uruchom `supabase/migrations/20261120_unilateral_timer.sql`.
+
 W zakładce **Trening → Moje plany** można uruchomić zapisany plan albo wczytać go do dostosowania. Podczas edycji planu przy każdym ćwiczeniu można opcjonalnie włączyć zegar HSR i ustawić czasy ruchu, przygotowania, przerwy oraz dźwięk. Zegar używa liczby serii i powtórzeń zapisanych przy ćwiczeniu. Podczas wykonywania dostępne są pauza, wznowienie, wcześniejsze zakończenie i przerwanie ćwiczenia; niewykonane serie nie są automatycznie oznaczane jako wykonane. Konfiguracja zegara jest kopiowana do sesji, więc późniejsza edycja planu nie zmienia historii. Po ponownym otwarciu strony ukończone i przerwane ćwiczenia zachowują status, a rozpoczęte odliczanie trzeba uruchomić ponownie.
 
 Przed opublikowaniem tej funkcji uruchom w Supabase SQL Editor `supabase/migrations/20261115_exercise_timers.sql` po wcześniejszych migracjach. Bez tej migracji zapisy planów i sesji z zegarem nie będą działać.

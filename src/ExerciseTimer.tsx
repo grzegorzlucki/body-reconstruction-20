@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { formatTimer, timerPosition, totalSeconds } from "./intervalTimer";
+import { formatTimer, timerPosition, timerSideLabel, totalSeconds } from "./intervalTimer";
 import { timerForEntry, type PlanEntry, type Session } from "./domain";
 
 type FinishStatus = NonNullable<Session["exerciseProgress"]>[number]["status"];
@@ -80,6 +80,7 @@ export function ExerciseTimer({ entry, savedStatus, disabled, onFinish, confirmA
     <h3>Zegar HSR</h3>
     {message && <p role="alert">{message}</p>}
     <strong>{position?.phase}</strong>
+    {settings.unilateral && <p className="timer-side" role="status">{timerSideLabel(position?.side)}</p>}
     <div className="timer-clock" role="timer" aria-label="Pozostały czas fazy">{formatTimer(position?.remaining ?? 0)}</div>
     <p>Seria {position?.set}/{settings.sets} · Powtórzenie {position?.rep}/{settings.reps}</p>
     <progress aria-label="Postęp ćwiczenia" max={total} value={elapsed} />

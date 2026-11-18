@@ -147,3 +147,9 @@
 .timer-display.timer-prepare {
   border-top-color: var(--color-timer-rest);
 }
+.unilateral-timer-fields { border: 1px solid var(--color-border-control); border-radius: var(--radius-card); padding: 16px; margin-block: 16px; min-width: 0; }
+.unilateral-timer-fields legend { padding-inline: 6px; font-weight: 600; }
+.timer-settings > .unilateral-timer-fields { grid-column: 1 / -1; }
+.unilateral-timer-fields .profile-config-toggle { margin-bottom: 8px; }
+.unilateral-timer-fields p { margin-bottom: 0; }
+.timer-side { font-size: 20px !important; font-weight: 700; color: var(--color-text); }

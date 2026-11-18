@@ -7,6 +7,9 @@ export type TimerSettings = {
   sets: number;
   rest: number;
   sound: boolean;
+  unilateral?: boolean;
+  sidePrepare?: number;
+  firstSide?: "L" | "P";
 };
 export const timerDefaults: TimerSettings = {
   prepare: 5,
@@ -17,6 +20,9 @@ export const timerDefaults: TimerSettings = {
   sets: 3,
   rest: 90,
   sound: true,
+  unilateral: false,
+  sidePrepare: 5,
+  firstSide: "L",
 };
 export const timerFields = [
   ["prepare", "Przygotowanie przed pierwszą serią", 0, 3600],
@@ -34,17 +40,23 @@ export function validTimer(s: TimerSettings) {
         Number.isInteger(s[key]) && s[key] >= min && s[key] <= max,
     ) &&
     s.move1 + s.hold + s.move2 > 0 &&
-    typeof s.sound === "boolean"
+    typeof s.sound === "boolean" &&
+    (s.unilateral === undefined || typeof s.unilateral === "boolean") &&
+    (s.sidePrepare === undefined || (Number.isInteger(s.sidePrepare) && s.sidePrepare >= 0 && s.sidePrepare <= 3600)) &&
+    (s.firstSide === undefined || s.firstSide === "L" || s.firstSide === "P")
   );
 }
 export function totalSeconds(s: TimerSettings) {
   return (
     s.prepare +
-    (s.move1 + s.hold + s.move2) * s.reps * s.sets +
+    ((s.move1 + s.hold + s.move2) * s.reps * (s.unilateral ? 2 : 1) +
+      (s.unilateral ? (s.sidePrepare ?? 5) : 0)) * s.sets +
     s.rest * (s.sets - 1)
   );
 }
 export function timerPosition(s: TimerSettings, elapsed: number) {
+  const firstSide = s.unilateral ? (s.firstSide ?? "L") : "both";
+  const secondSide = firstSide === "L" ? "P" : "L";
   const total = totalSeconds(s);
   let t = Math.max(0, elapsed);
   if (t >= total)
@@ -54,6 +66,7 @@ export function timerPosition(s: TimerSettings, elapsed: number) {
       remaining: 0,
       set: s.sets,
       rep: s.reps,
+      side: "both",
     };
   if (t < s.prepare)
     return {
@@ -62,13 +75,17 @@ export function timerPosition(s: TimerSettings, elapsed: number) {
       remaining: Math.ceil(s.prepare - t),
       set: 1,
       rep: 1,
+      side: firstSide,
     };
   t -= s.prepare;
   const repTime = s.move1 + s.hold + s.move2;
-  const blockTime = repTime * s.reps + s.rest;
+  const sideTime = repTime * s.reps;
+  const sidePrepare = s.unilateral ? (s.sidePrepare ?? 5) : 0;
+  const workTime = sideTime * (s.unilateral ? 2 : 1) + sidePrepare;
+  const blockTime = workTime + s.rest;
   const set = Math.floor(t / blockTime) + 1;
   t %= blockTime;
-  if (t >= repTime * s.reps) {
+  if (t >= workTime) {
     const restRemaining = blockTime - t;
     const preparation = Math.min(5, s.rest);
     if (preparation > 0 && restRemaining <= preparation)
@@ -78,6 +95,7 @@ export function timerPosition(s: TimerSettings, elapsed: number) {
         remaining: Math.ceil(restRemaining),
         set: set + 1,
         rep: 1,
+        side: firstSide,
       };
     return {
       phase: "Przerwa",
@@ -85,8 +103,13 @@ export function timerPosition(s: TimerSettings, elapsed: number) {
       remaining: Math.ceil(restRemaining - preparation),
       set,
       rep: s.reps,
+      side: "both",
     };
   }
+  if (s.unilateral && t >= sideTime && t < sideTime + sidePrepare)
+    return { phase: "Przygotowanie — zmiana strony", kind: "prepare", remaining: Math.ceil(sideTime + sidePrepare - t), set, rep: 1, side: secondSide };
+  const side = s.unilateral && t >= sideTime + sidePrepare ? secondSide : firstSide;
+  if (s.unilateral && t >= sideTime + sidePrepare) t -= sideTime + sidePrepare;
   const rep = Math.floor(t / repTime) + 1;
   t %= repTime;
   for (const [phase, kind, duration] of [
@@ -95,10 +118,13 @@ export function timerPosition(s: TimerSettings, elapsed: number) {
     ["Ruch 2", "move2", s.move2],
   ] as const) {
     if (t < duration)
-      return { phase, kind, remaining: Math.ceil(duration - t), set, rep };
+      return { phase, kind, remaining: Math.ceil(duration - t), set, rep, side };
     t -= duration;
   }
   throw new Error("Nieprawidłowy czas zegara");
+}
+export function timerSideLabel(side: string | undefined) {
+  return side === "L" ? "Lewa strona" : side === "P" ? "Prawa strona" : "Obie strony wykonane";
 }
 export function formatTimer(seconds: number) {
   return `${Math.floor(seconds / 60)

@@ -16,7 +16,8 @@ The browser uses only the Supabase project URL and publishable key. Run SQL in t
 8. Apply `supabase/migrations/20261117_injuries_analytics.sql`. It adds profile-owned injury episodes and atomic links from diary reports to injuries.
 9. Apply `supabase/migrations/20261118_rehab_site_archiving.sql`. It adds soft removal for tracked rehabilitation areas. Removed areas disappear from settings and new reports while historical measurements and injury associations remain available.
 10. Apply `supabase/migrations/20261119_account_profile.sql`. It adds private avatars, focused account identity writes and a service-role-only account data cleanup function. Review any existing policies on an existing avatars bucket; permissive custom policies can broaden access.
-11. Verify profile settings, area removal, injury creation, linked diary reports, analytics, workout writes, and backup import using a test account.
+11. Apply `supabase/migrations/20261120_unilateral_timer.sql` for standalone HSR unilateral settings. Per-exercise settings use existing timer_config JSONB and require no additional table.
+12. Verify profile settings, area removal, injury creation, linked diary reports, analytics, workout writes, and backup import using a test account.
 
 The GitHub Pages workflow does not run SQL migrations. Do not run the old broad `20261115_profile_access.sql` after the canonical RLS migration.
 

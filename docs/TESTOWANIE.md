@@ -1,5 +1,7 @@
 # Weryfikacja aplikacji
 
+Tryb jednostronny HSR: `src/intervalTimer.test.ts` sprawdza kolejność stron, dodatkowe przygotowanie, przerwę po obu stronach, czas całkowity, granice faz i zgodność dawnych ustawień. `src/plans.test.ts` sprawdza kopię ustawień do sesji. `e2e/timer.spec.ts` obejmuje konfigurację, zapis lokalny, zmianę strony, pauzę, przygotowanie przed następną serią i zakończenie.
+
 Profil konta: `e2e/account-profile.spec.ts` sprawdza zapis nazwy w lokalnej bazie, ochronę niezapisanych zmian, powrót między sekcjami oraz rozwijane menu konta i Escape na komputerze. Testy nawigacji i aktualizacji uwzględniają Profil po lewej stronie dolnego paska i mobilne odświeżanie w sekcji Aplikacja. Testy lokalne nie potwierdzają działania Supabase Auth/Storage ani serwerowego usuwania konta. Po zastosowaniu `20261119_account_profile.sql` i wdrożeniu funkcji przetestuj zmianę e-maila/hasła, zdjęcie i odmowę dostępu drugiego konta oraz usunięcie jednorazowego konta z syntetycznymi danymi.
 
 Tryb konta Supabase wymaga osobnego sprawdzenia po zastosowaniu migracji SQL: rejestracja i potwierdzenie e-mail, reset hasła, utworzenie profilu, zapis treningu oraz pomiaru, import lokalnego profilu i odmowa dostępu do danych innego konta. Lokalne testy Vitest nie uruchamiają prawdziwej bazy Supabase ani polityk RLS.

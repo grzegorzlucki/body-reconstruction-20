@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
+import { UnilateralTimerFields } from "./UnilateralTimerFields";
 import {
   formatTimer,
   timerDefaults,
   timerFields,
   timerPosition,
+  timerSideLabel,
   totalSeconds,
   validTimer,
   type TimerSettings,
@@ -14,7 +16,7 @@ function loadSettings(profileId: string): TimerSettings {
   try {
     const saved = JSON.parse(localStorage.getItem(storageKey(profileId)) ||
       (profileId === "default-profile" ? localStorage.getItem("body-reconstruction-hsr-timer-v1") : null) || "null");
-    if (saved && validTimer(saved)) return saved;
+    if (saved && validTimer(saved)) return { ...timerDefaults, ...saved };
   } catch {
     /* Use defaults if storage is unavailable or corrupt. */
   }
@@ -37,13 +39,15 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
     offset = useRef(0),
     lastBeat = useRef(-1);
   const audio = useRef<AudioContext | null>(null);
+  const saveQueue = useRef<Promise<void>>(Promise.resolve());
   const total = totalSeconds(settings);
   const position = validTimer(settings)
     ? timerPosition(settings, elapsed)
     : null;
   const active = status === "running" || status === "paused";
   useEffect(() => {
-    if (!supabase || !visible) return;
+    if (!supabase || !visible || active) return;
+    if (settingsDirty) { setRemoteReady(true); return; }
     let cancelled = false;
     void supabase.from("timer_settings").select("*").eq("profile_id", profileId).maybeSingle()
       .then(({ data, error }) => {
@@ -56,30 +60,38 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
         if (data) {
           const next = { prepare: data.prepare_seconds, move1: data.move1_seconds,
             hold: data.hold_seconds, move2: data.move2_seconds, reps: data.reps,
-            sets: data.sets, rest: data.rest_seconds, sound: data.sound };
+            sets: data.sets, rest: data.rest_seconds, sound: data.sound,
+            unilateral: data.unilateral ?? false, sidePrepare: data.side_prepare_seconds ?? 5,
+            firstSide: data.first_side ?? "L" };
           if (validTimer(next)) setSettings(next);
         }
         setRemoteReady(true);
       });
     return () => { cancelled = true; };
-  }, [profileId, visible]);
+  }, [profileId, visible, active, settingsDirty]);
   useEffect(() => {
     if (!validTimer(settings) || !remoteReady || !settingsDirty || !visible) return;
     if (supabase) {
-      void supabase.from("timer_settings").upsert({ profile_id: profileId,
+      let cancelled = false;
+      saveQueue.current = saveQueue.current.catch(() => {}).then(async () => {
+        if (cancelled) return;
+        const { error } = await supabase!.from("timer_settings").upsert({ profile_id: profileId,
         prepare_seconds: settings.prepare, move1_seconds: settings.move1,
         hold_seconds: settings.hold, move2_seconds: settings.move2,
         reps: settings.reps, sets: settings.sets, rest_seconds: settings.rest,
-        sound: settings.sound }).then(({ error }) => {
+        sound: settings.sound, unilateral: settings.unilateral ?? false,
+        side_prepare_seconds: settings.sidePrepare ?? 5, first_side: settings.firstSide ?? "L" });
+          if (cancelled) return;
           if (error) setMessage(error.message.includes("row-level security")
-            ? "Nie można zapisać ustawień zegara na koncie. Uruchom migrację 20261115_timer_settings_rls_repair.sql w Supabase."
-            : `Nie można zapisać ustawień zegara: ${error.message}`);
+            ? "Nie można zapisać ustawień zegara na koncie. Sprawdź polityki dostępu do timer_settings w Supabase."
+            : `Nie można zapisać ustawień zegara. Sprawdź migrację 20261120_unilateral_timer.sql: ${error.message}`);
           else { setSettingsDirty(false); setMessage(""); }
-        });
-      return;
+        }).catch(() => { if (!cancelled) setMessage("Nie można zapisać ustawień zegara. Sprawdź połączenie."); });
+      return () => { cancelled = true; };
     }
     try {
       localStorage.setItem(storageKey(profileId), JSON.stringify(settings));
+      setSettingsDirty(false);
     } catch {
       setMessage("Nie można zapamiętać ustawień w tej przeglądarce.");
     }
@@ -223,6 +235,7 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
                 : "W TOKU"}
           </p>
           <h2 aria-live="polite">{position?.phase}</h2>
+          {settings.unilateral && <p className="timer-side" role="status">{timerSideLabel(position?.side)}</p>}
           <div
             className="timer-clock"
             role="timer"
@@ -339,6 +352,9 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
                 </label>
               ))}
             </div>
+            <UnilateralTimerFields settings={settings} onChange={(patch) => {
+              setSettingsDirty(true); setSettings((current) => ({ ...current, ...patch }));
+            }} />
             <label>
               Dźwięk
               <select
@@ -368,6 +384,7 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
             <div>
               <span>Łączny czas</span>
               <strong>{validTimer(settings) ? formatTimer(total) : "—"}</strong>
+              {settings.unilateral && <p>{settings.reps} powtórzeń na każdą stronę · {settings.sets} serii obu stron</p>}
             </div>
             <button disabled={!validTimer(settings)} type="submit">
               Start
@@ -377,8 +394,10 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
       )}
       <p className="footnote">
         Przygotowanie jest przed pierwszą serią oraz w ostatnich sekundach
-        każdej przerwy. Czas przygotowania wlicza się w przerwę, więc nie wydłuża
-        treningu. Zegar działa także w innych zakładkach tej aplikacji. Podczas
+        każdej przerwy. Końcowe przygotowanie do serii wlicza się w przerwę.
+        W trybie jednostronnym osobne przygotowanie do zmiany strony wydłuża
+        serię, a odpoczynek jest dopiero po obu stronach.
+        Zegar działa także w innych zakładkach tej aplikacji. Podczas
         ćwiczenia pozostaw aplikację na ekranie — blokada telefonu lub przejście
         do innej aplikacji może zakłócić dźwięk. Ustawienia zapisują się
         automatycznie na tym urządzeniu.

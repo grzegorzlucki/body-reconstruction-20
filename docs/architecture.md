@@ -17,6 +17,7 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 | Diary values and context options | `src/app/usePainLogActions.ts`, `src/views/DiaryView.tsx`, `src/PainSlider.tsx` | `src/domain.ts`, `src/Calendar.tsx`, `src/PainCharts.tsx`, `src/views/HistoryView.tsx` |
 | Navigation and URL view state | `src/app/navigation.ts`, `src/app/useNavigation.ts` | `src/app/AppNavigation.tsx`, `src/main.tsx` |
 | Workouts, plans, exercise timers | `src/Plans.tsx`, `src/views/WorkoutView.tsx`, `src/SessionFields.tsx` | `src/app/useWorkoutActions.ts`, `src/domain.ts`, `src/intervalTimer.ts`, `src/views/HistoryView.tsx`, `src/PainSlider.tsx` |
+| Unilateral HSR timing and side changes | `src/intervalTimer.ts`, `src/UnilateralTimerFields.tsx` | `src/HsrTimer.tsx`, `src/ExerciseTimer.tsx`, `src/Plans.tsx`, `supabase/migrations/20261120_unilateral_timer.sql` |
 | Data validation, schemas, backup compatibility | `src/domain.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/useBackupActions.ts` |
 | Database schema and migrations | `supabase/bootstrap.sql` | `supabase/migrations/`, `docs/supabase/README.md` |
 | Global styles and responsive behavior | `src/style.css` | `src/styles/tokens.css`, `shell.css`, `forms.css`, `responsive.css`, `views.css`, `timer.css` |
@@ -38,6 +39,8 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 
 ## UI and Responsive Structure
 
+Timers optionally run a full repetition block on the first side, a separate configurable side-change preparation, and a full block on the second side before resting. A set always covers both sides; first side is configurable. Existing timers without the optional fields remain bilateral. New exercise timers default to the catalog exercise's unilateral flag. Per-exercise options remain in timer_config JSONB/session snapshots and backups; standalone settings use local storage or new timer_settings columns. Cloud reads do not replace running/dirty settings and writes are serialized. Preparation at the end of a rest retains the previous five-second behavior.
+
 Desktop account access is a header disclosure (`AccountMenu.tsx`). Mobile navigation starts with Profile on the left, then Today, Workout, Diary and More; Plans is in More and Workout/My plans. `AccountProfileView.tsx` renders identity, security, preferences and application settings. Rehabilitation and Data reuse existing views with shared section navigation. Canonical URLs use `?view=profile&section=...`; old settings/data URLs remain readable. Mobile refresh lives in the Application section; desktop retains its sidebar updater.
 
 Auth User is passed separately from the database Profile. `accountRepository.ts` saves name/time zone/avatar through the focused `update_account_identity` RPC, without resubmitting rehabilitation arrays. Cloud profile reads tolerate missing avatar values before migration. Avatars use private Storage paths; signed URLs are transient and images fall back to initials. Local identity uses Dexie partial updates; no authentication fields or avatar files enter backup v5. Date conventions for existing diary/history forms remain unchanged.
@@ -52,7 +55,7 @@ UI refinement scope and acceptance results are tracked in `docs/UI_REFINEMENT_PL
 
 The explicit refresh action in `src/AppUpdater.tsx` activates the waiting worker and clears only caches with this app's `rehab-<base>-` prefix before reloading. IndexedDB and authentication storage are preserved. `vite.config.ts` generates the production service worker and manifest, including the light theme colors.
 
-For an existing project, apply the migration sequence in `docs/supabase/README.md`, ending with `20261119_account_profile.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
+For an existing project, apply the migration sequence in `docs/supabase/README.md`, ending with `20261120_unilateral_timer.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
 
 ## Checks
 

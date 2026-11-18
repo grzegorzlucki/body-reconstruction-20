@@ -8,9 +8,21 @@ import {
   updatePairedSet,
   templateSchema,
   exerciseCatalog,
+  timerForEntry,
 } from "./domain";
 
 describe("Szablony i sesje", () => {
+  it("preserves unilateral timer settings in the session snapshot", () => {
+    const template = templateSchema.parse({ id: "one-sided", name: "Jednostronny", entries: [{
+      exerciseId: "clamshell", sets: 2, reps: 5, weight: 0, note: "",
+      timer: { prepare: 5, move1: 1, hold: 0, move2: 1, rest: 90, sound: false,
+        unilateral: true, sidePrepare: 7, firstSide: "P" },
+    }] });
+    const session = newSession({}, undefined, template);
+    template.entries[0].timer!.sidePrepare = 1;
+    expect(sessionSchema.parse(session).plan![0].timer).toMatchObject({ unilateral: true, sidePrepare: 7, firstSide: "P" });
+    expect(timerForEntry(session.plan![0])).toMatchObject({ unilateral: true, reps: 5, sets: 2, sidePrepare: 7 });
+  });
   it("ma pełną bazę i unikalne identyfikatory", () => {
     expect(exerciseCatalog).toHaveLength(30);
     expect(new Set(exerciseCatalog.map((e) => e.id)).size).toBe(30);

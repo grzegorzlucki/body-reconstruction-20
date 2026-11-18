@@ -10,6 +10,7 @@ import {
 import { SetNumberInput } from "./SetNumberInput";
 import { timerDefaults } from "./intervalTimer";
 import { ErrorNotice } from "./app/errorMessages";
+import { UnilateralTimerFields } from "./UnilateralTimerFields";
 
 export function ExercisePicker({
   excluded,
@@ -220,7 +221,8 @@ export function PlanComposer({
                 onChange={(event) => update(index, event.target.checked
                   ? { timer: { prepare: timerDefaults.prepare, move1: timerDefaults.move1,
                       hold: timerDefaults.hold, move2: timerDefaults.move2,
-                      rest: timerDefaults.rest, sound: timerDefaults.sound },
+                      rest: timerDefaults.rest, sound: timerDefaults.sound,
+                      unilateral: exercise.unilateral, sidePrepare: 5, firstSide: "L" },
                       reps: Math.max(1, entry.reps) }
                   : { timer: undefined })}
               />
@@ -238,6 +240,7 @@ export function PlanComposer({
                 </label>)}
               <label className="timer-option"><input type="checkbox" checked={entry.timer.sound}
                 onChange={(event) => update(index, { timer: { ...entry.timer!, sound: event.target.checked } })} /> Dźwięk</label>
+              <UnilateralTimerFields settings={entry.timer} onChange={(patch) => update(index, { timer: { ...entry.timer!, ...patch } })} />
               <p>Serii i powtórzeń zegar użyje z ustawień ćwiczenia powyżej.</p>
             </div>}
           </section>

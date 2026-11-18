@@ -112,6 +112,9 @@ export const exerciseTimerSchema = z.object({
   move2: z.number().int().min(0).max(3600),
   rest: z.number().int().min(0).max(3600),
   sound: z.boolean(),
+  unilateral: z.boolean().optional(),
+  sidePrepare: z.number().int().min(0).max(3600).optional(),
+  firstSide: z.enum(["L", "P"]).optional(),
 }).refine((value) => value.move1 + value.hold + value.move2 > 0, "Co najmniej jedna faza ruchu musi trwać dłużej niż 0 sekund");
 export type ExerciseTimer = z.infer<typeof exerciseTimerSchema>;
 export function timerForEntry(entry: PlanEntry): TimerSettings | null {
