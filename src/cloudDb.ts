@@ -1,3 +1,4 @@
+import { remapMeasurementSessions } from "./analytics/metrics";
 import { supabase } from "./supabase";
 import { backupSchema, defaultTemplate, exerciseById, sessionPlan, type Injury, type PainLog, type Session, type SetLog, type WorkoutTemplate } from "./domain";
 import type { Profile } from "./db";
@@ -171,6 +172,7 @@ async function logs(profileId: string): Promise<PainLog[]> {
   const byLog = groupRows(values, "pain_log_id");
   const injuriesByLog = groupRows(injuryLinks, "pain_log_id");
   return rows.map((row) => ({ id: row.id, profileId, date: row.log_date,
+    sessionId: row.session_id ?? undefined, measurementPhase: row.measurement_phase ?? "unspecified",
     at: cloudTimestamp(row.measured_at), context: row.context, note: row.note,
     injuryIds: (injuriesByLog.get(row.id) ?? []).map((link) => link.injury_id),
     values: (byLog.get(row.id) ?? []).map((value) => ({ siteId: value.site_id, value: value.value })),
@@ -178,8 +180,8 @@ async function logs(profileId: string): Promise<PainLog[]> {
 }
 async function putLog(log: PainLog) {
   if (!log.profileId) throw Error("Brak profilu pomiaru.");
-  const result = await client().rpc("save_pain_log_with_injuries", { payload: log });
-  if (result.error?.code === "PGRST202") throw Error("Brak migracji kontuzji i analiz. Zastosuj 20261117_injuries_analytics.sql w Supabase SQL Editor.");
+  const result = await client().rpc("save_pain_log_analytics", { payload: log });
+  if (result.error?.code === "PGRST202") throw Error("Brak migracji powiązań analiz. Zastosuj 20261121_analytics_links.sql w Supabase SQL Editor.");
   checked(result);
 }
 
@@ -202,6 +204,7 @@ async function sessions(profileId: string): Promise<Session[]> {
     ...(row.decision ? { decision: row.decision } : {}),
     ...(row.rule_version ? { ruleVersion: row.rule_version } : {}),
     ...(row.edited_at ? { editedAt: cloudTimestamp(row.edited_at) } : {}),
+    completionReason: row.completion_reason ?? "unspecified",
     exerciseProgress: row.exercise_progress ?? [],
     plan: (plansBySession.get(row.id) ?? []).map((p) => ({ exerciseId: p.exercise_id,
       sets: p.planned_sets, weight: Number(p.planned_weight), reps: p.planned_reps, note: p.note,
@@ -212,14 +215,16 @@ async function sessions(profileId: string): Promise<Session[]> {
 }
 async function putSession(session: Session) {
   if (!session.profileId) throw Error("Brak profilu treningu.");
-  checked(await client().rpc("save_workout_session", { payload: {
+  const result = await client().rpc("save_workout_session_analytics", { payload: {
     ...session,
     templateId: session.templateId && /^[0-9a-f-]{36}$/i.test(session.templateId) ? session.templateId : null,
     plan: (session.plan ?? []).map((entry) => ({ ...entry,
       exerciseName: exerciseById(entry.exerciseId).name,
       unilateral: exerciseById(entry.exerciseId).unilateral,
     })),
-  } }));
+  } });
+  if (result.error?.code === "PGRST202") throw Error("Brak migracji powiązań analiz. Zastosuj 20261121_analytics_links.sql w Supabase SQL Editor.");
+  checked(result);
 }
 
 export async function saveCloudSessionSets(session: Session, changed: SetLog[]) {
@@ -255,7 +260,7 @@ export async function exportCloudBackup(profileId: string) {
   const profile = (await profiles()).find((row) => row.id === profileId);
   if (!profile) throw Error("Nie znaleziono profilu.");
   const strip = <T extends { profileId?: string }>(rows: T[]) => rows.map(({ profileId: _id, ...row }) => row);
-  return { version: 5 as const, profileName: profile.name,
+  return { version: 6 as const, profileName: profile.name,
     profileSettings: { name: profile.name, weeklyGoal: profile.weeklyGoal,
       checkInTime: profile.checkInTime, rehabSites: profile.rehabSites, painContexts: profile.painContexts,
       injuries: profile.injuries },
@@ -267,12 +272,13 @@ export async function importCloudBackup(raw: unknown, profileId: string) {
   const data = backupSchema.parse(raw);
   const sourceTemplates = data.version === 1 ? [defaultTemplate()] : data.templates!;
   const ids = new Map(sourceTemplates.map((row) => [row.id, crypto.randomUUID()]));
+  const sessionIds = new Map(data.sessions.map((row) => [row.id, crypto.randomUUID()]));
   const payload = {
     profileSettings: data.profileSettings,
     templates: sourceTemplates.map((row) => ({ ...row, id: ids.get(row.id), profileId,
       entries: row.entries.map((entry) => ({ ...entry })) })),
-    logs: data.logs.map((row) => ({ ...row, id: crypto.randomUUID(), profileId })),
-    sessions: data.sessions.map((row) => ({ ...row, id: crypto.randomUUID(), profileId,
+    logs: remapMeasurementSessions(data.logs, sessionIds).map((row) => ({ ...row, id: crypto.randomUUID(), profileId })),
+    sessions: data.sessions.map((row) => ({ ...row, id: sessionIds.get(row.id), profileId,
       templateId: row.templateId ? ids.get(row.templateId) ?? null : null,
       plan: sessionPlan(row).map((entry) => ({ ...entry,
         exerciseName: exerciseById(entry.exerciseId).name,
@@ -280,7 +286,7 @@ export async function importCloudBackup(raw: unknown, profileId: string) {
       })),
     })),
   };
-  const result = await client().rpc("replace_profile_data_with_injuries", { target_profile: profileId, payload });
-  if (result.error?.code === "PGRST202") throw Error("Brak migracji kontuzji i analiz. Zastosuj 20261117_injuries_analytics.sql w Supabase SQL Editor.");
+  const result = await client().rpc("replace_profile_data_analytics", { target_profile: profileId, payload });
+  if (result.error?.code === "PGRST202") throw Error("Brak migracji powiązań analiz. Zastosuj 20261121_analytics_links.sql w Supabase SQL Editor.");
   checked(result);
 }

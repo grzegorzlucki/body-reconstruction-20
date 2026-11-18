@@ -3,7 +3,7 @@ import { exerciseCatalog, sessionExercises, sessionPlan, completedGroups, visibl
 
 const fmt = (date: string) => new Date(date).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
 
-export function HistoryView({ logs, sessions, sites, contexts, injuries, historyExercise, setHistoryExercise, openSessionEditor, editDate, navigate }: {
+export function HistoryView({ logs, sessions, sites, contexts, injuries, historyExercise, setHistoryExercise, openSessionEditor, editLog, navigate, onAnalyze }: {
   logs: PainLog[];
   sites: RehabSite[];
   contexts: PainContext[];
@@ -12,8 +12,9 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
   historyExercise: string;
   setHistoryExercise: (value: string) => void;
   openSessionEditor: (session?: Session) => void;
-  editDate: (date: string) => void;
+  editLog: (id: string) => void;
   navigate: (next: "Dziennik") => Promise<boolean>;
+  onAnalyze: (id: string) => void;
 }) {
   return <>
 
@@ -53,9 +54,8 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                     </div>
                     <button
                       className="text-button"
-                      onClick={() => {
-                        editDate(l.date);
-                        navigate("Dziennik");
+                      onClick={async () => {
+                        if (await navigate("Dziennik")) editLog(l.id);
                       }}
                     >
                       Edytuj
@@ -139,6 +139,7 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                           {new Date(s.editedAt).toLocaleString("pl-PL")}
                         </p>
                       )}
+                      <button type="button" className="secondary" onClick={() => onAnalyze(s.id)}>Analiza reakcji</button>
                       <button
                         className="secondary"
                         onClick={() => openSessionEditor(s)}

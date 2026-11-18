@@ -34,3 +34,8 @@ W środowisku chmurowym można użyć zainstalowanego systemowego Chromium przez
 
 
 `e2e/pain-charts.spec.ts` sprawdza trzy osobne wykresy, brak danych i pojedynczy punkt, rzeczywiste odstępy dat, luki w pomiarach, obsługę klawiatury i przesuwanie palcem przez zdarzenia dotykowe Chromium (CDP). Testy używają wyłącznie danych syntetycznych. Działanie na fizycznym Safari wymaga sprawdzenia na urządzeniu.
+# Analytics expansion checks
+
+`src/analytics.test.ts` covers daily weighting/median, real zero vs missing data, unilateral group counting, actual dose, time windows across midnight/DST, context/ownership, confirmed-vs-candidate matching, intervening training and backup compatibility. `src/db.test.ts` checks linked-report import remapping and report preservation on session deletion.
+
+`e2e/analytics.spec.ts` checks five subviews, URL filters/back navigation and overflow at 320/390/1024/1920px, plus independent same-day report editing. Run `npx playwright test e2e/analytics.spec.ts` against a local configuration without Supabase credentials. SQL/RLS acceptance requires the staging checks in `docs/supabase/README.md`.

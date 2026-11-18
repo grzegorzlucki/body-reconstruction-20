@@ -104,7 +104,7 @@ export function useWorkoutActions({ database, cloud, profileId, active, sessions
       await database.sessions.put(replaceSessionExercise(active, from, to));
     });
   }
-  async function finishWorkout(pain?: Record<string, string>) {
+  async function finishWorkout(pain?: Record<string, string>, completionReason: Session["completionReason"] = "unspecified") {
     if (!active || busy) return;
     const measuredSites = sites.filter((site) => site.active);
     if (pain && (measuredSites.length === 0 || measuredSites.some((site) =>
@@ -125,7 +125,7 @@ export function useWorkoutActions({ database, cloud, profileId, active, sessions
     }
     await action(async () => {
       const ended = new Date().toISOString();
-      const next = sessionSchema.parse({ ...active, ended,
+      const next = sessionSchema.parse({ ...active, ended, completionReason,
         exerciseProgress: [
           ...(active.exerciseProgress ?? []).filter((row) => !unfinishedIds.includes(row.exerciseId)),
           ...unfinishedIds.map((exerciseId) => ({ exerciseId, status: "finishedEarly" as const })),
@@ -133,7 +133,7 @@ export function useWorkoutActions({ database, cloud, profileId, active, sessions
       });
       await database.sessions.put(next);
       if (pain) {
-        const log = logSchema.parse({ id: active.id, profileId, date: day(ended), at: ended,
+        const log = logSchema.parse({ id: crypto.randomUUID(), sessionId: active.id, measurementPhase: "post", profileId, date: day(ended), at: ended,
           values: measuredSites.map((site) => ({ siteId: site.id, value: Number(pain[site.id]) })),
           injuryIds: [], context: "", note: "Pomiar po treningu" });
         try { await database.logs.put(log); }

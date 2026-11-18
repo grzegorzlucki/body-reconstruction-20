@@ -1,6 +1,6 @@
 import "fake-indexeddb/auto";
 import { describe, it, expect, beforeEach } from "vitest";
-import { db, exportBackup, importBackup, createProfile, legacyProfileId } from "./db";
+import { db, exportBackup, importBackup, createProfile, deleteLocalSession, saveLocalLog, saveLocalSession, legacyProfileId } from "./db";
 import { exercises, newSession } from "./domain";
 beforeEach(async () => {
   await db.logs.clear();
@@ -59,7 +59,39 @@ it("eksportuje i przywraca plany razem z niezależną sesją", async () => {
   await importBackup(backup);
   expect((await db.templates.toArray())[0].name).toBe(template.name);
   expect((await db.sessions.toArray())[0]?.planName).toBe("Lower A");
-  expect(backup.version).toBe(5);
+  expect(backup.version).toBe(6);
+});
+
+it("preserves multiple same-day reports and remaps session links on restore, then detaches on deletion", async () => {
+  const session = { ...newSession({}), profileId: legacyProfileId };
+  await db.sessions.add(session);
+  const report = { id: "linked", profileId: legacyProfileId, sessionId: session.id, measurementPhase: "during" as const,
+    date: session.started.slice(0,10), at: session.started, values: [{ siteId: "achilles", value: 0 }], context: "", note: "" };
+  await db.logs.add(report); await db.logs.add({ ...report, id: "another", sessionId: undefined });
+  const before = await exportBackup();
+  await importBackup(before);
+  const restored = await db.sessions.toArray(), logs = await db.logs.toArray();
+  expect(logs).toHaveLength(2); expect(restored[0].id).not.toBe(session.id);
+  expect(logs.find((log) => log.sessionId)?.sessionId).toBe(restored[0].id);
+  await deleteLocalSession(restored[0].id);
+  expect(await db.sessions.count()).toBe(0);
+  expect(await db.logs.count()).toBe(2);
+  expect((await db.logs.toArray()).every((log) => !log.sessionId)).toBe(true);
+});
+
+it("rejects inconsistent links/imports and session time edits without losing existing data", async () => {
+  const session = { ...newSession({}, "2026-11-01T12:00:00.000Z"), profileId: legacyProfileId };
+  await db.sessions.add(session);
+  const report = { id: "pre", profileId: legacyProfileId, sessionId: session.id, measurementPhase: "pre" as const,
+    date: "2026-11-01", at: "2026-11-01T11:00:00.000Z", values: [{ siteId: "achilles", value: 2 }], context: "", note: "" };
+  await saveLocalLog(report);
+  await expect(saveLocalSession({ ...session, started: "2026-11-01T10:00:00.000Z" })).rejects.toThrow();
+  expect((await db.sessions.get(session.id))?.started).toBe(session.started);
+  await expect(saveLocalLog({ ...report, id: "foreign", profileId: "other" })).rejects.toThrow();
+  const backup = await exportBackup();
+  await expect(importBackup({ ...backup, logs: [{ ...report, at: "2026-11-01T13:00:00.000Z" }] })).rejects.toThrow();
+  expect((await db.logs.toArray()).map((row) => row.id)).toEqual(["pre"]);
+  expect((await db.sessions.toArray()).map((row) => row.id)).toEqual([session.id]);
 });
 
 it("importuje kopię v1 i dodaje plan początkowy bez zmiany historii", async () => {

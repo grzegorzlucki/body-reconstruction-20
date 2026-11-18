@@ -14,7 +14,7 @@ const WIDTH = 400,
   RIGHT = 382,
   TOP = 14,
   BOTTOM = 174;
-const dayTime = (log: PainLog) => Date.parse(log.date + "T00:00:00Z");
+const dayTime = (log: PainLog) => Date.parse(log.at);
 const shortDate = (log: PainLog) =>
   new Date(log.date + "T12:00:00").toLocaleDateString("pl-PL", {
     day: "numeric",
@@ -24,10 +24,12 @@ function PainChart({
   logs,
   site,
   color,
+  daily,
 }: {
   logs: PainLog[];
   site: RehabSite;
   color: string;
+  daily: boolean;
 }) {
   const svg = useRef<SVGSVGElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -49,7 +51,7 @@ function PainChart({
       : LEFT + ((dayTime(log) - start) / (end! - start)) * (RIGHT - LEFT);
   const y = (value: number) => BOTTOM - (value / 10) * (BOTTOM - TOP);
   const describe = (log: PainLog) =>
-    `${new Date(log.date + "T12:00:00").toLocaleDateString("pl-PL")} · ${new Date(log.at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })} · ${value(log)}/10`;
+    `${new Date(log.date + "T12:00:00").toLocaleDateString("pl-PL")} · ${daily ? "Mediana dnia" : new Date(log.at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })} · ${value(log)}/10`;
   function selectAt(event: PointerEvent<SVGSVGElement>) {
     const matrix = svg.current?.getScreenCTM();
     if (!matrix || !logs.length) return;
@@ -93,7 +95,7 @@ function PainChart({
                 { day: "numeric", month: "long", year: "numeric" },
               )}{" "}
               ·{" "}
-              {new Date(current.at).toLocaleTimeString("pl-PL", {
+              {daily ? "Mediana dnia" : new Date(current.at).toLocaleTimeString("pl-PL", {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
@@ -137,7 +139,7 @@ function PainChart({
                 </text>
               </g>
             ))}
-            {logs.slice(1).map((log, i) => (
+            {logs.slice(1).map((log, i) => dayTime(log) - dayTime(logs[i]) <= 36 * 3600000 ? (
               <line
                 key={log.id}
                 x1={x(logs[i])}
@@ -150,7 +152,7 @@ function PainChart({
                   dayTime(log) - dayTime(logs[i]) > 86400000 ? "5 5" : undefined
                 }
               />
-            ))}
+            ) : null)}
             <line
               x1={x(current)}
               x2={x(current)}
@@ -212,28 +214,27 @@ function PainChart({
   );
 }
 
-export function PainCharts({ logs, sites }: { logs: PainLog[]; sites: RehabSite[] }) {
+export function PainCharts({ logs, sites, limit = 14, daily = false }: { logs: PainLog[]; sites: RehabSite[]; limit?: number | null; daily?: boolean }) {
   const recent = useMemo(
     () =>
       [...logs]
         .sort(
-          (a, b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at),
+          (a, b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id),
         )
-        .slice(-14),
-    [logs],
+        .slice(limit === null ? 0 : -limit),
+    [logs, limit],
   );
   return (
     <section aria-label="Trendy bólu">
-      <h2>Ból · ostatnie 14 pomiarów</h2>
+      <h2>{limit === null ? "Ból · cały wybrany zakres" : `Ból · ostatnie ${limit} pomiarów`}</h2>
       <p className="footnote">
         Przesuwaj palcem po wykresie lub wskaż punkt, aby odczytać datę, godzinę
         i wartość. Na komputerze możesz też używać strzałek. Oś czasu pokazuje
-        rzeczywiste odstępy między dniami; linia przerywana oznacza brak
-        pomiarów pomiędzy wpisami.
+        rzeczywiste odstępy między pomiarami. Dłuższe luki pozostają bez linii.
       </p>
       {sites.filter((site) => recent.some((log) => log.values.some((item) => item.siteId === site.id))).map((site) => (
         <PainChart key={site.id} logs={recent.filter((log) => log.values.some((item) => item.siteId === site.id))}
-          site={site} color="var(--color-text-secondary)" />
+          site={site} color="var(--color-text-secondary)" daily={daily} />
       ))}
     </section>
   );

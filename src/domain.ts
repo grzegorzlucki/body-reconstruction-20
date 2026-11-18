@@ -167,6 +167,12 @@ const painValuesSchema = z.union([
   z.array(z.object({ siteId: z.string().min(1).max(80), value: painSchema })).max(50),
   legacyPainValuesSchema,
 ]);
+export const measurementPhases = ["unspecified", "daily", "pre", "during", "post", "followup"] as const;
+export type MeasurementPhase = typeof measurementPhases[number];
+export const measurementPhaseLabels: Record<MeasurementPhase, string> = {
+  unspecified: "Nie określono", daily: "Pomiar dzienny", pre: "Przed treningiem",
+  during: "W trakcie treningu", post: "Po treningu", followup: "Pomiar kontrolny",
+};
 export const logSchema = z.object({
   id: z.string(),
   profileId: z.string().optional(),
@@ -174,6 +180,8 @@ export const logSchema = z.object({
   at: z.string().datetime(),
   values: painValuesSchema,
   injuryIds: z.array(z.string().min(1).max(80)).max(50).optional(),
+  sessionId: z.string().optional(),
+  measurementPhase: z.enum(measurementPhases).optional(),
   context: z.string().max(100),
   note: z.string().max(2000),
 }).superRefine((log, ctx) => {
@@ -198,6 +206,7 @@ export const sessionSchema = z
     profileId: z.string().optional(),
     started: z.string().datetime(),
     ended: z.string().datetime().optional(),
+    completionReason: z.enum(["unspecified", "pain", "fatigue", "time", "other"]).optional(),
     sets: z.array(setSchema).min(1).max(600),
     plan: planEntriesSchema.optional(),
     planName: z.string().max(80).optional(),
@@ -266,7 +275,7 @@ export function completedGroups(session: Session) {
   return visibleSets(session).filter((row) =>
     session.sets
       .filter((s) => s.exerciseId === row.exerciseId && s.index === row.index)
-      .every((s) => s.done),
+      .every((s) => s.done && s.reps > 0),
   ).length;
 }
 export function validateHistoricalSession(
@@ -301,7 +310,7 @@ export function validateHistoricalSession(
 }
 export const backupSchema = z
   .object({
-    version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5)]),
+    version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]),
     profileName: z.string().trim().min(1).max(80).optional(),
     profileSettings: profileSettingsSchema.optional(),
     templates: z.array(templateSchema).max(200).optional(),
@@ -310,7 +319,7 @@ export const backupSchema = z
     sessions: z.array(sessionSchema).max(10000),
   })
   .superRefine((data, ctx) => {
-    if ((data.version === 4 || data.version === 5) && !data.profileSettings)
+    if (data.version >= 4 && !data.profileSettings)
       ctx.addIssue({ code: "custom", message: "Missing profile settings" });
     if (data.version !== 1 && !data.templates)
       ctx.addIssue({ code: "custom", message: "Brak planów w kopii" });

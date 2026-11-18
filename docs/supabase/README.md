@@ -6,6 +6,16 @@ The browser uses only the Supabase project URL and publishable key. Run SQL in t
 
 ## Existing project
 
+For the new Analytics release, after the earlier migrations below, run the complete file `supabase/migrations/20261121_analytics_links.sql` in one SQL Editor execution **before deploying the frontend**. It is additive and rerunnable. It adds session-linked measurements, measurement phases and completion reasons; it does not guess relationships for old reports. Existing RLS policies remain active. New cloud save/import RPCs require this migration; deployment to Pages does not run SQL.
+
+Manual acceptance on a staging project (not verified by local browser tests):
+
+- Save two reports on one day, edit one, export/import v6 and verify each session relation points to the newly imported session ID.
+- Under account A, try linking a report to account B's session: both direct writes and RPC must fail and roll back.
+- Delete a session: reports and their profile ownership/values must remain, with `session_id` cleared.
+- Reject pre measurements after start, during measurements outside the session, and post/follow-up before end. Reject session time edits that invalidate already linked measurements.
+- Verify a failed import leaves existing data intact; rerun the migration without duplicate-relation errors.
+
 1. Export a backup. Run `supabase/migrations/20261116_schema_audit.sql` and inspect duplicate and orphan counts.
 2. Apply `supabase/migrations/20261115_exercise_catalog_seed.sql`.
 3. Apply `supabase/migrations/20261116_relations_and_indexes.sql`.
@@ -17,6 +27,7 @@ The browser uses only the Supabase project URL and publishable key. Run SQL in t
 9. Apply `supabase/migrations/20261118_rehab_site_archiving.sql`. It adds soft removal for tracked rehabilitation areas. Removed areas disappear from settings and new reports while historical measurements and injury associations remain available.
 10. Apply `supabase/migrations/20261119_account_profile.sql`. It adds private avatars, focused account identity writes and a service-role-only account data cleanup function. Review any existing policies on an existing avatars bucket; permissive custom policies can broaden access.
 11. Apply `supabase/migrations/20261120_unilateral_timer.sql` for standalone HSR unilateral settings. Per-exercise settings use existing timer_config JSONB and require no additional table.
+12. Apply `supabase/migrations/20261121_analytics_links.sql` for session-linked pain reports, measurement phases, completion reasons and v6 atomic import wrappers. See the acceptance checks above.
 12. Verify profile settings, area removal, injury creation, linked diary reports, analytics, workout writes, and backup import using a test account.
 
 The GitHub Pages workflow does not run SQL migrations. Do not run the old broad `20261115_profile_access.sql` after the canonical RLS migration.
@@ -38,7 +49,7 @@ supabase functions deploy delete-account --project-ref YOUR_PROJECT_REF
 
 Test deletion only using disposable accounts with synthetic data. Cleanup spans Storage, a database transaction and Auth; it is not a cross-service transaction. On a partial failure the same authenticated account can retry; some data might already be removed. MFA-enabled accounts are explicitly refused until a verified MFA deletion flow is implemented. OAuth-only accounts need to establish a password through recovery first. Security/email, avatar ownership and deletion require actual Supabase verification; local UI tests cannot prove these policies.
 
-Display name and avatar are not duplicated into Auth metadata. Account time zone is stored separately; historical log dates and existing local-device form conventions remain unchanged. Backup v5 retains rehabilitation data; it does not include avatar images or security credentials.
+Display name and avatar are not duplicated into Auth metadata. Account time zone is stored separately; historical log dates and existing local-device form conventions remain unchanged. Backup v6 retains rehabilitation data; it does not include avatar images or security credentials.
 
 ## Model
 
@@ -47,4 +58,4 @@ Display name and avatar are not duplicated into Auth metadata. Account time zone
 - Workout session exercises are snapshots, so later template edits do not alter history.
 - Diary logs support multiple entries on a date; values refer to profile-owned tracked areas.
 - Injuries are profile-owned episodes linked to configured tracked areas. Diary reports may reference multiple injuries; completed injuries and their report links remain in history.
-- Backup version 5 includes profile settings, injuries, and report-to-injury links. Imports replace one profile atomically.
+- Backup version 6 includes profile settings, injuries, and report-to-injury links. Imports replace one profile atomically.

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createRoot } from "react-dom/client";
-import { db as localDb, legacyProfileId, type Profile } from "./db";
+import { db as localDb, deleteLocalSession, saveLocalLog, saveLocalSession, legacyProfileId, type Profile } from "./db";
 import { cloudDb } from "./cloudDb";
 import { supabase } from "./supabase";
 import { AuthGate } from "./AuthGate";
@@ -33,7 +33,7 @@ import { useConfirmation } from "./app/useConfirmation";
 import { ProfileSettingsView } from "./views/ProfileSettingsView";
 import { AccountProfileView, ProfileNavigation } from "./views/AccountProfileView";
 import { isProfileTab } from "./app/navigation";
-import { AnalyticsView } from "./views/AnalyticsView";
+const AnalyticsView = React.lazy(() => import("./views/AnalyticsView").then((module) => ({ default: module.AnalyticsView })));
 const Calendar = React.lazy(() => import("./Calendar").then((module) => ({ default: module.Calendar })));
 const HistoryView = React.lazy(() => import("./views/HistoryView").then((module) => ({ default: module.HistoryView })));
 const DataView = React.lazy(() => import("./views/DataView").then((module) => ({ default: module.DataView })));
@@ -51,7 +51,15 @@ if (import.meta.env.PROD && "serviceWorker" in navigator)
       updateViaCache: "none",
     })
     .catch(() => {});
-const db: AppRepository = supabase ? cloudDb : localDb;
+const db: AppRepository = supabase ? cloudDb : {
+  profiles: localDb.profiles, templates: localDb.templates,
+  logs: { where: localDb.logs.where.bind(localDb.logs), put: saveLocalLog, delete: localDb.logs.delete.bind(localDb.logs) },
+  sessions: {
+    where: localDb.sessions.where.bind(localDb.sessions),
+    put: saveLocalSession, add: localDb.sessions.add.bind(localDb.sessions),
+    delete: deleteLocalSession,
+  },
+};
 function App({ user }: { user?: User }) {
   const { ask: confirmAction, dialog: confirmationDialog } = useConfirmation();
   const approvedReload = useRef(false);
@@ -236,9 +244,9 @@ function App({ user }: { user?: User }) {
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Nie udało się wylogować."); }
     finally { setBusy(false); }
   }
-  const { date, time, pain, context, note, injuryIds, editDate, savePain, removePain,
+  const { editingId, sessionId, measurementPhase, setSessionId, setMeasurementPhase, editLog, newMeasurement, date, time, pain, context, note, injuryIds, editDate, savePain, removePain,
     setTime, setPain, setContext, setNote, setInjuryIds } = usePainLogActions({
-    database: db, logs, profileId, cloud: !!supabase,
+    database: db, logs, sessions, profileId, cloud: !!supabase,
     sites: selectedProfile?.rehabSites ?? [], contexts: selectedProfile?.painContexts ?? [],
     injuries: selectedProfile?.injuries ?? [],
     defaultTime: selectedProfile?.checkInTime ?? "08:00", action, setNotice, confirmAction,
@@ -253,6 +261,17 @@ function App({ user }: { user?: User }) {
     database: db, cloud: !!supabase, localProfiles, sourceProfileId, profiles,
     profileId, action, setWorkout, setWorkoutDirty, setNotice, confirmAction,
   });
+  async function openAnalytics(sessionId?: string) {
+    if (!await navigate("Analizy")) return;
+    const session = sessions.find((s) => s.id === sessionId);
+    if (!session) return;
+    const url = new URL(window.location.href);
+    for (const key of ["area", "injury", "context", "phase", "plan", "exercise"]) url.searchParams.delete(key);
+    url.searchParams.set("analysis", "response"); url.searchParams.set("session", session.id);
+    url.searchParams.set("from", day(session.started)); url.searchParams.set("to", day(new Date()));
+    window.history.replaceState(null, "", url);
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  }
   return (
     <>
     <AppShell tab={tab} onNavigate={navigate} busy={busy} confirmAction={confirmAction}
@@ -281,10 +300,12 @@ function App({ user }: { user?: User }) {
                 sites={selectedProfile?.rehabSites ?? []} weeklyGoal={selectedProfile?.weeklyGoal ?? 2} profileName={selectedProfile?.name}
                 onWorkout={() => { navigate("Trening"); }}
                 onDiary={async () => { if (await navigate("Dziennik")) editDate(day(new Date())); }}
-                onAnalytics={() => { void navigate("Analizy"); }} />
+                onAnalytics={(id) => { void openAnalytics(id); }} />
             )}
             {tab === "Dziennik" && (
-              <DiaryView date={date} time={time} pain={pain} context={context} note={note} injuryIds={injuryIds}
+              <DiaryView editingId={editingId} sessionId={sessionId} measurementPhase={measurementPhase}
+                sessions={sessions} onSession={setSessionId} onPhase={setMeasurementPhase} onEdit={editLog}
+                onNew={() => newMeasurement(date)} date={date} time={time} pain={pain} context={context} note={note} injuryIds={injuryIds}
                 sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []}
                 injuries={selectedProfile?.injuries ?? []}
                 logs={logs} busy={busy} onDate={editDate} onTime={setTime}
@@ -300,7 +321,7 @@ function App({ user }: { user?: User }) {
                 onSetChange={(session) => { void updateTraining(session); }}
                 onTimerFinish={finishExercise}
                 onReplace={(from, to) => { void replaceActiveExercise(from, to); }}
-                onFinish={(pain) => { void finishWorkout(pain); }}
+                onFinish={(pain, reason) => { void finishWorkout(pain, reason); }}
                 onDiscard={() => { void discardWorkout(); }}
                 onStart={(template) => { void begin(template); }}
                 onLoadWorkout={loadWorkout} onChangeWorkout={changeWorkout}
@@ -333,13 +354,17 @@ function App({ user }: { user?: User }) {
               <React.Suspense fallback={<p role="status">Ładowanie historii…</p>}>
               <HistoryView logs={logs} sessions={sessions} sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []} injuries={selectedProfile?.injuries ?? []} historyExercise={historyExercise}
                 setHistoryExercise={setHistoryExercise} openSessionEditor={openSessionEditor}
-                editDate={editDate} navigate={navigate} />
+                editLog={editLog} navigate={navigate} onAnalyze={(id) => { void openAnalytics(id); }} />
               </React.Suspense>
             )}
             {tab === "Analizy" && (
+              <React.Suspense fallback={<p role="status">Ładowanie analiz…</p>}>
                 <AnalyticsView logs={logs} sessions={sessions}
+                  onEditLog={async (id) => { if (await navigate("Dziennik")) editLog(id); }}
+                  onAddMeasurement={async (id, phase) => { if (await navigate("Dziennik")) newMeasurement(day(new Date()), id, phase); }}
                   sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []}
                   injuries={selectedProfile?.injuries ?? []} />
+              </React.Suspense>
             )}
             {tab === "Plany" && (
               <Plans

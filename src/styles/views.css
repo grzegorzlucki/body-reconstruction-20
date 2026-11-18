@@ -211,3 +211,15 @@ details.panel[open] > summary { border-bottom: 1px solid var(--color-border); pa
   }
 }
 
+.analytics-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 20px; }
+.analytics-tabs button { flex: 0 1 auto; min-height: 44px; white-space: normal; }
+.analytics-filter-disclosure summary { cursor: pointer; padding-block: 8px; font-weight: 600; overflow-wrap: anywhere; }
+.analytics-filter-disclosure .analytics-filters { margin-block-start: 16px; }
+.analytics-summary article { min-width: 0; }
+.analytics-summary h2 { font-size: var(--font-size-body); }
+.analytics-table td small { display: block; margin-block: 6px; }
+@media (max-width: 700px) {
+  .analytics-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .analytics-tabs button { width: 100%; padding-inline: 10px; }
+  .analytics-filters { grid-template-columns: minmax(0, 1fr); }
+}

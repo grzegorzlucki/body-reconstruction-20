@@ -26,7 +26,7 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
   onSetChange: (session: Session) => void;
   onTimerFinish: (exerciseId: string, status: ExerciseStatus) => Promise<void>;
   onReplace: (from: string, to: string) => void;
-  onFinish: (pain?: Record<string, string>) => void;
+  onFinish: (pain?: Record<string, string>, reason?: Session["completionReason"]) => void;
   onDiscard: () => void;
   onStart: (template?: WorkoutTemplate) => void;
   onLoadWorkout: (template: WorkoutTemplate) => void;
@@ -35,6 +35,7 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
   onEditPlan: () => void;
 }) {
   const previousActiveId = useRef(active?.id);
+  const [completionReason, setCompletionReason] = useState<NonNullable<Session["completionReason"]>>("unspecified");
   const [recordPain, setRecordPain] = useState(false);
   const [postPain, setPostPain] = useState<Record<string, string>>({});
   const activeSites = sites.filter((site) => site.active);
@@ -47,6 +48,7 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
       });
     }
     previousActiveId.current = active?.id;
+    setCompletionReason("unspecified");
     setRecordPain(false);
     setPostPain({});
   }, [active?.id]);
@@ -61,9 +63,14 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
       <p className="badge">{active.planName ?? "Plan początkowy"} · Rozpoczęto {new Date(active.started).toLocaleString("pl-PL")} · {completedGroups(active)}/{visibleSets(active).length} serii</p>
       <div className="actions workout-quick-finish">
         <button type="button" className="secondary" disabled={busy}
-          onClick={() => onFinish(recordPain ? postPain : undefined)}>Zakończ trening wcześniej</button>
+          onClick={() => onFinish(recordPain ? postPain : undefined, completionReason)}>Zakończ trening wcześniej</button>
         <p>Możesz zapisać trening bez wykonania wszystkich zaplanowanych serii.</p>
       </div>
+      <label>Powód wcześniejszego zakończenia (opcjonalnie)
+        <select value={completionReason} onChange={(e) => setCompletionReason(e.target.value as NonNullable<Session["completionReason"]>)}>
+          <option value="unspecified">Nie podano</option><option value="pain">Ból</option><option value="fatigue">Zmęczenie</option>
+          <option value="time">Brak czasu</option><option value="other">Inny</option>
+        </select></label>
       <SessionFields session={active} disabled={busy} onChange={onSetChange} confirmAction={confirmAction}
         onTimerFinish={onTimerFinish} onReplace={onReplace} />
       {activeSites.length > 0 && <section className="panel" aria-label="Pomiar bólu po treningu">
@@ -79,7 +86,7 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
       </section>}
       <div className="actions">
         <button type="button" disabled={busy || (recordPain && activeSites.some((site) => postPain[site.id] === undefined))}
-          onClick={() => onFinish(recordPain ? postPain : undefined)}>Zakończ trening</button>
+          onClick={() => onFinish(recordPain ? postPain : undefined, completionReason)}>Zakończ trening</button>
         <button type="button" className="destructive secondary" disabled={busy} onClick={onDiscard}>Odrzuć trening</button>
       </div>
     </> : <>
@@ -102,10 +109,10 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
       <section className="panel" aria-label="Monitor bólu po ostatnim treningu">
         <h2>Monitor bólu po ostatnim treningu</h2>
         {last ? <>
-          <p>Ostatni trening: {fmt(last.started)}. Pomiary z dnia treningu oraz poranków jeden i dwa dni później (około 24 i 48 h).</p>
+          <p>Ostatni trening: {fmt(last.started)}. Pomiary według dni kalendarzowych, nie dokładnych odstępów 24/48 h. Szczegółowe powiązania znajdziesz w Analizach.</p>
           <div className="grid three">{painMonitor(last, logs).map(({ date, log }, index) =>
             <article key={date}>
-              <h3>{["Przed treningiem", "Po około 24 h", "Po około 48 h"][index]}</h3>
+              <h3>{["Przed treningiem (tego dnia)", "Następny dzień", "Dwa dni później"][index]}</h3>
               <p>{fmt(date + "T12:00:00")}</p>
               {log ? <>
                 {log.values.map((value) => <p key={value.siteId}>{sites.find((site) => site.id === value.siteId)?.name ?? value.siteId}: <strong>{value.value} / 10</strong></p>)}

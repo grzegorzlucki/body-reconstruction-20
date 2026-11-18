@@ -10,6 +10,8 @@ import {
   backupSchema,
 } from "./domain";
 
+import { remapMeasurementSessions, validateMeasurementLink } from "./analytics/metrics";
+
 export const legacyProfileId = "default-profile";
 export type Profile = ProfileSettings & { id: string; timeZone?: string; avatarPath?: string | null };
 
@@ -93,6 +95,13 @@ class RehabDB extends Dexie {
         profile.rehabSites.forEach((site) => { site.archived ??= false; });
       });
     });
+    this.version(7).stores({
+      logs: "id,[profileId+date],profileId,sessionId,[profileId+at]",
+      sessions: "id,[profileId+started],profileId",
+      templates: "id,[profileId+name],profileId", profiles: "id,name",
+    }).upgrade(async (tx) => {
+      await tx.table("logs").toCollection().modify((log: PainLog) => { log.measurementPhase ??= "unspecified"; });
+    });
     this.on("populate", (tx) => {
       tx.table("profiles").add({ id: legacyProfileId, ...defaultProfileSettings("Profil główny") });
       tx.table("templates").add(starter(legacyProfileId));
@@ -118,7 +127,7 @@ export async function exportBackup(profileId = legacyProfileId) {
     const profile = await db.profiles.get(profileId);
     if (!profile) throw Error("Nie znaleziono profilu.");
     return {
-      version: 5 as const,
+      version: 6 as const,
       profileName: profile.name,
       profileSettings: {
         name: profile.name,
@@ -147,7 +156,34 @@ export async function importBackup(raw: unknown, profileId = legacyProfileId) {
     await db.sessions.where("profileId").equals(profileId).delete();
     await db.templates.where("profileId").equals(profileId).delete();
     await db.templates.bulkAdd(sourceTemplates.map((row) => ({ ...row, id: templateIds.get(row.id)!, profileId })));
-    await db.logs.bulkAdd(data.logs.map((row) => ({ ...row, id: crypto.randomUUID(), profileId })));
-    await db.sessions.bulkAdd(data.sessions.map((row) => ({ ...row, id: crypto.randomUUID(), templateId: row.templateId ? (templateIds.get(row.templateId) ?? row.templateId) : undefined, profileId })));
+    const sessionIds = new Map(data.sessions.map((row) => [row.id, crypto.randomUUID()]));
+    const sessions = data.sessions.map((row) => ({ ...row, id: sessionIds.get(row.id)!, templateId: row.templateId ? (templateIds.get(row.templateId) ?? row.templateId) : undefined, profileId }));
+    const logs = remapMeasurementSessions(data.logs, sessionIds).map((row) => ({ ...row, id: crypto.randomUUID(), profileId }));
+    for (const log of logs) validateMeasurementLink(log, sessions);
+    await db.sessions.bulkAdd(sessions);
+    await db.logs.bulkAdd(logs);
+  });
+}
+
+/** Delete a session without losing its independent diary measurements. */
+export async function deleteLocalSession(id: string) {
+  await db.transaction("rw", db.logs, db.sessions, async () => {
+    await db.logs.where("sessionId").equals(id).modify((log) => { delete log.sessionId; });
+    await db.sessions.delete(id);
+  });
+}
+
+export async function saveLocalLog(log: PainLog) {
+  await db.transaction("rw", db.logs, db.sessions, async () => {
+    validateMeasurementLink(log, log.sessionId ? [await db.sessions.get(log.sessionId)].filter((s): s is Session => !!s) : []);
+    await db.logs.put(log);
+  });
+}
+
+export async function saveLocalSession(session: Session) {
+  await db.transaction("rw", db.logs, db.sessions, async () => {
+    const reports = await db.logs.where("sessionId").equals(session.id).toArray();
+    for (const report of reports) validateMeasurementLink(report, [session]);
+    await db.sessions.put(session);
   });
 }
