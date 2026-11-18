@@ -7,6 +7,6 @@ Keep the sea, sand and coral palette. Prioritize readable text, clear workout ac
 3. Navigation and account: account details/sign-out now appear in Settings, desktop footer links there, updater has lower emphasis and mobile updater lives in Settings. Existing sidebar scrolling and More access preserved. **Implemented.**
 4. Today: compact heading, workout completion counts and equally accessible diary entry action above summaries. Missing area measurements are distinct from zero. **Implemented.**
 5. Diary and workout: full-width labeled pain sliders, explicit missing ratings, validation focus, pointer/keyboard confirmation, and clearer completion/destructive actions. Existing timer phase labels and controls retained. **Implemented.**
-6. Analytics/history: readable chart values, table overflow confined to its container, visible missing data and consistent statistics.
+6. Analytics/history: dark chart readings and lines, colored points, focusable scrollable tables, stable context keys and clearer history summaries. **Implemented.**
 
 Acceptance: check contrast, keyboard focus, 360/390/768/1024/1440px layouts, low-height windows, 200% zoom, long text, empty data, save failures and installed-app refresh. Build and relevant existing tests must be run where Node/npm are available; do not mark unavailable checks as passed.

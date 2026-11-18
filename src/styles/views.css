@@ -95,6 +95,18 @@
 .analytics-table th, .analytics-table td { padding: 12px; border-bottom: 1px solid var(--color-border); text-align: left; }
 .analytics-table th[scope="row"] small, .analytics-table td small { display: block; margin-top: 4px; color: var(--color-text-subtle); font-weight: 400; }
 .table-scroll { max-width: 100%; overflow-x: auto; }
+.table-scroll { overscroll-behavior-inline: contain; border: 1px solid var(--color-border); border-radius: 10px; }
+.table-scroll:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 3px; }
+.analytics-table thead { background: var(--color-surface-soft); color: var(--color-text); }
+.analytics-table td { color: var(--color-text); font-size: 16px; }
+.analytics-table tbody tr:nth-child(even) { background: var(--color-surface-control); }
+.pain-chart-reading { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.pain-chart-reading strong { color: var(--color-text); font-size: 28px; }
+.pain-chart svg text { fill: var(--color-text-secondary); font-size: 11px; }
+.pain-chart-grid { stroke: var(--color-border-control); stroke-width: .6; }
+.history-row small { display: block; line-height: 1.6; }
+details.panel > summary { color: var(--color-text); font-weight: 600; line-height: 1.7; min-height: 44px; }
+details.panel[open] > summary { border-bottom: 1px solid var(--color-border); padding-bottom: 12px; margin-bottom: 16px; }
 .analytics-contexts { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
 .analytics-contexts li { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--color-border); }
 .analytics-report-list { display: grid; gap: 8px; }

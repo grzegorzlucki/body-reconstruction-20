@@ -27,7 +27,7 @@ export function AnalyticsView({ logs, sessions, sites, contexts, injuries }: {
   const selectedInjury = injuries.find((injury) => injury.id === injuryId);
   const contextCounts = new Map<string, number>();
   for (const log of visibleLogs) if (log.context) contextCounts.set(log.context, (contextCounts.get(log.context) ?? 0) + 1);
-  const contextsSummary = [...contextCounts].map(([value, count]) => ({ context: contexts.find((item) => item.value === value), count }))
+  const contextsSummary = [...contextCounts].map(([value, count]) => ({ value, context: contexts.find((item) => item.value === value), count }))
     .sort((a, b) => b.count - a.count);
 
   return <>
@@ -64,7 +64,7 @@ export function AnalyticsView({ logs, sessions, sites, contexts, injuries }: {
     <section className="panel">
       <h2>Pomiary według obszaru</h2>
       {!visibleStats.length ? <p>Brak pomiarów dla wybranych filtrów i zakresu. Zapisane wartości nie są uzupełniane szacunkami.</p> :
-        <div className="table-scroll"><table className="analytics-table">
+        <div className="table-scroll" role="region" aria-label="Pomiary bólu według obszaru — tabela przewijana" tabIndex={0}><table className="analytics-table">
           <thead><tr><th scope="col">Obszar</th><th scope="col">Ostatni</th><th scope="col">Średnia</th><th scope="col">Poprzedni okres</th><th scope="col">Liczba ocen</th></tr></thead>
           <tbody>{visibleStats.map(({ site, average, previousAverage, last, count }) => {
             const delta = average !== null && previousAverage !== null ? average - previousAverage : null;
@@ -82,7 +82,7 @@ export function AnalyticsView({ logs, sessions, sites, contexts, injuries }: {
     <section className="panel">
       <h2>Kontekst raportów</h2>
         {!contextsSummary.length ? <p>Brak raportów z wybranym kontekstem.</p> :
-        <ul className="analytics-contexts">{contextsSummary.map(({ context, count }) => <li key={context?.value ?? "unknown"}>
+        <ul className="analytics-contexts">{contextsSummary.map(({ value, context, count }) => <li key={value}>
           <span>{context?.label ?? "Inny lub dawny kontekst"}</span><strong>{count}</strong></li>)}</ul>}
     </section>
 

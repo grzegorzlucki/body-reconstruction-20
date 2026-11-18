@@ -98,7 +98,7 @@ function PainChart({
                 minute: "2-digit",
               })}
             </span>
-            <strong style={{ color: painLevelColor(value(current)) }}>
+            <strong>
               {value(current)}
               <small>/10</small>
             </strong>
@@ -231,9 +231,9 @@ export function PainCharts({ logs, sites }: { logs: PainLog[]; sites: RehabSite[
         rzeczywiste odstępy między dniami; linia przerywana oznacza brak
         pomiarów pomiędzy wpisami.
       </p>
-      {sites.filter((site) => recent.some((log) => log.values.some((item) => item.siteId === site.id))).map((site, index) => (
+      {sites.filter((site) => recent.some((log) => log.values.some((item) => item.siteId === site.id))).map((site) => (
         <PainChart key={site.id} logs={recent.filter((log) => log.values.some((item) => item.siteId === site.id))}
-          site={site} color={["#91d5a7", "#c3d994", "#efb47c", "#83cbd0", "#c2a2dc"][index % 5]} />
+          site={site} color="var(--color-text-secondary)" />
       ))}
     </section>
   );
