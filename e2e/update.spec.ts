@@ -24,7 +24,7 @@ test("aktualizacja w otwartej aplikacji zachowuje zapisany trening i działa pon
     await first.click();
     await expect(first).toBeChecked();
     await expect(first).toBeEnabled();
-    await openTab(page, "Ustawienia");
+    await openTab(page, "Aplikacja");
     await context.setOffline(true);
     await page
       .getByRole("button", { name: "Odśwież aplikację", exact: true })
@@ -53,7 +53,7 @@ test("aktualizacja w otwartej aplikacji zachowuje zapisany trening i działa pon
     await page.getByRole("button", { name: "Trening", exact: true }).click();
     await expect(first).toBeChecked();
     await expect(page.getByRole("checkbox")).toHaveCount(12);
-    await page.getByRole("button", { name: "Plany", exact: true }).click();
+    await openTab(page, "Plany");
     await expect(
       page.getByRole("heading", { name: "Plan początkowy", exact: true }),
     ).toBeVisible();
@@ -69,7 +69,7 @@ test("aktualizacja w otwartej aplikacji zachowuje zapisany trening i działa pon
   }
 });
 
-test("aktualizacja mobilna jest dostępna w Ustawieniach", async ({
+test("aktualizacja mobilna jest dostępna w sekcji Aplikacja", async ({
   page,
 }) => {
   await page.goto("./");
@@ -78,13 +78,13 @@ test("aktualizacja mobilna jest dostępna w Ustawieniach", async ({
     exact: true,
   });
   await expect(button).not.toBeVisible();
-  await openTab(page, "Ustawienia");
+  await openTab(page, "Aplikacja");
   await expect(button).toBeVisible();
   await expect(button).toBeEnabled();
   await page.getByRole("button", { name: "Trening", exact: true }).click();
   await expect(button).not.toBeVisible();
-  await page.getByRole("button", { name: "Plany", exact: true }).click();
+  await openTab(page, "Plany");
   await expect(button).not.toBeVisible();
-  await openTab(page, "Ustawienia");
+  await openTab(page, "Aplikacja");
   await expect(button).toBeVisible();
 });

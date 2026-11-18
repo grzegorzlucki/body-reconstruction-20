@@ -10,6 +10,7 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 |---|---|---|
 | Compose app, select views, wire persistence/actions | `src/main.tsx` | `src/app/`, `src/views/` |
 | Account profile settings and tracked body areas | `src/views/ProfileSettingsView.tsx` | `src/domain.ts`, `src/db.ts`, `src/cloudDb.ts`, `supabase/migrations/20261116_account_profile_settings.sql`, `supabase/migrations/20261118_rehab_site_archiving.sql` |
+| Account identity, avatar and security | `src/views/AccountProfileView.tsx`, `src/profile/`, `src/app/AccountMenu.tsx` | `src/account/accountRepository.ts`, `supabase/migrations/20261119_account_profile.sql`, `supabase/functions/delete-account/index.ts` |
 | Injury episodes and report associations | `src/views/ProfileSettingsView.tsx`, `src/views/DiaryView.tsx` | `src/domain.ts`, `src/cloudDb.ts`, `supabase/migrations/20261117_injuries_analytics.sql` |
 | User progress analytics | `src/views/AnalyticsView.tsx`, `src/analytics.ts` | `src/main.tsx`, `src/views/TodayView.tsx`, `src/PainCharts.tsx` |
 | Profile-scoped loading and storage adapters | `src/app/useProfileData.ts`, `src/app/repository.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/profileRepository.ts` |
@@ -35,7 +36,11 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 
 ## UI and Responsive Structure
 
-Account details and sign-out are displayed in Settings through `AppShell.tsx`; the desktop sidebar provides a direct account/settings action. Mobile refresh controls also live in Settings (reachable through More). The desktop updater remains in the sidebar footer.
+Desktop account access is a header disclosure (`AccountMenu.tsx`). Mobile navigation starts with Profile on the left, then Today, Workout, Diary and More; Plans is in More and Workout/My plans. `AccountProfileView.tsx` renders identity, security, preferences and application settings. Rehabilitation and Data reuse existing views with shared section navigation. Canonical URLs use `?view=profile&section=...`; old settings/data URLs remain readable. Mobile refresh lives in the Application section; desktop retains its sidebar updater.
+
+Auth User is passed separately from the database Profile. `accountRepository.ts` saves name/time zone/avatar through the focused `update_account_identity` RPC, without resubmitting rehabilitation arrays. Cloud profile reads tolerate missing avatar values before migration. Avatars use private Storage paths; signed URLs are transient and images fall back to initials. Local identity uses Dexie partial updates; no authentication fields or avatar files enter backup v5. Date conventions for existing diary/history forms remain unchanged.
+
+Account deletion calls a deployed Edge Function which validates bearer identity and current password, removes avatar objects, calls the service-role-only transactional database cleanup, then deletes the Auth user. This is not a distributed transaction. MFA-enabled deletion is refused pending an MFA-aware flow. Browser code contains no administrative secret. Deployment and manual security verification are documented in `docs/supabase/README.md`.
 
 UI refinement scope and acceptance results are tracked in `docs/UI_REFINEMENT_PLAN.md`. `TodayView.tsx` prioritizes workout progress and diary actions; `PainSlider.tsx` owns the shared labeled, initially unrated pain control. Responsive navigation and updater placement checks live in `e2e/responsive-navigation.spec.ts` and `e2e/update.spec.ts`.
 
@@ -45,7 +50,7 @@ UI refinement scope and acceptance results are tracked in `docs/UI_REFINEMENT_PL
 
 The explicit refresh action in `src/AppUpdater.tsx` activates the waiting worker and clears only caches with this app's `rehab-<base>-` prefix before reloading. IndexedDB and authentication storage are preserved. `vite.config.ts` generates the production service worker and manifest, including the light theme colors.
 
-For an existing project, apply the migration sequence in `docs/supabase/README.md`, ending with `20261118_rehab_site_archiving.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
+For an existing project, apply the migration sequence in `docs/supabase/README.md`, ending with `20261119_account_profile.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
 
 ## Checks
 

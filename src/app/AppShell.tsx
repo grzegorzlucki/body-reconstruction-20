@@ -3,8 +3,9 @@ import { AppUpdater } from "../AppUpdater";
 import { AppNavigation } from "./AppNavigation";
 import { ErrorNotice } from "./errorMessages";
 import type { MainTab, Tab } from "./navigation";
+import { AccountMenu } from "./AccountMenu";
 
-export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, onSignOut,
+export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, profileName, avatarPath, onSignOut,
   confirmAction, onApprovedReload, ready, loadingData, error, notice, children }: {
   tab: Tab;
   onNavigate: (tab: MainTab) => Promise<boolean>;
@@ -12,7 +13,8 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, onSig
   dirty: boolean;
   cloud: boolean;
   accountId?: string;
-  onSignOut: () => void;
+  profileName?: string; avatarPath?: string | null;
+  onSignOut: () => Promise<void>;
   confirmAction: (message: string) => Promise<boolean>;
   onApprovedReload: () => void;
   ready: boolean;
@@ -30,10 +32,9 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, onSig
       </button>
       <p className="eyebrow">TWÓJ PROCES. TWOJE TEMPO.</p>
       <div className="sidebar-navigation">
-        <AppNavigation current={tab} onNavigate={onNavigate} />
+        <AppNavigation current={tab} onNavigate={onNavigate} profileName={profileName} avatarPath={avatarPath} />
       </div>
       <div className="sidebar-footer">
-        <button type="button" className="secondary" onClick={() => void onNavigate("Ustawienia")}>Konto i ustawienia</button>
         <div className="sidebar-updater"><AppUpdater disabled={busy} hasUnsavedChanges={dirty} confirmAction={confirmAction} onApprovedReload={onApprovedReload} /></div>
       <div className="local">
         <i aria-hidden="true" /> {cloud ? "Dane na koncie" : "Dane na tym urządzeniu"}
@@ -43,14 +44,10 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, onSig
     </aside>
     <main id="main-content" tabIndex={-1}>
       <header><span>REHABILITACJA / {tab.toUpperCase()}</span>
-        <span>{new Date().toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
+        <div className="header-account"><span>{new Date().toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
+          <AccountMenu name={profileName ?? (cloud ? "Konto" : "Profil lokalny")} email={accountId} avatarPath={avatarPath}
+            onNavigate={onNavigate} onSignOut={onSignOut} busy={busy} /></div>
       </header>
-      {tab === "Ustawienia" && <section className="panel account-settings" aria-label="Konto i aplikacja">
-        <h2>Konto i aplikacja</h2>
-        {cloud && <div className="account-actions"><span>{accountId}</span>
-          <button type="button" className="secondary" disabled={busy} onClick={onSignOut}>Wyloguj</button></div>}
-        <div className="mobile-updater"><AppUpdater disabled={busy} hasUnsavedChanges={dirty} confirmAction={confirmAction} onApprovedReload={onApprovedReload} /></div>
-      </section>}
       {error && <ErrorNotice message={error} />}
       {notice && <div role="status" className="notice">{notice}</div>}
       {children}

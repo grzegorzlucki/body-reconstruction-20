@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+import { openTab } from "./helpers";
 
 for (const width of [320, 390, 768, 1024, 1440]) {
   test(`navigation and layout at ${width}px`, async ({ browser, baseURL }) => {
@@ -27,7 +28,7 @@ for (const width of [320, 390, 768, 1024, 1440]) {
 
 test("browser Back keeps an unsaved plan until the user confirms", async ({ page }) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Plany", exact: true }).click();
+  await openTab(page, "Plany");
   await expect(page).toHaveURL(/view=plans/);
   await page.getByRole("button", { name: "Nowy plan" }).click();
   await expect(page.getByRole("textbox", { name: "Nazwa planu" })).toBeVisible();

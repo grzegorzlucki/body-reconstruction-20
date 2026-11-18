@@ -12,6 +12,8 @@ Lokalne skille znajdują się w `docs/skills/` i zachowują strukturę katalogó
 
 [Otwórz aplikację](https://grzegorzlucki.github.io/body-reconstruction-20/)
 
+Profil konta otwiera się z menu użytkownika w prawym górnym rogu na komputerze lub z pozycji **Profil** po lewej stronie dolnego paska na telefonie. Sekcje obejmują dane osobowe i zdjęcie, rehabilitację, bezpieczeństwo, preferencje, dane oraz aktualizacje aplikacji. Plany na telefonie są dostępne w **Więcej** i **Trening → Moje plany**. Przed wdrożeniem zapisu danych konta i awatara zastosuj `supabase/migrations/20261119_account_profile.sql`; usunięcie konta wymaga dodatkowo wdrożenia funkcji `delete-account`, zgodnie z [instrukcją Supabase](docs/supabase/README.md).
+
 Osobisty dziennik aktywności: zapis serii, monitoring samopoczucia, historia oraz kalendarz miesięczny. React + TypeScript + Vite. Dane konta są przechowywane w Supabase; dotychczasowe dane lokalne można przenieść z IndexedDB.
 
 ## Prywatność

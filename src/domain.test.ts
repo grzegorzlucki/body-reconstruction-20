@@ -4,6 +4,7 @@ import {
   newSession,
   painMonitor,
   backupSchema,
+  accountIdentitySchema,
   type Session,
   type PainLog,
 } from "./domain";
@@ -29,6 +30,11 @@ function log(date: string, values = [2, 2, 2]): PainLog {
   };
 }
 describe("Dane i serie", () => {
+  it("validates account names and time zones without touching rehabilitation settings", () => {
+    expect(accountIdentitySchema.parse({ name: "  Konto testowe  ", timeZone: "Europe/Warsaw" })).toEqual({ name: "Konto testowe", timeZone: "Europe/Warsaw" });
+    expect(accountIdentitySchema.safeParse({ name: " ", timeZone: "Europe/Warsaw" }).success).toBe(false);
+    expect(accountIdentitySchema.safeParse({ name: "Konto", timeZone: "not/a-zone" }).success).toBe(false);
+  });
   it("tworzy 21 serii, po 3 na każdą stronę ćwiczenia jednonóż", () => {
     const s = newSession(doses);
     expect(s.sets).toHaveLength(21);

@@ -1,0 +1,31 @@
+.header-account { display: flex; align-items: center; gap: 20px; min-width: 0; }
+.account-menu { position: relative; text-transform: none; letter-spacing: normal; }
+.account-trigger { display: flex; align-items: center; gap: 10px; padding: 6px 12px; }
+.account-trigger > span:nth-child(2) { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-avatar { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--color-accent-soft); color: var(--color-text); border: 1px solid var(--color-border-control); font-weight: 700; overflow: hidden; }
+.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.account-dropdown { position: absolute; z-index: 20; inset-inline-end: 0; top: calc(100% + 8px); width: min(320px, calc(100vw - 32px)); max-height: 70dvh; overflow: auto; padding: 20px; border: 1px solid var(--color-border-control); border-radius: 14px; background: var(--color-surface); box-shadow: var(--shadow-popover); color: var(--color-text); font-size: 14px; overflow-wrap: anywhere; }
+.account-dropdown nav { margin: 12px 0; max-height: none; }
+.account-dropdown nav button { font-size: 16px; }
+.account-dropdown nav button:hover { background: var(--color-surface-soft); }
+.profile-sections { display: flex; flex-wrap: wrap; gap: 8px; margin: 24px 0; overflow: visible; max-height: none; }
+.profile-sections button { font-size: 15px; background: var(--color-surface-control); border: 1px solid var(--color-border-control); }
+.profile-sections button.selected { background: var(--color-accent-soft); }
+.profile-overview { display: flex; gap: 20px; align-items: center; }
+.profile-overview .profile-avatar { width: 80px; height: 80px; font-size: 26px; }
+.profile-overview h2 { margin: 0; }
+.profile-overview p { margin: 6px 0 0; overflow-wrap: anywhere; }
+.account-form { max-width: 760px; }
+.account-form > .profile-avatar { margin-bottom: 16px; }
+.account-form > .secondary { margin-bottom: 20px; }
+.danger-zone { margin-top: 40px; border-color: var(--color-danger-border); }
+.danger-zone h2 { color: var(--color-danger-text); }
+@media (max-width: 700px) {
+  .phone-nav button .profile-avatar { display: flex; width: 26px; height: 26px; margin: 0 auto 2px; font-size: 11px; }
+  .header-account .account-menu { display: none; }
+  .profile-sections { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-block: 16px; }
+  .profile-sections button { min-height: 48px; padding: 10px; text-align: left; }
+  .profile-overview { align-items: flex-start; gap: 12px; }
+  .profile-overview .profile-avatar { width: 56px; height: 56px; font-size: 20px; }
+  .profile-overview h2 { font-size: 22px; }
+}

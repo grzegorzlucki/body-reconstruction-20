@@ -1,5 +1,11 @@
 import { z } from "zod";
 import { validTimer, type TimerSettings } from "./intervalTimer";
+export const accountIdentitySchema = z.object({
+  name: z.string().trim().min(1, "Podaj nazwę profilu.").max(80),
+  timeZone: z.string().min(1).max(100).refine((value) => {
+    try { new Intl.DateTimeFormat("pl-PL", { timeZone: value }); return true; } catch { return false; }
+  }, "Wybierz poprawną strefę czasową."),
+});
 export const defaultRehabSites: RehabSite[] = [
   { id: "achilles", name: "Achilles", bodyArea: "Staw skokowy", position: 0, active: true, archived: false },
   { id: "pht", name: "PHT", bodyArea: "Tył uda", position: 1, active: true, archived: false },

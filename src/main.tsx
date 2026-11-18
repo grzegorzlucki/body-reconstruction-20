@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 import { createRoot } from "react-dom/client";
 import { db as localDb, legacyProfileId, type Profile } from "./db";
 import { cloudDb } from "./cloudDb";
@@ -30,6 +31,8 @@ import { useBackupActions } from "./app/useBackupActions";
 import type { AppRepository } from "./app/repository";
 import { useConfirmation } from "./app/useConfirmation";
 import { ProfileSettingsView } from "./views/ProfileSettingsView";
+import { AccountProfileView, ProfileNavigation } from "./views/AccountProfileView";
+import { isProfileTab } from "./app/navigation";
 import { AnalyticsView } from "./views/AnalyticsView";
 const Calendar = React.lazy(() => import("./Calendar").then((module) => ({ default: module.Calendar })));
 const HistoryView = React.lazy(() => import("./views/HistoryView").then((module) => ({ default: module.HistoryView })));
@@ -49,7 +52,7 @@ if (import.meta.env.PROD && "serviceWorker" in navigator)
     })
     .catch(() => {});
 const db: AppRepository = supabase ? cloudDb : localDb;
-function App({ accountId }: { accountId?: string }) {
+function App({ user }: { user?: User }) {
   const { ask: confirmAction, dialog: confirmationDialog } = useConfirmation();
   const approvedReload = useRef(false);
   const [localProfiles, setLocalProfiles] = useState<Profile[]>([]);
@@ -79,11 +82,12 @@ function App({ accountId }: { accountId?: string }) {
     return () => window.removeEventListener("beforeunload", warn);
   }, [planDirty, workoutDirty, editing, profileDirty]);
   const { tab, navigate: goToTab } = useNavigation(async (next) => {
+    if (busy) return false;
     if (planDirty && !await confirmAction("Odrzucić niezapisane zmiany planu?")) return false;
     if (workoutDirty && !await confirmAction("Odrzucić niezapisane zmiany przygotowania treningu?")) return false;
     if (editing && next !== "Edytor treningu" &&
       !await confirmAction("Odrzucić niezapisane zmiany treningu?")) return false;
-    if (profileDirty && !await confirmAction("Discard unsaved profile settings?")) return false;
+    if (profileDirty && !await confirmAction("Odrzucić niezapisane zmiany ustawień konta?")) return false;
     setPlanDirty(false);
     setWorkoutDirty(false);
     setProfileDirty(false);
@@ -180,6 +184,8 @@ function App({ accountId }: { accountId?: string }) {
     }).catch(() => {});
   }, []);
   async function saveProfileSettings(settings: ProfileSettings): Promise<boolean> {
+    if (busy) return false;
+    setBusy(true);
     try {
       await db.profiles.update(profileId, settings);
       await refreshRecords();
@@ -187,9 +193,9 @@ function App({ accountId }: { accountId?: string }) {
       setNotice("Ustawienia profilu zapisane.");
       return true;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not save profile settings.");
+      setError(cause instanceof Error ? cause.message : "Nie udało się zapisać ustawień.");
       return false;
-    }
+    } finally { setBusy(false); }
   }
   async function action(fn: () => Promise<void>) {
     if (busy) return;
@@ -219,6 +225,17 @@ function App({ accountId }: { accountId?: string }) {
     ? (Date.now() - new Date(last.ended!).getTime()) / 36e5
     : Infinity;
   const selectedProfile = profiles.find((profile) => profile.id === profileId);
+  async function signOut() {
+    if (!supabase || busy) return;
+    if ((profileDirty || workoutDirty || planDirty || !!editing) &&
+      !await confirmAction("Wylogować i odrzucić niezapisane zmiany formularzy? Zapisane treningi pozostaną na koncie.")) return;
+    setBusy(true); setError("");
+    try {
+      const { error } = await supabase.auth.signOut({ scope: "local" });
+      if (error) throw error;
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Nie udało się wylogować."); }
+    finally { setBusy(false); }
+  }
   const { date, time, pain, context, note, injuryIds, editDate, savePain, removePain,
     setTime, setPain, setContext, setNote, setInjuryIds } = usePainLogActions({
     database: db, logs, profileId, cloud: !!supabase,
@@ -241,15 +258,20 @@ function App({ accountId }: { accountId?: string }) {
     <AppShell tab={tab} onNavigate={navigate} busy={busy} confirmAction={confirmAction}
       onApprovedReload={() => { approvedReload.current = true; }}
       dirty={planDirty || workoutDirty || !!editing || profileDirty} cloud={!!supabase}
-      accountId={accountId} onSignOut={() => { void supabase?.auth.signOut(); }}
+      accountId={user?.email} profileName={selectedProfile?.name} avatarPath={selectedProfile?.avatarPath} onSignOut={signOut}
       ready={ready} loadingData={loadingData} error={error} notice={notice}>
-        {!ready ? (
+        {isProfileTab(tab) && <ProfileNavigation tab={tab} onNavigate={navigate} />}
+        {!ready && !["Profil", "Bezpieczeństwo", "Preferencje", "Aplikacja"].includes(tab) ? (
           <div>
             <p>{loadingData ? supabase ? "Ładowanie danych konta…" : "Otwieranie lokalnej bazy…" : "Nie udało się załadować danych."}</p>
             {error && <button type="button" disabled={loadingData} onClick={() => { void refresh().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Nieznany błąd")); }}>Spróbuj ponownie</button>}
           </div>
         ) : (
           <>
+            {["Profil", "Bezpieczeństwo", "Preferencje", "Aplikacja"].includes(tab) && <AccountProfileView key={tab}
+              tab={tab} profile={selectedProfile} user={user} busy={busy} dirty={profileDirty}
+              onDirty={setProfileDirty} onBusy={setBusy} onChanged={refreshRecords} onNavigate={navigate}
+              onSignOut={signOut} confirmAction={confirmAction} onApprovedReload={() => { approvedReload.current = true; }} />}
             <IntervalTimer key={profileId} profileId={profileId} visible={tab === "Zegar HSR"}
               confirmAction={confirmAction} />
             {tab === "Dzisiaj" && (
@@ -364,5 +386,5 @@ function App({ accountId }: { accountId?: string }) {
   );
 }
 createRoot(document.getElementById("root")!).render(
-  supabase ? <AuthGate>{(session) => <App key={session.user.id} accountId={session.user.email} />}</AuthGate> : <App />,
+  supabase ? <AuthGate>{(session) => <App key={session.user.id} user={session.user} />}</AuthGate> : <App />,
 );

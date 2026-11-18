@@ -13,4 +13,12 @@ describe("GitHub Pages-safe view URLs", () => {
       .toBe("?source=app&view=workout");
     expect(searchForTab("?view=plans", "Dzisiaj")).toBe("");
   });
+  it("routes profile sections, preserves aliases and removes stale section parameters", () => {
+    expect(tabFromSearch("?view=settings")).toBe("Ustawienia");
+    expect(tabFromSearch("?view=data")).toBe("Dane");
+    expect(tabFromSearch("?view=profile&section=security")).toBe("Bezpieczeństwo");
+    expect(tabFromSearch("?view=profile&section=unknown")).toBe("Profil");
+    expect(searchForTab("?source=app", "Ustawienia")).toBe("?source=app&view=profile&section=rehabilitation");
+    expect(searchForTab("?view=profile&section=personal", "Dzisiaj")).toBe("");
+  });
 });

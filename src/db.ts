@@ -11,7 +11,7 @@ import {
 } from "./domain";
 
 export const legacyProfileId = "default-profile";
-export type Profile = ProfileSettings & { id: string };
+export type Profile = ProfileSettings & { id: string; timeZone?: string; avatarPath?: string | null };
 
 const defaultProfileSettings = (name: string): ProfileSettings => ({
   name,

@@ -1,11 +1,12 @@
 import { defineConfig } from "vite";
-import { writeFileSync, readdirSync } from "node:fs";
+import { writeFileSync, readdirSync, readFileSync } from "node:fs";
 const requestedBase = process.env.VITE_BASE_PATH || "/";
 const base = requestedBase.endsWith("/") ? requestedBase : requestedBase + "/";
 if (!/^\/(?:[a-zA-Z0-9_-]+\/)*$/.test(base))
   throw Error("Nieprawidłowa ścieżka VITE_BASE_PATH.");
 export default defineConfig({
   base,
+  define: { __APP_VERSION__: JSON.stringify(JSON.parse(readFileSync("package.json", "utf8")).version) },
   preview: { headers: { "Cache-Control": "no-cache" } },
   plugins: [
     {

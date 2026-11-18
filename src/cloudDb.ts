@@ -78,7 +78,7 @@ async function profiles(): Promise<Profile[]> {
   let rows: Row[];
   try {
     rows = await allPages(async (start, end) => await client().from("profiles")
-      .select("id,name,weekly_goal,check_in_time").eq("owner_user_id", owner).order("id").range(start, end));
+      .select("*").eq("owner_user_id", owner).order("id").range(start, end));
   } catch (error) {
     throw Error(`Odczyt profili: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -91,7 +91,7 @@ async function profiles(): Promise<Profile[]> {
       if (!(error instanceof Error) || !(error.message.includes("duplicate key") || error.message.includes("already has its profile"))) throw error;
     }
     rows = await allPages(async (start, end) => await client().from("profiles")
-      .select("id,name,weekly_goal,check_in_time").eq("owner_user_id", owner).order("id").range(start, end));
+      .select("*").eq("owner_user_id", owner).order("id").range(start, end));
     if (!rows.length) throw Error("Nie udało się utworzyć profilu głównego.");
   }
   const profileIds = rows.map((row) => row.id as string);
@@ -114,6 +114,7 @@ async function profiles(): Promise<Profile[]> {
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
+    timeZone: row.time_zone ?? "Europe/Warsaw", avatarPath: row.avatar_path ?? null,
     weeklyGoal: row.weekly_goal,
     checkInTime: String(row.check_in_time).slice(0, 5),
     rehabSites: (sitesByProfile.get(row.id) ?? []).map((site) => ({

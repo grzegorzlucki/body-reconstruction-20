@@ -97,15 +97,11 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
   }
 
   return <>
-    <h1>Ustawienia profilu</h1>
+    <h1>Rehabilitacja</h1>
     <p className="intro">Ten profil jest przypisany do zalogowanego konta. Zmiany zapisują się w jego bazie danych.</p>
     <form className="panel profile-settings" onSubmit={(event) => void submit(event)}>
       <section>
-        <h2>Dane profilu</h2>
-        <label>Nazwa profilu
-          <input required maxLength={80} value={settings.name}
-            onChange={(event) => setSettings((current) => ({ ...current, name: event.target.value }))} />
-        </label>
+        <h2>Plan i dziennik</h2>
         <div className="grid two">
           <label>Cel treningów w tygodniu
             <select value={settings.weeklyGoal} onChange={(event) => setSettings((current) =>
