@@ -278,7 +278,7 @@ function App({ user }: { user?: User }) {
               <TodayView active={active} sessions={sessions} today={today} hours={hours}
                 busy={busy} onFinish={() => { void finishWorkout(); }}
                 logs={logs} injuries={selectedProfile?.injuries ?? []}
-                sites={selectedProfile?.rehabSites ?? []} weeklyGoal={selectedProfile?.weeklyGoal ?? 2}
+                sites={selectedProfile?.rehabSites ?? []} weeklyGoal={selectedProfile?.weeklyGoal ?? 2} profileName={selectedProfile?.name}
                 onWorkout={() => { navigate("Trening"); }}
                 onDiary={async () => { if (await navigate("Dziennik")) editDate(day(new Date())); }}
                 onAnalytics={() => { void navigate("Analizy"); }} />

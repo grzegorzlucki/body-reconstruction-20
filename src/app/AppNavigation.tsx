@@ -8,8 +8,8 @@ const icons: Record<MainTab, string> = {
   Ustawienia: "\u2699", Analizy: "\u25a5",
   Profil: "◯", Bezpieczeństwo: "⚿", Preferencje: "☷", Aplikacja: "↻",
 };
-const primary: MainTab[] = ["Profil", "Dzisiaj", "Trening", "Dziennik"];
-const secondary: MainTab[] = ["Plany", "Kalendarz", "Historia", "Analizy", "Zegar HSR", "Dane"];
+const primary: MainTab[] = ["Dzisiaj", "Trening", "Plany", "Dziennik"];
+const secondary: MainTab[] = ["Profil", "Kalendarz", "Historia", "Analizy", "Zegar HSR", "Dane"];
 
 export function AppNavigation({ current, onNavigate, profileName = "Profil", avatarPath }: {
   current: Tab;
@@ -19,8 +19,8 @@ export function AppNavigation({ current, onNavigate, profileName = "Profil", ava
   const moreDialog = useRef<HTMLDialogElement>(null);
   const moreButton = useRef<HTMLButtonElement>(null);
   const item = (tab: MainTab) => <button key={tab} type="button"
-    className={current === tab || (tab === "Profil" && isProfileTab(current)) ? "selected" : ""}
-    aria-current={current === tab || (tab === "Profil" && isProfileTab(current)) ? "page" : undefined}
+    className={current === tab || (tab === "Profil" && isProfileTab(current) && current !== "Dane") ? "selected" : ""}
+    aria-current={current === tab || (tab === "Profil" && isProfileTab(current) && current !== "Dane") ? "page" : undefined}
     onClick={async () => {
       if (await onNavigate(tab)) {
         moreDialog.current?.close();
@@ -32,7 +32,7 @@ export function AppNavigation({ current, onNavigate, profileName = "Profil", ava
     <nav className="desktop-nav" aria-label="Główna nawigacja">{tabs.filter((tab) => !isProfileTab(tab)).map(item)}</nav>
     <nav className="phone-nav" aria-label="Główna nawigacja">
       {primary.map(item)}
-      <button ref={moreButton} type="button" className={!isProfileTab(current) && secondary.includes(current as MainTab) ? "selected" : ""}
+      <button ref={moreButton} type="button" className={isProfileTab(current) || secondary.includes(current as MainTab) ? "selected" : ""}
         aria-label="Więcej widoków" onClick={() => moreDialog.current?.showModal()}>
         <span aria-hidden="true">☷</span>Więcej
       </button>

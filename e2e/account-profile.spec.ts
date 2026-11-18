@@ -14,6 +14,11 @@ test("mobile profile preserves unsaved data and persists identity separately", a
   await expect(page.getByRole("status")).toContainText("Profil zapisany");
   await page.reload();
   await expect(name).toHaveValue("Profil testowy");
+  await page.locator(".phone-nav").getByRole("button", { name: "Dzisiaj", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Cześć, Profil testowy!", exact: true })).toBeVisible();
+  await expect(page.locator(".phone-nav").getByRole("button", { name: "Profil", exact: true })).toHaveCount(0);
+  await expect(page.locator(".phone-nav").getByRole("button", { name: "Plany", exact: true })).toBeVisible();
+  await openTab(page, "Profil");
   await page.locator(".profile-sections").getByRole("button", { name: "Rehabilitacja", exact: true }).click();
   await expect(page).toHaveURL(/section=rehabilitation/);
   await expect(page.getByRole("heading", { name: "Monitorowane ścięgna i obszary" })).toBeVisible();

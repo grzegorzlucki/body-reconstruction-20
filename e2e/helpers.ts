@@ -12,7 +12,8 @@ export async function openTab(page: Page, name: "Historia" | "Kalendarz" | "Zega
       await desktop.click();
       await page.locator(".account-dropdown").getByRole("button", { name: name === "Profil" ? "Mój profil" : name === "Ustawienia" ? "Rehabilitacja" : "Aplikacja", exact: true }).click();
     } else {
-      await page.locator(".phone-nav").getByRole("button", { name: "Profil", exact: true }).click();
+      await page.getByRole("button", { name: "Więcej widoków" }).click();
+      await page.getByRole("dialog", { name: "Więcej widoków" }).getByRole("button", { name: "Profil", exact: true }).click();
       if (name !== "Profil") await page.locator(".profile-sections").getByRole("button", { name: name === "Ustawienia" ? "Rehabilitacja" : "Aplikacja", exact: true }).click();
     }
     return;
@@ -22,6 +23,8 @@ export async function openTab(page: Page, name: "Historia" | "Kalendarz" | "Zega
     await direct.click();
     return;
   }
+  const mobileDirect = page.locator(".phone-nav").getByRole("button", { name, exact: true });
+  if (await mobileDirect.isVisible()) { await mobileDirect.click(); return; }
   if (await page.locator(".account-trigger").isVisible() && name === "Dane") {
     await page.locator(".account-trigger").click();
     await page.locator(".account-dropdown").getByRole("button", { name: "Moje dane", exact: true }).click();

@@ -4,6 +4,8 @@ Status: frontend and additive migration/Edge Function implemented locally. TypeS
 
 ## Product decisions
 
+Navigation update requested after the initial implementation: mobile Profile now lives under More. Bottom navigation is Today / Workout / Plans / Diary / More. The desktop header account menu remains. This supersedes the original leftmost mobile Profile placement described below.
+
 - Reuse the existing single account-owned `public.profiles` row. Do not reintroduce profile selection or create a second identity table.
 - Desktop/tablet: avatar, display name and disclosure button at the top right of the application header. Show account email inside the expanded panel, not permanently above content.
 - Mobile: first bottom navigation item is Profile at the left, followed by Today, Workout, Diary and More. Plans remains available through More and Workout/My plans. Keep labels on all items.
