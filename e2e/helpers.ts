@@ -5,7 +5,7 @@ export async function confirmInApp(page: Page) {
     .getByRole("button", { name: "Potwierdź" }).click();
 }
 
-export async function openTab(page: Page, name: "Historia" | "Kalendarz" | "Zegar HSR" | "Dane") {
+export async function openTab(page: Page, name: "Historia" | "Kalendarz" | "Zegar HSR" | "Dane" | "Ustawienia") {
   const direct = page.locator(".desktop-nav").getByRole("button", { name, exact: true });
   if (await direct.isVisible()) {
     await direct.click();

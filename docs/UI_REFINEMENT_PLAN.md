@@ -10,3 +10,13 @@ Keep the sea, sand and coral palette. Prioritize readable text, clear workout ac
 6. Analytics/history: dark chart readings and lines, colored points, focusable scrollable tables, stable context keys and clearer history summaries. **Implemented.**
 
 Acceptance: check contrast, keyboard focus, 360/390/768/1024/1440px layouts, low-height windows, 200% zoom, long text, empty data, save failures and installed-app refresh. Build and relevant existing tests must be run where Node/npm are available; do not mark unavailable checks as passed.
+
+## Verification — 2026-11-18
+
+- TypeScript `tsc --noEmit` and Vite production build passed using temporary Node 22.14.0 outside the repository.
+- Vitest: 7 files, 28 tests passed.
+- Playwright responsive navigation: 6 scenarios passed, including 320/390/768/1024/1440px and unsaved-plan Back navigation.
+- Playwright mobile updater placement: passed (Settings visible, other tabs hidden).
+- Calculated contrast: body/page 11.16:1; secondary/card 7.08:1; help/card 5.51:1; primary action 4.67:1; badge 8.62:1; control border 3.75:1.
+- Real-device Safari/Opera, 200% zoom, low-height windows and installed-app offline update remain manual acceptance checks; no claim of completion for those checks.
+- No database migration or remote push is needed for these UI changes.
