@@ -37,6 +37,8 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 
 ## Supabase Setup
 
+The explicit refresh action in `src/AppUpdater.tsx` activates the waiting worker and clears only caches with this app's `rehab-<base>-` prefix before reloading. IndexedDB and authentication storage are preserved. `vite.config.ts` generates the production service worker and manifest, including the light theme colors.
+
 For an existing project, apply the migration sequence in `supabase/README.md`, ending with `20261118_rehab_site_archiving.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
 
 ## Checks

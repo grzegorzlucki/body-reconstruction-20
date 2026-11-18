@@ -131,6 +131,13 @@ export function AppUpdater({
           }
         }
       }
+      // Remove only this app's offline files, never IndexedDB or authentication data.
+      // Older workers serve cached HTML before consulting the network.
+      if ("caches" in window) {
+        const prefix = "rehab-" + import.meta.env.BASE_URL.replaceAll("/", "_") + "-";
+        const names = await caches.keys();
+        await Promise.all(names.filter((name) => name.startsWith(prefix)).map((name) => caches.delete(name)));
+      }
       onApprovedReload();
       window.location.reload();
     } catch (e) {

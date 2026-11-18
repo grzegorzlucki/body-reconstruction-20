@@ -23,8 +23,8 @@ export default defineConfig({
             start_url: base,
             scope: base,
             display: "standalone",
-            background_color: "#101917",
-            theme_color: "#101917",
+            background_color: "#DCEBE7",
+            theme_color: "#DCEBE7",
             icons: [192, 512].map((size) => ({
               src: base + "icon-" + size + ".png",
               sizes: size + "x" + size,
