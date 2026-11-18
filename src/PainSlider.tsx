@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 export function painLevelColor(value: number) {
   if (value <= 2) return "var(--pain-low)";
   if (value <= 4) return "var(--pain-mild)";
@@ -13,16 +15,24 @@ export function PainSlider({ name, detail, value, onChange, disabled = false }: 
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
+  const id = useId();
   return <label className="pain-row">
     <span>{name}{detail && <small> · {detail}</small>}</span>
-    <span className="pain-slider-ends"><span>Brak bólu</span><span>Najsilniejszy wyobrażalny ból</span></span>
     <span className="pain-slider-control">
-      <input type="range" min="0" max="10" step="1" value={value === "" ? "5" : value} disabled={disabled}
+      <input id={id} type="range" min="0" max="10" step="1" value={value === "" ? "5" : value} disabled={disabled}
+        data-pain-unrated={value === "" ? "true" : undefined} aria-describedby={`${id}-scale`}
         aria-label={`Odczuwany ból: ${name}`} aria-valuetext={value === "" ? "Nie wybrano oceny" : `${value} na 10`}
         style={{ accentColor: value === "" ? "var(--color-accent-fill)" : painLevelColor(Number(value)) }}
-        onPointerDown={(event) => { if (value === "") onChange(event.currentTarget.value); }}
+        onPointerUp={(event) => onChange(event.currentTarget.value)}
+        onKeyDown={(event) => {
+          if (event.key === " " || event.key === "Enter") {
+            event.preventDefault(); onChange(event.currentTarget.value);
+          }
+        }}
         onChange={(event) => onChange(event.target.value)} />
-      <output aria-live="polite">{value === "" ? "Wybierz ocenę" : `${value} / 10`}</output>
+      <output htmlFor={id} aria-live="polite">{value === "" ? "Nie oceniono" : `${value} / 10`}</output>
     </span>
+    <span id={`${id}-scale`} className="pain-slider-ends"><span>0 — brak bólu</span><span>10 — najsilniejszy wyobrażalny ból</span></span>
+    {value === "" && <small>Przesuń suwak lub wskaż ocenę. Klawiatura: strzałki, Enter zatwierdza.</small>}
   </label>;
 }

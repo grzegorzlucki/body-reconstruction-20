@@ -75,7 +75,7 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
       <div className="actions">
         <button type="button" disabled={busy || (recordPain && activeSites.some((site) => postPain[site.id] === undefined))}
           onClick={() => onFinish(recordPain ? postPain : undefined)}>Zakończ trening</button>
-        <button type="button" className="secondary" disabled={busy} onClick={onDiscard}>Odrzuć trening</button>
+        <button type="button" className="destructive secondary" disabled={busy} onClick={onDiscard}>Odrzuć trening</button>
       </div>
     </> : <>
       <section className="panel">
