@@ -1,6 +1,8 @@
 # Architecture Map
 
-Body Reconstruction is a React + TypeScript single-page app built with Vite. Supabase is the authenticated cloud persistence layer; Dexie IndexedDB remains available for local use and migration. Read this file before code changes and keep it aligned with the implementation. Follow `AGENTS.md` and relevant instructions in `skills/*/SKILL.md`; use `skills/CODE_PRACTICES.md`.
+Project documentation lives under `docs/`; the root `README.md` is the entry point. File paths in this map and command examples in project documentation are relative to the repository root, unless stated otherwise. Local skill packages live in `docs/skills/` and remain excluded from version control; their internal directory structure and supporting assets are preserved.
+
+Body Reconstruction is a React + TypeScript single-page app built with Vite. Supabase is the authenticated cloud persistence layer; Dexie IndexedDB remains available for local use and migration. Read this file before code changes and keep it aligned with the implementation. Follow `docs/AGENTS.md` and relevant instructions in `docs/skills/*/SKILL.md`; use `docs/CODE_PRACTICES.md`.
 
 ## Quick Navigation
 
@@ -15,7 +17,7 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 | Navigation and URL view state | `src/app/navigation.ts`, `src/app/useNavigation.ts` | `src/app/AppNavigation.tsx`, `src/main.tsx` |
 | Workouts, plans, exercise timers | `src/Plans.tsx`, `src/views/WorkoutView.tsx`, `src/SessionFields.tsx` | `src/app/useWorkoutActions.ts`, `src/domain.ts`, `src/intervalTimer.ts`, `src/views/HistoryView.tsx`, `src/PainSlider.tsx` |
 | Data validation, schemas, backup compatibility | `src/domain.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/useBackupActions.ts` |
-| Database schema and migrations | `supabase/bootstrap.sql` | `supabase/migrations/`, `supabase/README.md` |
+| Database schema and migrations | `supabase/bootstrap.sql` | `supabase/migrations/`, `docs/supabase/README.md` |
 | Global styles and responsive behavior | `src/style.css` | `src/styles/tokens.css`, `shell.css`, `forms.css`, `responsive.css`, `views.css`, `timer.css` |
 
 ## Data Ownership and Flow
@@ -43,7 +45,7 @@ UI refinement scope and acceptance results are tracked in `docs/UI_REFINEMENT_PL
 
 The explicit refresh action in `src/AppUpdater.tsx` activates the waiting worker and clears only caches with this app's `rehab-<base>-` prefix before reloading. IndexedDB and authentication storage are preserved. `vite.config.ts` generates the production service worker and manifest, including the light theme colors.
 
-For an existing project, apply the migration sequence in `supabase/README.md`, ending with `20261118_rehab_site_archiving.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
+For an existing project, apply the migration sequence in `docs/supabase/README.md`, ending with `20261118_rehab_site_archiving.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
 
 ## Checks
 

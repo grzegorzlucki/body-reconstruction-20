@@ -1,5 +1,15 @@
 # Body Reconstruction
 
+## Dokumentacja i instrukcje pracy
+
+Dokumentacja projektu znajduje się w `docs/`. Przed zmianą kodu przeczytaj [instrukcje repozytorium](docs/AGENTS.md), [mapę architektury](docs/architecture.md) i [zasady kodowania](docs/CODE_PRACTICES.md).
+
+- [Weryfikacja aplikacji](docs/TESTOWANIE.md)
+- [Konfiguracja i migracje Supabase](docs/supabase/README.md)
+- [Plan zmian UI i wyniki weryfikacji](docs/UI_REFINEMENT_PLAN.md)
+
+Lokalne skille znajdują się w `docs/skills/` i zachowują strukturę katalogów wraz z plikami pomocniczymi. Instrukcje `docs/AGENTS.md` trzeba wskazać narzędziu, jeśli automatycznie odczytuje ono wyłącznie `AGENTS.md` z katalogu głównego.
+
 [Otwórz aplikację](https://grzegorzlucki.github.io/body-reconstruction-20/)
 
 Osobisty dziennik aktywności: zapis serii, monitoring samopoczucia, historia oraz kalendarz miesięczny. React + TypeScript + Vite. Dane konta są przechowywane w Supabase; dotychczasowe dane lokalne można przenieść z IndexedDB.
@@ -35,7 +45,7 @@ Widoki aplikacji używają adresów `?view=...`, dzięki czemu przycisk Wstecz d
 
 Jeśli pojawia się błąd RLS, brak funkcji zapisu lub błąd klucza obcego ćwiczenia, zastosuj migracje opisane poniżej w podanej kolejności. Starsze pliki `*_rls_repair.sql` służyły do doraźnych napraw i nie należy ich uruchamiać po migracji `20261116_canonical_rls.sql`.
 
-Przed włączeniem zapisu w chmurze zastosuj SQL zgodnie z [instrukcją bazy Supabase](supabase/README.md). Opisuje osobno istniejącą bazę i nowy projekt oraz kolejność migracji. Nie uruchamiaj wszystkich plików alfabetycznie: starsze funkcje mogą nadpisać obsługę zegara. Przed wdrożeniem wersji z usuwaniem obszarów uruchom również migrację `20261118_rehab_site_archiving.sql`. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
+Przed włączeniem zapisu w chmurze zastosuj SQL zgodnie z [instrukcją bazy Supabase](docs/supabase/README.md). Opisuje osobno istniejącą bazę i nowy projekt oraz kolejność migracji. Nie uruchamiaj wszystkich plików alfabetycznie: starsze funkcje mogą nadpisać obsługę zegara. Przed wdrożeniem wersji z usuwaniem obszarów uruchom również migrację `20261118_rehab_site_archiving.sql`. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
 
 W GitHub **Settings → Secrets and variables → Actions → Variables** ustaw `VITE_SUPABASE_URL` i `VITE_SUPABASE_PUBLISHABLE_KEY`. Workflow wymaga obu wartości. Są publiczne i trafiają do kodu przeglądarki. Lokalnie skopiuj `.env.example` do `.env.local` i uzupełnij te same wartości. Nigdy nie przekazuj `SUPABASE_SECRET_KEY` do Vite ani GitHub Pages.
 
@@ -84,4 +94,4 @@ npm run build
 npx playwright test
 ```
 
-Po teście usuń zmienną poleceniem `Remove-Item Env:VITE_BASE_PATH`, aby wrócić do lokalnej ścieżki głównej. Szczegóły w [TESTOWANIE.md](TESTOWANIE.md).
+Po teście usuń zmienną poleceniem `Remove-Item Env:VITE_BASE_PATH`, aby wrócić do lokalnej ścieżki głównej. Szczegóły w [TESTOWANIE.md](docs/TESTOWANIE.md).
