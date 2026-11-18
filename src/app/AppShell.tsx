@@ -33,6 +33,7 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, onSig
         <AppNavigation current={tab} onNavigate={onNavigate} />
       </div>
       <div className="sidebar-footer">
+        <button type="button" className="secondary" onClick={() => void onNavigate("Ustawienia")}>Konto i ustawienia</button>
         <div className="sidebar-updater"><AppUpdater disabled={busy} hasUnsavedChanges={dirty} confirmAction={confirmAction} onApprovedReload={onApprovedReload} /></div>
       <div className="local">
         <i aria-hidden="true" /> {cloud ? "Dane na koncie" : "Dane na tym urządzeniu"}
@@ -44,9 +45,12 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, onSig
       <header><span>REHABILITACJA / {tab.toUpperCase()}</span>
         <span>{new Date().toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
       </header>
-      <div className="mobile-updater"><AppUpdater disabled={busy} hasUnsavedChanges={dirty} confirmAction={confirmAction} onApprovedReload={onApprovedReload} /></div>
-      {cloud && <div className="account-actions"><span>{accountId}</span>
-        <button type="button" className="secondary" onClick={onSignOut}>Wyloguj</button></div>}
+      {tab === "Ustawienia" && <section className="panel account-settings" aria-label="Konto i aplikacja">
+        <h2>Konto i aplikacja</h2>
+        {cloud && <div className="account-actions"><span>{accountId}</span>
+          <button type="button" className="secondary" disabled={busy} onClick={onSignOut}>Wyloguj</button></div>}
+        <div className="mobile-updater"><AppUpdater disabled={busy} hasUnsavedChanges={dirty} confirmAction={confirmAction} onApprovedReload={onApprovedReload} /></div>
+      </section>}
       {error && <ErrorNotice message={error} />}
       {notice && <div role="status" className="notice">{notice}</div>}
       {children}

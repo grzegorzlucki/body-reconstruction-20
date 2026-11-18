@@ -33,6 +33,8 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 
 ## UI and Responsive Structure
 
+Account details and sign-out are displayed in Settings through `AppShell.tsx`; the desktop sidebar provides a direct account/settings action. Mobile refresh controls also live in Settings (reachable through More). The desktop updater remains in the sidebar footer.
+
 `src/app/AppShell.tsx` owns the sidebar, account sign-out, update controls, status and app landmarks. `src/app/AppNavigation.tsx` renders desktop navigation and the mobile More dialog. `src/main.tsx` composes the screen views and action hooks. `ProfileSettingsView.tsx` edits account configuration, tracked areas, and injury episodes; `DiaryView.tsx` renders configured areas, contexts, and injury selectors. `AnalyticsView.tsx` filters and summarizes health/workout records. `TodayView.tsx`, `HistoryView.tsx`, `Calendar.tsx`, `PainCharts.tsx`, and `WorkoutView.tsx` consume the same profile-defined tracked areas. Shared responsive tokens and breakpoints live in `src/styles/`.
 
 ## Supabase Setup

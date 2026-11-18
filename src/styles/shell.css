@@ -92,6 +92,7 @@ nav button.selected {
   background: var(--color-accent-soft);
   color: var(--color-accent-strong);
   font-weight: 700;
+  box-shadow: inset 3px 0 var(--color-accent-fill);
 }
 .local {
   position: static;
@@ -121,7 +122,10 @@ nav button.selected {
   margin-top: 0;
 }
 .sidebar-footer { display: grid; gap: 8px; min-width: 0; }
-.sidebar-updater button { width: 100%; font-size: 13px; }
+.sidebar-updater button { width: 100%; font-size: 14px; background: transparent; border-color: var(--color-border); }
+.account-settings { margin-top: 24px; }
+.account-settings h2 { font-size: 20px; }
+.account-actions span { word-break: break-word; }
 .sidebar-updater [role="alert"],
 .sidebar-updater [role="status"] { font-size: 11px; }
 .mobile-updater { display: none; }
