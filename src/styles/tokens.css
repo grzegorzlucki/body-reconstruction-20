@@ -1,54 +1,62 @@
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
   /* Surfaces */
-  --color-page: #101917;
-  --color-surface: #192622;
-  --color-surface-glass: #192622f5;
-  --color-surface-control: #101c17;
-  --color-surface-soft: #22342a;
-  --color-surface-muted: #18221d;
-  --color-surface-selected: #304e34;
-  --color-surface-hero: #153d35;
-  --color-surface-hero-pill: #355b4e;
-  --color-surface-success: #293e27;
-  --color-surface-warning: #422e21;
-  --color-surface-set-done: #233c2c;
+  --color-page: #DCEBE7;
+  --color-surface: #F2E6D5;
+  --color-surface-glass: #F2E6D5f5;
+  --color-surface-control: #f8f4ec;
+  --color-surface-soft: #e8ddd0;
+  --color-surface-muted: #ebe5db;
+  --color-surface-selected: #f0d9cf;
+  --color-surface-hero: #c7dfd8;
+  --color-surface-hero-pill: #c0d9d1;
+  --color-surface-success: #d4e8dc;
+  --color-surface-warning: #f6e3cf;
+  --color-surface-set-done: #d6e9dc;
 
   /* Text and borders */
-  --color-text: #e2ece7;
-  --color-text-on-hero: #ffffff;
-  --color-text-secondary: #afc1b7;
-  --color-text-subtle: #9db1a4;
-  --color-text-soft: #d3e5d8;
-  --color-text-navigation: #adc0b3;
-  --color-text-footer: #afc1b7;
-  --color-border: #34483f;
-  --color-border-control: #476052;
-  --color-border-hero: #607d63;
-  --color-backdrop: #000a;
+  --color-text: #203632;
+  --color-text-on-hero: #203632;
+  --color-text-secondary: #405650;
+  --color-text-subtle: #52665f;
+  --color-text-soft: #344c45;
+  --color-text-navigation: #344d46;
+  --color-text-footer: #52665f;
+  --color-border: #c5d5ce;
+  --color-border-control: #98b3a7;
+  --color-border-hero: #96b7aa;
+  --color-backdrop: #20363266;
 
   /* Brand and action colors */
-  --color-accent: #9bdbb4;
-  --color-accent-ink: #10241a;
-  --color-accent-soft: #2b4437;
-  --color-accent-strong: #a9d99c;
-  --color-accent-warm: #a9c99b;
-  --color-accent-light: #d8efa7;
-  --color-accent-soft-light: #d7efa8;
-  --color-accent-dark-ink: #244336;
-  --color-focus: #d89c52;
-  --color-success: #91d5a7;
-  --color-success-muted: #74a574;
-  --color-warning: #d69a52;
-  --color-danger-border: #9b704a;
-  --color-danger-text: #ffaaa0;
-  --color-notice-border: #55704a;
+  --color-accent: #a7473b;
+  --color-accent-fill: #D76A5A;
+  --color-accent-ink: #203632;
+  --color-accent-soft: #ead2c9;
+  --color-accent-strong: #8f3f35;
+  --color-accent-warm: #bb584b;
+  --color-accent-light: #f0d9cf;
+  --color-accent-soft-light: #f0d9cf;
+  --color-accent-dark-ink: #203632;
+  --color-focus: #203632;
+  --color-success: #2F7D5B;
+  --color-success-muted: #2F7D5B;
+  --color-warning: #D99A32;
+  --color-danger-border: #B84343;
+  --color-danger-text: #8f3030;
+  --color-notice-border: #83A85A;
+
+  /* Pain scale */
+  --pain-low: #2F7D5B;
+  --pain-mild: #83A85A;
+  --pain-moderate: #D99A32;
+  --pain-high: #D66B36;
+  --pain-severe: #B84343;
 
   /* Timer phase colors */
-  --color-timer-hold: #c4a166;
-  --color-timer-move: #8ca8e6;
-  --color-timer-rest: #64c5cf;
+  --color-timer-hold: #a76c18;
+  --color-timer-move: #456d91;
+  --color-timer-rest: #287c83;
 
   /* Typography, spacing, and shape */
   --font-body: "DM Sans", system-ui, sans-serif;

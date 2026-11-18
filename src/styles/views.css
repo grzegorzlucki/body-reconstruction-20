@@ -126,7 +126,7 @@
 .timer-option input { width: auto; }
 .exercise-timer { margin: 20px 0; }
 .exercise-timer .timer-clock { font-size: clamp(42px, 9vw, 72px); }
-.exercise-timer progress { width: 100%; accent-color: var(--color-accent); }
+.exercise-timer progress { width: 100%; accent-color: var(--color-accent-fill); }
 .exercise-picker {
   margin-bottom: 16px;
   min-width: 0;

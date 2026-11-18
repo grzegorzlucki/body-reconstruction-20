@@ -5,7 +5,7 @@
   font-synthesis: none;
   font-weight: 400;
 }
-.skip-link { position: fixed; left: 12px; top: -80px; z-index: 100; background: var(--color-accent); color: var(--color-accent-ink); padding: 12px; border-radius: var(--radius-control); }
+.skip-link { position: fixed; left: 12px; top: -80px; z-index: 100; background: var(--color-accent-fill); color: var(--color-accent-ink); padding: 12px; border-radius: var(--radius-control); }
 .skip-link:focus { top: 12px; }
 .phone-nav { display: none; }
 .more-dialog { width: min(100% - 24px, 460px); max-height: min(75dvh, 620px); margin: auto auto calc(76px + env(safe-area-inset-bottom)); padding: 20px; color: var(--color-text); background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-dialog); overscroll-behavior: contain; }
@@ -48,7 +48,7 @@ textarea {
 button {
   border: 0;
   border-radius: var(--radius-button);
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   color: var(--color-accent-ink);
   padding: 14px 20px;
   cursor: pointer;
@@ -75,6 +75,7 @@ a:focus-visible {
   outline: 3px solid var(--color-focus);
   outline-offset: 3px;
 }
+input[type="range"] { accent-color: var(--color-accent-fill); }
 p {
   line-height: var(--line-height-body);
   color: var(--color-text-secondary);

@@ -40,7 +40,7 @@ aside {
   position: absolute;
   left: 0;
   top: 0;
-  background: var(--color-accent);
+  background: var(--color-accent-fill);
   border-radius: 10px;
   color: var(--color-accent-soft-light);
   font-size: 28px;
@@ -90,7 +90,7 @@ nav button span {
 }
 nav button.selected {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
   font-weight: 700;
 }
 .local {

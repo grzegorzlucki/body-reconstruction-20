@@ -131,7 +131,7 @@
 .timer-display progress {
   width: 100%;
   margin-top: 24px;
-  accent-color: var(--color-accent);
+  accent-color: var(--color-accent-fill);
   height: 12px;
 }
 .timer-display .actions {

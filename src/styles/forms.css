@@ -188,7 +188,7 @@ textarea:focus-visible {
   outline-offset: 2px;
   box-shadow: 0 0 0 1px var(--color-surface-control);
 }
-select { color-scheme: dark; }
+select { color-scheme: light; }
 textarea {
   min-height: 90px;
   resize: vertical;
@@ -201,8 +201,9 @@ textarea {
   padding: 12px 0;
 }
 .pain-slider-control { display: flex; align-items: center; gap: 12px; width: min(100%, 380px); }
-.pain-slider-control input[type="range"] { flex: 1; min-height: 44px; padding: 0; accent-color: var(--color-accent); cursor: pointer; }
+.pain-slider-control input[type="range"] { flex: 1; min-height: 44px; padding: 0; cursor: pointer; }
 .pain-slider-control output { min-width: 94px; text-align: right; color: var(--color-text); font-weight: 700; }
+.pain-slider-ends { display: flex; justify-content: space-between; gap: 8px; width: min(100%, 380px); color: var(--color-text-subtle); font-size: var(--font-size-meta); }
 @media (max-width: 640px) { .pain-row { flex-direction: column; align-items: stretch; } .pain-slider-control { width: 100%; } }
 .reason {
   background: var(--color-surface-soft);
@@ -237,7 +238,7 @@ textarea {
   width: 24px;
   height: 24px;
   min-height: 24px;
-  accent-color: var(--color-accent);
+  accent-color: var(--color-accent-fill);
 }
 .done {
   background: var(--color-surface-set-done);
@@ -249,7 +250,7 @@ textarea {
 }
 .secondary {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
 }
 .alert,
 .notice {
@@ -295,7 +296,7 @@ a {
   text-underline-offset: 0.18em;
   transition: color 140ms ease;
 }
-a:hover { color: var(--color-accent); }
+a:hover { color: var(--color-accent-strong); }
 
 .profile-settings { display: grid; gap: 28px; }
 .profile-settings section { display: grid; gap: 16px; }

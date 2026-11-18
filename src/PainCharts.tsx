@@ -6,6 +6,7 @@ import {
   type KeyboardEvent,
 } from "react";
 import { type PainLog, type RehabSite } from "./domain";
+import { painLevelColor } from "./PainSlider";
 
 const WIDTH = 400,
   HEIGHT = 210,
@@ -97,7 +98,7 @@ function PainChart({
                 minute: "2-digit",
               })}
             </span>
-            <strong style={{ color }}>
+            <strong style={{ color: painLevelColor(value(current)) }}>
               {value(current)}
               <small>/10</small>
             </strong>
@@ -165,8 +166,8 @@ function PainChart({
                 cx={x(log)}
                 cy={y(value(log))}
                 r={i === index ? 5 : 3}
-                fill={color}
-                stroke="#192622"
+                fill={painLevelColor(value(log))}
+                stroke="var(--color-surface)"
                 strokeWidth={i === index ? 2 : 0}
               >
                 <title>{describe(log)}</title>
