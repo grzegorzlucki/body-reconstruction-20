@@ -276,6 +276,7 @@ function App({ user }: { user?: User }) {
               confirmAction={confirmAction} />
             {tab === "Dzisiaj" && (
               <TodayView active={active} sessions={sessions} today={today} hours={hours}
+                busy={busy} onFinish={() => { void finishWorkout(); }}
                 logs={logs} injuries={selectedProfile?.injuries ?? []}
                 sites={selectedProfile?.rehabSites ?? []} weeklyGoal={selectedProfile?.weeklyGoal ?? 2}
                 onWorkout={() => { navigate("Trening"); }}

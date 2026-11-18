@@ -1,5 +1,7 @@
 /* Focused when a newly started workout replaces the preparation form. */
 #workout-heading { scroll-margin-top: 16px; }
+.workout-quick-finish { margin-bottom: 20px; }
+.workout-quick-finish p { margin: 0; font-size: var(--font-size-small); }
 .today-heading { margin-block: 24px; }
 .today-heading h1 { margin-block: 0 8px; }
 .today-heading p { margin: 0; }

@@ -59,6 +59,11 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
       : "Sprawdź monitor bólu i ustaw dawki. Jeden wpis serii dotyczy obu nóg."}</p>
     {active ? <>
       <p className="badge">{active.planName ?? "Plan początkowy"} · Rozpoczęto {new Date(active.started).toLocaleString("pl-PL")} · {completedGroups(active)}/{visibleSets(active).length} serii</p>
+      <div className="actions workout-quick-finish">
+        <button type="button" className="secondary" disabled={busy}
+          onClick={() => onFinish(recordPain ? postPain : undefined)}>Zakończ trening wcześniej</button>
+        <p>Możesz zapisać trening bez wykonania wszystkich zaplanowanych serii.</p>
+      </div>
       <SessionFields session={active} disabled={busy} onChange={onSetChange} confirmAction={confirmAction}
         onTimerFinish={onTimerFinish} onReplace={onReplace} />
       {activeSites.length > 0 && <section className="panel" aria-label="Pomiar bólu po treningu">

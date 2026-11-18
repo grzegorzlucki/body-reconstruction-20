@@ -1,8 +1,8 @@
 import { completedGroups, visibleSets, day, type Injury, type PainLog, type RehabSite, type Session } from "../domain";
 
-export function TodayView({ active, sessions, logs, today, hours, sites, injuries, weeklyGoal, onWorkout, onDiary, onAnalytics }: {
+export function TodayView({ active, sessions, logs, today, hours, sites, injuries, weeklyGoal, busy, onFinish, onWorkout, onDiary, onAnalytics }: {
   active?: Session; sessions: Session[]; logs: PainLog[]; today?: PainLog; hours: number; sites: RehabSite[]; injuries: Injury[];
-  weeklyGoal: number; onWorkout: () => void; onDiary: () => void; onAnalytics: () => void;
+  weeklyGoal: number; busy: boolean; onFinish: () => void; onWorkout: () => void; onDiary: () => void; onAnalytics: () => void;
 }) {
   const recent = sessions.filter((session) => session.ended && Date.now() - new Date(session.ended).getTime() < 7 * 864e5).length;
   const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 6);
@@ -17,7 +17,11 @@ export function TodayView({ active, sessions, logs, today, hours, sites, injurie
       <h2>{active?.planName ?? "Twój własny plan."}</h2>
       <p>{active ? "Kontynuuj zapis serii od miejsca, w którym skończyłeś." : `Plan treningu i monitor bólu · ${activeSites.map((site) => site.name).join(" · ")}`}</p>
       {active && <p className="workout-progress">Wykonano {completedGroups(active)} z {visibleSets(active).length} serii</p>}
-      <button type="button" className="light" onClick={onWorkout}>{active ? "Wznów trening" : "Przejdź do treningu"}</button>
+      <div className="actions">
+        <button type="button" className="light" disabled={busy} onClick={onWorkout}>{active ? "Wznów trening" : "Przejdź do treningu"}</button>
+        {active && <button type="button" className="secondary" disabled={busy} onClick={onFinish}>Zakończ trening</button>}
+      </div>
+      {active && <p>Możesz zakończyć trening także z mniejszą liczbą wykonanych serii.</p>}
     </div></section>
     <section className="panel today-diary-action" aria-label="Dzisiejszy pomiar bólu">
       <div><h2>{today ? "Dzisiejszy pomiar zapisany" : "Jak się dziś czujesz?"}</h2>
