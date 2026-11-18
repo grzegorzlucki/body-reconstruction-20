@@ -13,7 +13,7 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 | Profile-scoped loading and storage adapters | `src/app/useProfileData.ts`, `src/app/repository.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/profileRepository.ts` |
 | Diary values and context options | `src/app/usePainLogActions.ts`, `src/views/DiaryView.tsx` | `src/domain.ts`, `src/Calendar.tsx`, `src/PainCharts.tsx`, `src/views/HistoryView.tsx` |
 | Navigation and URL view state | `src/app/navigation.ts`, `src/app/useNavigation.ts` | `src/app/AppNavigation.tsx`, `src/main.tsx` |
-| Workouts, plans, exercise timers | `src/Plans.tsx`, `src/views/WorkoutView.tsx` | `src/app/useWorkoutActions.ts`, `src/domain.ts`, `src/intervalTimer.ts` |
+| Workouts, plans, exercise timers | `src/Plans.tsx`, `src/views/WorkoutView.tsx`, `src/SessionFields.tsx` | `src/app/useWorkoutActions.ts`, `src/domain.ts`, `src/intervalTimer.ts`, `src/views/HistoryView.tsx` |
 | Data validation, schemas, backup compatibility | `src/domain.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/useBackupActions.ts` |
 | Database schema and migrations | `supabase/bootstrap.sql` | `supabase/migrations/`, `supabase/README.md` |
 | Global styles and responsive behavior | `src/style.css` | `src/styles/tokens.css`, `shell.css`, `forms.css`, `responsive.css`, `views.css`, `timer.css` |
@@ -26,6 +26,7 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 - Profile settings contain injury episodes with status, dates, side, notes, and links to monitored areas. Diary logs can reference multiple injuries through `injuryIds`; Supabase stores these links in `pain_log_injuries` while local Dexie and backup v5 keep the same app-level shape. Earlier backups remain importable with no injury associations.
 - Progress summaries are derived from the profile's already loaded diary logs, sessions, contexts, and area definitions. `src/analytics.ts` owns period calculations; `AnalyticsView.tsx` supplies filters and detailed report/statistic views; `TodayView.tsx` shows a compact seven-day summary. These are descriptive measurements, not medical interpretation.
 - Cloud reads and writes flow through `src/cloudDb.ts`; untrusted imports and writes are validated in `src/domain.ts`. SQL functions perform atomic writes. Browser code uses only the Supabase URL and publishable key; row-level security enforces account ownership. Never put a secret key in the frontend.
+- A workout can end with fewer completed sets than planned. Unfinished exercise IDs receive `finishedEarly` in `exerciseProgress`, while their unfinished set rows keep `done=false`; the status and `ended` timestamp are saved in one session write. History displays completed versus planned set groups and distinguishes early completion.
 - The account consolidation migration moves all prior profile-owned workouts, templates, logs, and timer settings under one canonical account profile before adding unique ownership. It preserves multiple diary rows on the same date and leaves old global `pain_sites` lookup rows unused for compatibility.
 - Local Dexie remains multi-profile only to support old local data and source selection during local-to-cloud migration. The normal app shell no longer offers profile switching.
 

@@ -54,6 +54,15 @@ export function SessionFields({
               savedStatus={session.exerciseProgress?.find((row) => row.exerciseId === e.id)?.status}
               disabled={disabled} onFinish={(status) => onTimerFinish(e.id, status)}
               confirmAction={confirmAction} />}
+          {onTimerFinish && !sessionPlan(session).find((entry) => entry.exerciseId === e.id)?.timer &&
+            (session.exerciseProgress?.some((row) => row.exerciseId === e.id && (row.status === "finishedEarly" || row.status === "stopped"))
+              ? <p className="notice" role="status">Ćwiczenie zakończone wcześniej.</p>
+              : <button type="button" className="secondary" disabled={disabled}
+                  onClick={async () => {
+                    if (await confirmAction("Zakończyć to ćwiczenie wcześniej? Niewykonane serie pozostaną niezaznaczone."))
+                      try { await onTimerFinish(e.id, "finishedEarly"); }
+                      catch { /* Save error is displayed by the workout action. */ }
+                  }}>Zakończ ćwiczenie wcześniej</button>)}
           {visibleSets(session)
             .filter((s) => s.exerciseId === e.id)
             .map((row) => {

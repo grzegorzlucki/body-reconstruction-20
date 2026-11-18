@@ -56,11 +56,7 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
       <SessionFields session={active} disabled={busy} onChange={onSetChange} confirmAction={confirmAction}
         onTimerFinish={onTimerFinish} onReplace={onReplace} />
       <div className="actions">
-        <button type="button" disabled={busy || active.sets.some((set) =>
-          (!set.done || set.reps < 1) && !active.exerciseProgress?.some((progress) =>
-            progress.exerciseId === set.exerciseId &&
-            (progress.status === "finishedEarly" || progress.status === "stopped")))}
-          onClick={onFinish}>Zakończ trening</button>
+        <button type="button" disabled={busy} onClick={onFinish}>Zakończ trening</button>
         <button type="button" className="secondary" disabled={busy} onClick={onDiscard}>Odrzuć trening</button>
       </div>
     </> : <>

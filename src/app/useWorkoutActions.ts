@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { AppRepository } from "./repository";
-import { newSession, replaceSessionExercise, sessionSchema, templateSchema,
+import { completedGroups, exerciseById, newSession, replaceSessionExercise, sessionSchema, templateSchema, visibleSets,
   type Session, type WorkoutTemplate } from "../domain";
 import { saveCloudSessionSets } from "../cloudDb";
 
@@ -104,9 +104,26 @@ export function useWorkoutActions({ database, cloud, profileId, active, sessions
     });
   }
   async function finishWorkout() {
-    if (!active) return;
+    if (!active || busy) return;
+    const completed = completedGroups(active);
+    const planned = visibleSets(active).length;
+    const unfinishedIds = [...new Set(active.sets.filter((row) => !row.done || row.reps < 1)
+      .map((row) => row.exerciseId))];
+    if (unfinishedIds.length) {
+      const names = unfinishedIds.map((id) => exerciseById(id).name).join(", ");
+      const message = completed === 0
+        ? `Nie wykonano żadnej serii. Zapisać pusty trening jako zakończony? Możesz też wybrać „Odrzuć trening”. Brakujące ćwiczenia: ${names}.`
+        : `Wykonano ${completed} z ${planned} serii. Zapisać trening z niewykonanymi seriami? Brakujące ćwiczenia: ${names}.`;
+      if (!await confirmAction(message)) return;
+    }
     await action(async () => {
-      await database.sessions.put(sessionSchema.parse({ ...active, ended: new Date().toISOString() }));
+      const next = sessionSchema.parse({ ...active, ended: new Date().toISOString(),
+        exerciseProgress: [
+          ...(active.exerciseProgress ?? []).filter((row) => !unfinishedIds.includes(row.exerciseId)),
+          ...unfinishedIds.map((exerciseId) => ({ exerciseId, status: "finishedEarly" as const })),
+        ],
+      });
+      await database.sessions.put(next);
       setNotice("Trening ukończony. Zapisz reakcję następnego ranka.");
     });
   }

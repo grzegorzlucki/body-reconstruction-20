@@ -100,7 +100,7 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                     <details className="panel" key={s.id}>
                       <summary>
                         {fmt(s.started)} · {s.planName ?? "Plan początkowy"} ·{" "}
-                        {s.ended ? "Ukończony" : "W trakcie"} ·{" "}
+                        {s.ended ? completedGroups(s) < visibleSets(s).length ? "Zakończony wcześniej" : "Ukończony" : "W trakcie"} ·{" "}
                         {completedGroups(s)}/{visibleSets(s).length} serii
                       </summary>
                       {sessionExercises(s)
