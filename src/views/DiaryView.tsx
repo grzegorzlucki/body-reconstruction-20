@@ -42,11 +42,11 @@ export function DiaryView({ editingId, sessionId, measurementPhase, sessions, on
       }
       onSave(event);
     }} className="panel">
-      <div className="grid two">
+      <div className="grid two date-time-fields">
         <label>Dzień<input name="painDate" required type="date" max={day(new Date())} value={date} onChange={(event) => onDate(event.target.value)} /></label>
         <label>Godzina pomiaru<input name="painTime" required type="time" step="1" value={time} onChange={(event) => onTime(event.target.value)} /></label>
       </div>
-      <div className="grid two">
+      <div className="grid two date-time-fields">
         <label>Rodzaj pomiaru<select value={measurementPhase} onChange={(e) => onPhase(e.target.value as MeasurementPhase)}>
           {measurementPhases.map((phase) => <option key={phase} value={phase}>{measurementPhaseLabels[phase]}</option>)}
         </select></label>

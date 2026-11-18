@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 export async function confirmInApp(page: Page) {
   await page.getByRole("alertdialog", { name: "Potwierdź działanie" })
@@ -6,6 +6,8 @@ export async function confirmInApp(page: Page) {
 }
 
 export async function openTab(page: Page, name: "Historia" | "Kalendarz" | "Zegar HSR" | "Dane" | "Ustawienia" | "Plany" | "Profil" | "Aplikacja") {
+  // Startup intentionally has no navigation until the initial records are ready.
+  await expect(page.locator(".shell")).toBeVisible();
   if (["Profil", "Ustawienia", "Aplikacja"].includes(name)) {
     const desktop = page.locator(".account-trigger");
     if (await desktop.isVisible()) {

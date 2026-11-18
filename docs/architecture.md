@@ -14,6 +14,7 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 | Injury episodes and report associations | `src/views/ProfileSettingsView.tsx`, `src/views/DiaryView.tsx` | `src/domain.ts`, `src/cloudDb.ts`, `supabase/migrations/20261117_injuries_analytics.sql` |
 | User progress analytics | `src/views/AnalyticsView.tsx`, `src/analytics.ts`, `src/analytics/` | `metrics.ts`, `matching.ts`, `useAnalyticsNavigation.ts`, `WorkoutResponseView.tsx`, `TrainingDoseView.tsx`, `AreaAnalysisView.tsx`, `src/analytics.test.ts` |
 | Profile-scoped loading and storage adapters | `src/app/useProfileData.ts`, `src/app/repository.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/profileRepository.ts` |
+| Startup/loading screen and authentication lifecycle | `src/app/LoadingScreen.tsx`, `src/app/watchAuthSession.ts` | `src/AuthGate.tsx`, `src/main.tsx`, `src/styles/loading.css`, `src/authSession.test.ts` |
 | Diary values and context options | `src/app/usePainLogActions.ts`, `src/views/DiaryView.tsx`, `src/PainSlider.tsx` | `src/domain.ts`, `src/Calendar.tsx`, `src/PainCharts.tsx`, `src/views/HistoryView.tsx` |
 | Navigation and URL view state | `src/app/navigation.ts`, `src/app/useNavigation.ts` | `src/app/AppNavigation.tsx`, `src/main.tsx` |
 | Workouts, plans, exercise timers | `src/Plans.tsx`, `src/views/WorkoutView.tsx`, `src/SessionFields.tsx` | `src/app/useWorkoutActions.ts`, `src/domain.ts`, `src/intervalTimer.ts`, `src/views/HistoryView.tsx`, `src/PainSlider.tsx` |
@@ -41,6 +42,10 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 - Local Dexie remains multi-profile only to support old local data and source selection during local-to-cloud migration. The normal app shell no longer offers profile switching.
 
 ## UI and Responsive Structure
+
+`LoadingScreen.tsx` provides full-screen startup, content-area lazy-view and small inline background-refresh variants. Startup uses the page color, a CSS ring and “Wczytywanie…”; reduced motion disables rotation. `AuthGate` delegates initial session resolution and auth subscription cleanup to `watchAuthSession.ts`, which bounds startup at 15 seconds, ignores stale initial results after auth events/unmount/timeout, and permits a fresh retry after failure. Password recovery events remain authoritative. `main.tsx` uses the same full-screen presentation until first profile records resolve; later background refreshes keep the shell, forms and timer mounted, with an inline status and aria-busy. Failed profile reads retain existing error/retry and account access.
+
+More navigation uses `.nav-icon` for ordinary symbols, so icon width selectors no longer resize the shared avatar. More avatars are 32px square and overview/form avatars retain their existing square sizes and cropped photos. Date/time/datetime-local controls have explicit border-box inline bounds; `.date-time-fields` stacks Diary and historical-session date groups on mobile. Native pickers, seconds and parsing remain intact. Geometry and loading regressions are in `e2e/mobile-controls.spec.ts`; physical-device Safari verification remains separate from Chromium emulation.
 
 Layout rules use horizontal checkbox/toggle labels independently of ordinary stacked form labels. Rehabilitation sections own their spacing, without accumulated paragraph/label margins; narrow screens stack form columns and section actions. Desktop shell uses the viewport width, bounded left-aligned forms and top-aligned sidebar rows (no vertical grid stretching). `e2e/rehab-layout.spec.ts` checks geometry, unclipped buttons and overflow from 320 to 1920px.
 

@@ -4,6 +4,7 @@ import { AppNavigation } from "./AppNavigation";
 import { ErrorNotice } from "./errorMessages";
 import type { MainTab, Tab } from "./navigation";
 import { AccountMenu } from "./AccountMenu";
+import { LoadingScreen } from "./LoadingScreen";
 
 export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, profileName, avatarPath, onSignOut,
   confirmAction, onApprovedReload, ready, loadingData, error, notice, children }: {
@@ -42,13 +43,14 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, profi
       </div>
       </div>
     </aside>
-    <main id="main-content" tabIndex={-1}>
+    <main id="main-content" tabIndex={-1} aria-busy={loadingData}>
       <header><span>REHABILITACJA / {tab.toUpperCase()}</span>
         <div className="header-account"><span>{new Date().toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
           <AccountMenu name={profileName ?? (cloud ? "Konto" : "Profil lokalny")} email={accountId} avatarPath={avatarPath}
             onNavigate={onNavigate} onSignOut={onSignOut} busy={busy} /></div>
       </header>
       {error && <ErrorNotice message={error} />}
+      {ready && loadingData && <LoadingScreen inline />}
       {notice && <div role="status" className="notice">{notice}</div>}
       {children}
     </main>

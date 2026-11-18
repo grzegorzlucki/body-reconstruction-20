@@ -338,3 +338,14 @@ a:hover { color: var(--color-accent-strong); }
 
 .profile-order-actions { display: flex; gap: 8px; }
 .profile-order-actions button { min-width: 44px; padding-inline: 10px; }
+.date-time-fields > * { min-inline-size: 0; }
+input[type="date"], input[type="time"], input[type="datetime-local"] {
+  box-sizing: border-box;
+  inline-size: 100%;
+  max-inline-size: 100%;
+  min-inline-size: 0;
+  min-block-size: 48px;
+}
+@media (max-width: 700px) {
+  .grid.two.date-time-fields { grid-template-columns: minmax(0, 1fr); }
+}

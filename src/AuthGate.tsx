@@ -3,6 +3,8 @@ import type { Session } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
 import { errorExplanation } from "./app/errorMessages";
 import { accountRedirect } from "./account/accountRepository";
+import { LoadingScreen } from "./app/LoadingScreen";
+import { watchAuthSession } from "./app/watchAuthSession";
 
 export function AuthGate({ children }: { children: (session: Session) => ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
@@ -12,17 +14,20 @@ export function AuthGate({ children }: { children: (session: Session) => ReactNo
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sessionError, setSessionError] = useState("");
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     if (!supabase) { setLoading(false); return; }
-    void supabase.auth.getSession().then(({ data }) => { setSession(data.session); setLoading(false); });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((authEvent, next) => {
-      setSession(next);
+    return watchAuthSession(supabase.auth, (next, authEvent) => {
+      setSession(next); setSessionError("");
       if (authEvent === "PASSWORD_RECOVERY") setMode("update");
       setLoading(false);
+    }, () => {
+      setLoading(false);
+      setSessionError("Nie udało się sprawdzić sesji. Sprawdź połączenie i spróbuj ponownie.");
     });
-    return () => subscription.unsubscribe();
-  }, []);
+  }, [attempt]);
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -47,7 +52,11 @@ export function AuthGate({ children }: { children: (session: Session) => ReactNo
   }
 
   if (!supabase) return <p role="alert">Brak konfiguracji Supabase. Ustaw publiczny adres i klucz projektu.</p>;
-  if (loading) return <p>Sprawdzanie sesji…</p>;
+  if (loading) return <LoadingScreen fullScreen />;
+  if (sessionError) return <main className="auth-screen">
+    <h1>Nie można wczytać aplikacji</h1><p role="alert">{sessionError}</p>
+    <button type="button" onClick={() => { setSessionError(""); setLoading(true); setAttempt((value) => value + 1); }}>Spróbuj ponownie</button>
+  </main>;
   if (session && mode !== "update") return <>{children(session)}</>;
   return <main className="auth-screen">
     <h1>{mode === "register" ? "Utwórz konto" : mode === "reset" ? "Odzyskaj dostęp" : mode === "update" ? "Ustaw nowe hasło" : "Zaloguj się"}</h1>

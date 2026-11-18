@@ -4,6 +4,7 @@ import { createRoot } from "react-dom/client";
 import { db as localDb, deleteLocalSession, saveLocalLog, saveLocalSession, legacyProfileId, type Profile } from "./db";
 import { cloudDb } from "./cloudDb";
 import { supabase } from "./supabase";
+import { LoadingScreen } from "./app/LoadingScreen";
 import { AuthGate } from "./AuthGate";
 import {
   defaultTemplate,
@@ -272,6 +273,7 @@ function App({ user }: { user?: User }) {
     window.history.replaceState(null, "", url);
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
+  if (!ready && loadingData) return <LoadingScreen fullScreen />;
   return (
     <>
     <AppShell tab={tab} onNavigate={navigate} busy={busy} confirmAction={confirmAction}
@@ -329,7 +331,7 @@ function App({ user }: { user?: User }) {
                 onEditPlan={() => { navigate("Plany"); }} />
             )}
             {tab === "Kalendarz" && (
-              <React.Suspense fallback={<p role="status">Ładowanie kalendarza…</p>}>
+              <React.Suspense fallback={<LoadingScreen />}>
               <Calendar
                 sessions={sessions}
                 logs={logs} sites={selectedProfile?.rehabSites ?? []}
@@ -351,14 +353,14 @@ function App({ user }: { user?: User }) {
                 navigate={navigate} removeSession={() => void removeSession()} />
             )}
             {tab === "Historia" && (
-              <React.Suspense fallback={<p role="status">Ładowanie historii…</p>}>
+              <React.Suspense fallback={<LoadingScreen />}>
               <HistoryView logs={logs} sessions={sessions} sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []} injuries={selectedProfile?.injuries ?? []} historyExercise={historyExercise}
                 setHistoryExercise={setHistoryExercise} openSessionEditor={openSessionEditor}
                 editLog={editLog} navigate={navigate} onAnalyze={(id) => { void openAnalytics(id); }} />
               </React.Suspense>
             )}
             {tab === "Analizy" && (
-              <React.Suspense fallback={<p role="status">Ładowanie analiz…</p>}>
+              <React.Suspense fallback={<LoadingScreen />}>
                 <AnalyticsView logs={logs} sessions={sessions}
                   onEditLog={async (id) => { if (await navigate("Dziennik")) editLog(id); }}
                   onAddMeasurement={async (id, phase) => { if (await navigate("Dziennik")) newMeasurement(day(new Date()), id, phase); }}
@@ -390,7 +392,7 @@ function App({ user }: { user?: User }) {
             {tab === "Ustawienia" && selectedProfile && <ProfileSettingsView profile={selectedProfile}
               busy={busy} onDirty={setProfileDirty} onSave={saveProfileSettings} />}
             {tab === "Dane" && (
-              <React.Suspense fallback={<p role="status">Ładowanie danych…</p>}>
+              <React.Suspense fallback={<LoadingScreen />}>
               <DataView cloud={!!supabase} localProfiles={localProfiles}
                 sourceProfileId={sourceProfileId} onSourceProfileChange={setSourceProfileId}
                 profileId={profileId} logs={logs} sessions={sessions} templates={templates}

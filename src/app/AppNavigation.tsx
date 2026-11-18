@@ -26,7 +26,7 @@ export function AppNavigation({ current, onNavigate, profileName = "Profil", ava
         moreDialog.current?.close();
       }
     }}>
-    {tab === "Profil" ? <ProfileAvatar name={profileName} path={avatarPath} /> : <span aria-hidden="true">{icons[tab]}</span>}{tab}
+    {tab === "Profil" ? <ProfileAvatar name={profileName} path={avatarPath} /> : <span className="nav-icon" aria-hidden="true">{icons[tab]}</span>}{tab}
   </button>;
   return <>
     <nav className="desktop-nav" aria-label="Główna nawigacja">{tabs.filter((tab) => !isProfileTab(tab)).map(item)}</nav>

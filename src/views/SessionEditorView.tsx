@@ -30,7 +30,7 @@ export function SessionEditorView({ editing, editingExisting, editStart, editEnd
                 </p>
                 <form onSubmit={saveHistorical}>
                   <section className="panel">
-                    <div className="grid two">
+                    <div className="grid two date-time-fields">
                       <label>
                         Początek treningu
                         <input

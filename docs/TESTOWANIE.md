@@ -36,6 +36,8 @@ W środowisku chmurowym można użyć zainstalowanego systemowego Chromium przez
 `e2e/pain-charts.spec.ts` sprawdza trzy osobne wykresy, brak danych i pojedynczy punkt, rzeczywiste odstępy dat, luki w pomiarach, obsługę klawiatury i przesuwanie palcem przez zdarzenia dotykowe Chromium (CDP). Testy używają wyłącznie danych syntetycznych. Działanie na fizycznym Safari wymaga sprawdzenia na urządzeniu.
 # Analytics expansion checks
 
+Mobile date/avatar/loading regressions: `npx playwright test e2e/mobile-controls.spec.ts` checks 320–1440px control bounds (relative to labels/cards), More avatar geometry, populated/empty date fields, initial full-screen loading, reduced motion and lazy-view loading with navigation retained. `src/authSession.test.ts` covers signed-out resolution, rejected reads/retry, timeout, late results, password recovery precedence and unmount cleanup. Chromium emulation does not verify physical Safari or installed iOS PWA behavior; WebKit is not installed in the current environment.
+
 `src/analytics.test.ts` covers daily weighting/median, real zero vs missing data, unilateral group counting, actual dose, time windows across midnight/DST, context/ownership, confirmed-vs-candidate matching, intervening training and backup compatibility. `src/db.test.ts` checks linked-report import remapping and report preservation on session deletion.
 
 `e2e/analytics.spec.ts` checks five subviews, URL filters/back navigation and overflow at 320/390/1024/1920px, plus independent same-day report editing. Run `npx playwright test e2e/analytics.spec.ts` against a local configuration without Supabase credentials. SQL/RLS acceptance requires the staging checks in `docs/supabase/README.md`.

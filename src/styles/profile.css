@@ -2,8 +2,11 @@
 .account-menu { position: relative; text-transform: none; letter-spacing: normal; }
 .account-trigger { display: flex; align-items: center; gap: 10px; padding: 6px 12px; }
 .account-trigger > span:nth-child(2) { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.profile-avatar { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 48px; height: 48px; border-radius: 50%; background: var(--color-accent-soft); color: var(--color-text); border: 1px solid var(--color-border-control); font-weight: 700; overflow: hidden; }
+.profile-avatar { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 48px; height: 48px; aspect-ratio: 1; border-radius: 50%; background: var(--color-accent-soft); color: var(--color-text); border: 1px solid var(--color-border-control); font-weight: 700; overflow: hidden; }
+.more-dialog .profile-avatar { width: 32px; height: 32px; font-size: 13px; }
+.profile-overview > div { min-width: 0; }
 .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+img.profile-avatar { object-fit: cover; }
 .account-dropdown { position: absolute; z-index: 20; inset-inline-end: 0; top: calc(100% + 8px); width: min(320px, calc(100vw - 32px)); max-height: 70dvh; overflow: auto; padding: 20px; border: 1px solid var(--color-border-control); border-radius: 14px; background: var(--color-surface); box-shadow: var(--shadow-popover); color: var(--color-text); font-size: 14px; overflow-wrap: anywhere; }
 .account-dropdown nav { margin: 12px 0; max-height: none; }
 .account-dropdown nav button { font-size: 16px; }
