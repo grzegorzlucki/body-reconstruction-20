@@ -3,7 +3,7 @@
 Keep the sea, sand and coral palette. Prioritize readable text, clear workout actions and touch controls. Preserve persisted data and existing navigation URLs.
 
 1. Colors and contrast: lighten page/cards, separate coral fills from text, darken control borders, fix status badges and manifest colors. **Implemented.**
-2. Typography and controls: readable 16px form/action text, 14px help, compact headings, stable numeric widths and distinct secondary buttons.
+2. Typography and controls: readable 16px form/action text, 14px help, compact headings, stable numeric widths and distinct secondary buttons. **Implemented.**
 3. Navigation and account: move account actions into a compact accessible menu, reduce updater prominence, preserve sidebar scrolling and mobile access.
 4. Today: compact heading, workout completion counts and equally accessible diary entry action above summaries.
 5. Diary and workout: consistent full-width labeled pain sliders, explicit missing ratings, clear completion/destructive actions and readable timer controls.
