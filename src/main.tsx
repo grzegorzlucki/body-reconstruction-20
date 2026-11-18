@@ -229,7 +229,7 @@ function App({ accountId }: { accountId?: string }) {
   const { begin, savePreparedWorkout, updateTraining, finishExercise,
     replaceActiveExercise, finishWorkout, discardWorkout, loadWorkout,
     changeWorkout } = useWorkoutActions({ database: db, cloud: !!supabase,
-    profileId, active, sessions, templates, workout, workoutDirty, busy,
+    profileId, active, sessions, templates, sites: selectedProfile?.rehabSites ?? [], workout, workoutDirty, busy,
     setBusy, setError, setNotice, setSessions, setWorkout, setWorkoutDirty,
     action, refresh, confirmAction });
   const { migrateLocal, download, load } = useBackupActions({
@@ -277,7 +277,7 @@ function App({ accountId }: { accountId?: string }) {
                 onSetChange={(session) => { void updateTraining(session); }}
                 onTimerFinish={finishExercise}
                 onReplace={(from, to) => { void replaceActiveExercise(from, to); }}
-                onFinish={() => { void finishWorkout(); }}
+                onFinish={(pain) => { void finishWorkout(pain); }}
                 onDiscard={() => { void discardWorkout(); }}
                 onStart={(template) => { void begin(template); }}
                 onLoadWorkout={loadWorkout} onChangeWorkout={changeWorkout}

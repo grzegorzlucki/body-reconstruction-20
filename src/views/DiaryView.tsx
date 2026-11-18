@@ -1,5 +1,6 @@
 import type { FormEvent } from "react";
 import { day, type Injury, type PainContext, type PainLog, type RehabSite } from "../domain";
+import { PainSlider } from "../PainSlider";
 
 export function DiaryView({ date, time, pain, context, note, logs, sites, contexts, injuries, injuryIds, busy,
   onDate, onTime, onPain, onContext, onInjuries, onNote, onSave, onRemove }: {
@@ -20,13 +21,8 @@ export function DiaryView({ date, time, pain, context, note, logs, sites, contex
         <label>Dzień<input name="painDate" required type="date" max={day(new Date())} value={date} onChange={(event) => onDate(event.target.value)} /></label>
         <label>Godzina pomiaru<input name="painTime" required type="time" value={time} onChange={(event) => onTime(event.target.value)} /></label>
       </div>
-      {activeSites.map((site) => <label className="pain-row" key={site.id}>
-        <span>{site.name}<small> · {site.bodyArea}</small></span>
-        <select required value={pain[site.id] ?? ""} onChange={(event) => onPain(site.id, event.target.value)}>
-          <option value="">Wybierz 0–10</option>
-          {Array.from({ length: 11 }, (_, value) => <option key={value} value={value}>{value} / 10</option>)}
-        </select>
-      </label>)}
+      {activeSites.map((site) => <PainSlider key={site.id} name={site.name} detail={site.bodyArea}
+        value={pain[site.id] ?? ""} onChange={(value) => onPain(site.id, value)} />)}
       <fieldset className="diary-injuries">
         <legend>Powiąż raport z kontuzją (opcjonalnie)</legend>
         {!injuries.length && <p>Dodaj kontuzję w Ustawieniach profilu, aby móc przypisywać do niej raporty.</p>}

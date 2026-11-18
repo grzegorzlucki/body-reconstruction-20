@@ -200,9 +200,10 @@ textarea {
   border-bottom: 1px solid var(--color-border);
   padding: 12px 0;
 }
-.pain-row select {
-  width: 150px;
-}
+.pain-slider-control { display: flex; align-items: center; gap: 12px; width: min(100%, 380px); }
+.pain-slider-control input[type="range"] { flex: 1; min-height: 44px; padding: 0; accent-color: var(--color-accent); cursor: pointer; }
+.pain-slider-control output { min-width: 94px; text-align: right; color: var(--color-text); font-weight: 700; }
+@media (max-width: 640px) { .pain-row { flex-direction: column; align-items: stretch; } .pain-slider-control { width: 100%; } }
 .reason {
   background: var(--color-surface-soft);
   border-radius: 8px;

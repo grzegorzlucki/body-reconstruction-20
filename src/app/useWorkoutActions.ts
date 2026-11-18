@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { AppRepository } from "./repository";
-import { completedGroups, exerciseById, newSession, replaceSessionExercise, sessionSchema, templateSchema, visibleSets,
-  type Session, type WorkoutTemplate } from "../domain";
+import { completedGroups, day, exerciseById, logSchema, newSession, replaceSessionExercise, sessionSchema, templateSchema, visibleSets,
+  type RehabSite, type Session, type WorkoutTemplate } from "../domain";
 import { saveCloudSessionSets } from "../cloudDb";
 
 type ActionContext = {
@@ -11,6 +11,7 @@ type ActionContext = {
   active?: Session;
   sessions: Session[];
   templates: WorkoutTemplate[];
+  sites: RehabSite[];
   workout: WorkoutTemplate;
   workoutDirty: boolean;
   busy: boolean;
@@ -25,7 +26,7 @@ type ActionContext = {
   confirmAction: (message: string) => Promise<boolean>;
 };
 
-export function useWorkoutActions({ database, cloud, profileId, active, sessions,
+export function useWorkoutActions({ database, cloud, profileId, active, sessions, sites,
   templates, workout, workoutDirty, busy, setBusy, setError, setNotice,
   setSessions, setWorkout, setWorkoutDirty, action, refresh, confirmAction }: ActionContext) {
   async function begin(selectedWorkout: WorkoutTemplate = workout) {
@@ -103,8 +104,14 @@ export function useWorkoutActions({ database, cloud, profileId, active, sessions
       await database.sessions.put(replaceSessionExercise(active, from, to));
     });
   }
-  async function finishWorkout() {
+  async function finishWorkout(pain?: Record<string, string>) {
     if (!active || busy) return;
+    const measuredSites = sites.filter((site) => site.active);
+    if (pain && (measuredSites.length === 0 || measuredSites.some((site) =>
+      pain[site.id] === undefined || pain[site.id] === ""))) {
+      setError("Oceń ból we wszystkich monitorowanych obszarach albo wyłącz zapis pomiaru.");
+      return;
+    }
     const completed = completedGroups(active);
     const planned = visibleSets(active).length;
     const unfinishedIds = [...new Set(active.sets.filter((row) => !row.done || row.reps < 1)
@@ -117,14 +124,24 @@ export function useWorkoutActions({ database, cloud, profileId, active, sessions
       if (!await confirmAction(message)) return;
     }
     await action(async () => {
-      const next = sessionSchema.parse({ ...active, ended: new Date().toISOString(),
+      const ended = new Date().toISOString();
+      const next = sessionSchema.parse({ ...active, ended,
         exerciseProgress: [
           ...(active.exerciseProgress ?? []).filter((row) => !unfinishedIds.includes(row.exerciseId)),
           ...unfinishedIds.map((exerciseId) => ({ exerciseId, status: "finishedEarly" as const })),
         ],
       });
       await database.sessions.put(next);
-      setNotice("Trening ukończony. Zapisz reakcję następnego ranka.");
+      if (pain) {
+        const log = logSchema.parse({ id: active.id, profileId, date: day(ended), at: ended,
+          values: measuredSites.map((site) => ({ siteId: site.id, value: Number(pain[site.id]) })),
+          injuryIds: [], context: "", note: "Pomiar po treningu" });
+        try { await database.logs.put(log); }
+        catch (cause) {
+          throw Error(`Trening zapisany, ale pomiar bólu nie został zapisany. Dodaj go w Dzienniku. ${cause instanceof Error ? cause.message : ""}`);
+        }
+      }
+      setNotice(pain ? "Trening i pomiar bólu zapisane." : "Trening ukończony. Zapisz reakcję następnego ranka.");
     });
   }
   async function discardWorkout() {

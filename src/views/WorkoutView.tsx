@@ -1,5 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SessionFields } from "../SessionFields";
+import { PainSlider } from "../PainSlider";
 import { PlanComposer } from "../Plans";
 import { completedGroups, exerciseById, painMonitor, visibleSets,
   type PainLog, type Session, type WorkoutTemplate, type RehabSite, type PainContext } from "../domain";
@@ -25,7 +26,7 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
   onSetChange: (session: Session) => void;
   onTimerFinish: (exerciseId: string, status: ExerciseStatus) => Promise<void>;
   onReplace: (from: string, to: string) => void;
-  onFinish: () => void;
+  onFinish: (pain?: Record<string, string>) => void;
   onDiscard: () => void;
   onStart: (template?: WorkoutTemplate) => void;
   onLoadWorkout: (template: WorkoutTemplate) => void;
@@ -34,6 +35,9 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
   onEditPlan: () => void;
 }) {
   const previousActiveId = useRef(active?.id);
+  const [recordPain, setRecordPain] = useState(false);
+  const [postPain, setPostPain] = useState<Record<string, string>>({});
+  const activeSites = sites.filter((site) => site.active);
   useEffect(() => {
     if (active && previousActiveId.current !== active.id) {
       window.requestAnimationFrame(() => {
@@ -43,6 +47,8 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
       });
     }
     previousActiveId.current = active?.id;
+    setRecordPain(false);
+    setPostPain({});
   }, [active?.id]);
   return <>
     <h1 id="workout-heading" tabIndex={-1}>{active ? "Twój trening trwa" : "Następny trening"}</h1>
@@ -55,8 +61,20 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
       <p className="badge">{active.planName ?? "Plan początkowy"} · Rozpoczęto {new Date(active.started).toLocaleString("pl-PL")} · {completedGroups(active)}/{visibleSets(active).length} serii</p>
       <SessionFields session={active} disabled={busy} onChange={onSetChange} confirmAction={confirmAction}
         onTimerFinish={onTimerFinish} onReplace={onReplace} />
+      {activeSites.length > 0 && <section className="panel" aria-label="Pomiar bólu po treningu">
+        <h2>Odczuwany ból po treningu</h2>
+        <label className="profile-config-toggle"><input type="checkbox" checked={recordPain} disabled={busy}
+          onChange={(event) => setRecordPain(event.target.checked)} /> Zapisz pomiar bólu razem z treningiem</label>
+        {recordPain && <>
+          <p>Oceń każdy monitorowany obszar w skali od 0 do 10. Pomiar pojawi się też w Dzienniku.</p>
+          {activeSites.map((site) => <PainSlider key={site.id} name={site.name} detail={site.bodyArea}
+            value={postPain[site.id] ?? ""} disabled={busy}
+            onChange={(value) => setPostPain((current) => ({ ...current, [site.id]: value }))} />)}
+        </>}
+      </section>}
       <div className="actions">
-        <button type="button" disabled={busy} onClick={onFinish}>Zakończ trening</button>
+        <button type="button" disabled={busy || (recordPain && activeSites.some((site) => postPain[site.id] === undefined))}
+          onClick={() => onFinish(recordPain ? postPain : undefined)}>Zakończ trening</button>
         <button type="button" className="secondary" disabled={busy} onClick={onDiscard}>Odrzuć trening</button>
       </div>
     </> : <>
