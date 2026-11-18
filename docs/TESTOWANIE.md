@@ -1,5 +1,7 @@
 # Weryfikacja aplikacji
 
+Skalowanie formularzy: `e2e/rehab-layout.spec.ts` sprawdza ustawienia przy 320, 390, 768, 1024, 1440 i 1920 px, w tym checkbox obok tekstu, rozmiar i brak obcięcia przycisków, brak nadmiarowego marginesu desktopowego i nierozciągnięte pozycje nawigacji. Po poprawce skalowania: TypeScript/build, 34 testy jednostkowe i 15 scenariuszy przeglądarkowych zaliczone; wygląd formularza sprawdzony na zrzutach mobilnym i desktopowym.
+
 Układ desktopowy: `e2e/responsive-navigation.spec.ts` sprawdza karty treningu i pomiaru obok siebie przy 1440×650, dostęp do zegara z przewijanej nawigacji oraz brak poziomego przewijania przy szerokościach 320–1440 px. Test profilu sprawdza również, że po zmianie nazwy strona Dzisiaj wita użytkownika nową nazwą, a mobilny profil jest dostępny przez Więcej. Weryfikacja tej zmiany: TypeScript/build, 34 testy jednostkowe i 10 wybranych testów przeglądarkowych zakończone powodzeniem.
 
 Tryb jednostronny HSR: `src/intervalTimer.test.ts` sprawdza kolejność stron, dodatkowe przygotowanie, przerwę po obu stronach, czas całkowity, granice faz i zgodność dawnych ustawień. `src/plans.test.ts` sprawdza kopię ustawień do sesji. `e2e/timer.spec.ts` obejmuje konfigurację, zapis lokalny, zmianę strony, pauzę, przygotowanie przed następną serią i zakończenie.

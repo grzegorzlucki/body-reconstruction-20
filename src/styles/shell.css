@@ -75,6 +75,7 @@ nav {
   max-height: none;
   margin: clamp(20px, 4vh, 36px) 0 12px;
   overscroll-behavior: contain;
+  align-content: start;
 }
 nav button {
   text-align: left;

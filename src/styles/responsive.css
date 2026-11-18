@@ -176,7 +176,7 @@
     gap: 12px;
   }
   .panel {
-    padding: 19px;
+    padding: 16px;
   }
   .section-title h2 {
     font-size: 19px;
@@ -269,5 +269,30 @@
   .set-row label:first-child { grid-column: 1 / -1; }
   .timer-field { gap: 8px; flex-wrap: wrap; }
   .timer-field input { max-width: 100%; }
+}
+
+@media (max-width: 700px) {
+  main { padding-inline: 12px; }
+  .profile-settings .grid.two { grid-template-columns: minmax(0, 1fr); }
+  .section-title { align-items: stretch; gap: 12px; }
+  .section-title > h2 { flex-basis: 100%; }
+  .section-title > button { width: 100%; }
+  .actions { align-items: stretch; gap: 10px; }
+  .actions > button, .actions > .exercise-picker { flex: 1 1 180px; min-width: 0; }
+  .actions > button { min-height: 48px; padding: 12px 16px; }
+  .profile-config-row, .injury-config { grid-template-columns: minmax(0, 1fr); padding: 12px; }
+  .site-config-controls { gap: 10px; align-items: center; }
+  .site-config-controls .profile-config-toggle { flex-basis: 100%; margin-right: 0; }
+  .site-config-controls .remove-site { margin-left: auto; }
+  .destructive.secondary { margin-inline-start: 0; }
+  .history-row { flex-wrap: wrap; align-items: flex-start; }
+  .history-row > div { flex: 1 1 200px; min-width: 0; }
+  .history-row button { min-height: 44px; }
+  footer { flex-wrap: wrap; gap: 8px; }
+  .timer-summary { flex-wrap: wrap; }
+  .timer-summary > button { flex: 1 1 160px; }
+}
+@media (max-width: 480px) {
+  .grid.two { grid-template-columns: minmax(0, 1fr); }
 }
 

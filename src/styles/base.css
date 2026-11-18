@@ -1,4 +1,6 @@
 :root {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
   font-family: var(--font-body);
   color: var(--color-text);
   background: var(--color-page);
@@ -54,6 +56,11 @@ button {
   cursor: pointer;
   font-weight: 600;
   min-height: 44px;
+  max-width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
   transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease,
     box-shadow 140ms ease, filter 140ms ease, transform 100ms ease;
 }

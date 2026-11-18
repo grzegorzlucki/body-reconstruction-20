@@ -1,16 +1,17 @@
 /* Desktop density and hierarchy; mobile keeps its existing safe-area layout. */
 @media (min-width: 701px) {
-  .shell { grid-template-columns: 232px minmax(0, 1fr); }
+  .shell { grid-template-columns: 232px minmax(0, 1fr); max-width: none; margin: 0; }
   aside { padding: 28px 16px; }
   aside > .eyebrow { margin: 20px 0 0; font-size: 11px; letter-spacing: 1px; }
   .sidebar-navigation .desktop-nav { margin: 24px 0 12px; gap: 4px; }
   .desktop-nav button { min-height: 46px; padding: 10px 12px; font-size: 15px; }
-  main { max-width: 1280px; padding-inline: clamp(24px, 3vw, 48px); }
+  main { max-width: none; margin: 0; padding-inline: clamp(20px, 2.25vw, 36px); }
   header { height: auto; min-height: 80px; padding-block: 12px; gap: 16px; flex-wrap: wrap; }
   .header-account { margin-inline-start: auto; flex-wrap: wrap; justify-content: flex-end; gap: 16px; }
   .heading p { font-size: 15px; }
   .profile-sections { gap: 8px; }
   .profile-sections button { padding: 10px 14px; }
+  .profile-settings, .account-form { max-width: 1160px; }
 }
 @media (min-width: 1100px) {
   .today-primary-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: stretch; margin-bottom: 24px; }

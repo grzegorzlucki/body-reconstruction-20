@@ -150,8 +150,9 @@ details.panel[open] > summary { border-bottom: 1px solid var(--color-border); pa
 .template-list {
   margin-top: 24px;
 }
-.timer-option { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
+.timer-option { display: flex; flex-direction: row; align-items: center; gap: 10px; margin: 16px 0; }
 .timer-option input { width: auto; }
+.timer-option input[type="checkbox"] { flex: 0 0 22px; width: 22px; height: 22px; min-height: 22px; padding: 0; margin: 0; }
 .exercise-timer { margin: 20px 0; }
 .exercise-timer .timer-clock { font-size: clamp(42px, 9vw, 72px); }
 .exercise-timer progress { width: 100%; accent-color: var(--color-accent-fill); }
