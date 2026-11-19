@@ -61,7 +61,7 @@ export function usePainLogActions({ database, logs, sessions, profileId, cloud, 
         values: [...current].map(([siteId, value]) => ({ siteId, value })), injuryIds, context, note, sessionId: sessionId || undefined, measurementPhase });
       validateMeasurementLink(next, sessions);
       await database.logs.put(next);
-      setEditingId(next.id);
+      newMeasurement(date);
       setNotice(cloud ? "Pomiar zapisany na koncie." : "Pomiar zapisany na tym urządzeniu.");
     });
   }

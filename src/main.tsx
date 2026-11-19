@@ -34,6 +34,7 @@ import { usePainLogActions } from "./app/usePainLogActions";
 import { useBackupActions } from "./app/useBackupActions";
 import type { AppRepository } from "./app/repository";
 import { useConfirmation } from "./app/useConfirmation";
+import { useNotice } from "./app/useNotice";
 import { ProfileSettingsView } from "./views/ProfileSettingsView";
 import { AccountProfileView, ProfileNavigation } from "./views/AccountProfileView";
 import { isProfileTab } from "./app/navigation";
@@ -73,8 +74,8 @@ function App({ user }: { user?: User }) {
   const { profiles, profileId, logs, sessions, setSessions,
     templates, ready, loadingData, refresh: refreshRecords } = useProfileData(db);
   const [error, setError] = useState(""),
-    [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
+  const { notice, noticeId, setNotice, clearNotice } = useNotice();
   const [workout, setWorkout] = useState<WorkoutTemplate>(defaultTemplate);
   const [workoutDirty, setWorkoutDirty] = useState(false);
   const [planDirty, setPlanDirty] = useState(false);
@@ -285,7 +286,7 @@ function App({ user }: { user?: User }) {
       onApprovedReload={() => { approvedReload.current = true; }}
       dirty={planDirty || workoutDirty || !!editing || profileDirty} cloud={!!supabase}
       accountId={user?.email} profileName={selectedProfile?.name} avatarPath={selectedProfile?.avatarPath} onSignOut={signOut}
-      ready={ready} loadingData={loadingData} error={error} notice={notice}>
+      ready={ready} loadingData={loadingData} error={error} notice={notice} noticeId={noticeId} onNoticeDismiss={clearNotice}>
         {isProfileTab(tab) && <ProfileNavigation tab={tab} onNavigate={navigate} />}
         {!ready && !["Profil", "Bezpieczeństwo", "Preferencje", "Aplikacja"].includes(tab) ? (
           <div>

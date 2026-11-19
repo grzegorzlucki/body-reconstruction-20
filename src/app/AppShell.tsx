@@ -7,9 +7,10 @@ import { ErrorNotice } from "./errorMessages";
 import type { MainTab, Tab } from "./navigation";
 import { AccountMenu } from "./AccountMenu";
 import { LoadingScreen } from "./LoadingScreen";
+import { ToastNotice } from "./ToastNotice";
 
 export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, profileName, avatarPath, onSignOut,
-  confirmAction, onApprovedReload, ready, loadingData, error, notice, children }: {
+  confirmAction, onApprovedReload, ready, loadingData, error, notice, noticeId, onNoticeDismiss, children }: {
   tab: Tab;
   onNavigate: (tab: MainTab) => Promise<boolean>;
   busy: boolean;
@@ -24,6 +25,8 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, profi
   loadingData: boolean;
   error: string;
   notice: string;
+  noticeId: number;
+  onNoticeDismiss: () => void;
   children: ReactNode;
 }) {
   useTranslation();
@@ -54,9 +57,9 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, profi
       </header>
       {error && <ErrorNotice message={error} />}
       {ready && loadingData && <LoadingScreen inline />}
-      {notice && <div role="status" className="notice">{ui(notice)}</div>}
       {children}
     </main>
     <footer>BODY RECONSTRUCTION <span>{ui("Konsekwencja, nie pośpiech.")}</span></footer>
+    <ToastNotice message={notice} noticeId={noticeId} onDismiss={onNoticeDismiss} />
   </div>;
 }

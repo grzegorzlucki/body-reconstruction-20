@@ -68,7 +68,7 @@ test("two reports on the same day remain independent when editing by ID", async 
     .getByRole("button", { name: "Zapisz pomiar", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Edycja pomiaru", exact: true }),
+    page.getByRole("heading", { name: "Nowy pomiar", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Nowy pomiar", exact: true }).click();
   await page.getByLabel("Godzina pomiaru").fill("00:00:01");
@@ -152,7 +152,7 @@ test("a partial workout saves a linked post report and accepts a separate follow
     .getByRole("button", { name: "Zapisz pomiar", exact: true })
     .click();
   await expect(
-    page.getByRole("heading", { name: "Edycja pomiaru", exact: true }),
+    page.getByRole("heading", { name: "Nowy pomiar", exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Edytuj ten pomiar", exact: true }),
