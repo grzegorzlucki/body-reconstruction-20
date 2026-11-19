@@ -25,7 +25,7 @@ export function TodayView({ active, sessions, logs, today, hours, sites, injurie
     </section>
     <div className="today-primary-grid">
     <section className="hero today-hero"><div><span className="pill">{active ? ui("TRWAJĄCY TRENING") : ui("TWÓJ PLAN")}</span>
-      <h2>{active?.planName ?? "Twój własny plan."}</h2>
+      <h2>{active?.planName ?? ui("Twój własny plan.")}</h2>
       <p>{active ? ui("Kontynuuj zapis serii od miejsca, w którym skończyłeś.") : ui("Plan treningu i monitor bólu · {{v0}}", {v0: activeSites.map((site) => site.name).join(" · ")})}</p>
       {active && <p className="workout-progress">{ui("Wykonano")}{completedGroups(active)} {ui("z")}{visibleSets(active).length}  {ui("serii")}</p>}
       <div className="actions">
