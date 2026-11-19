@@ -1,4 +1,4 @@
-import { isPreference, type LanguagePreference } from "../i18n/config";
+import { isPreference, storePreference, type LanguagePreference } from "../i18n/config";
 import { supabase } from "../supabase";
 import { db } from "../db";
 import { accountIdentitySchema } from "../domain";
@@ -46,12 +46,26 @@ export async function removeAvatar(path: string) {
 export const accountRedirect = () => new URL(import.meta.env.BASE_URL, window.location.origin).href;
 
 const languageWrites = new Map<string, Promise<unknown>>();
+export const pendingLanguageWrite = (profileId: string) => languageWrites.get(profileId);
 export async function saveAccountLanguage(profileId: string, preference: LanguagePreference) {
   if (!isPreference(preference)) throw Error("Invalid language preference");
-  if (!supabase) { await db.profiles.update(profileId, { preferredLanguage: preference }); return; }
+  storePreference(preference, profileId, true);
   const write = (languageWrites.get(profileId) ?? Promise.resolve()).catch(() => {}).then(async () => {
-    const { error } = await supabase!.rpc("update_profile_language", { target_profile_id: profileId, language_preference: preference });
-    if (error) throw error;
+    if (!supabase) {
+      if (!await db.profiles.update(profileId, { preferredLanguage: preference })) throw Error("Profile unavailable");
+    } else {
+      const { error } = await supabase.rpc("update_profile_language", { target_profile_id: profileId, language_preference: preference });
+      if (error) {
+        if (error.code !== "PGRST202" && error.code !== "42883") throw error;
+        // Older deployments can update the same field through the owner's RLS policy.
+        const result = await supabase.from("profiles").update({ preferred_language: preference })
+          .eq("id", profileId).select("id,preferred_language").single();
+        if (result.error) throw result.error;
+        if (result.data?.id !== profileId || result.data?.preferred_language !== preference)
+          throw Error("Profile unavailable");
+      }
+    }
+    if (languageWrites.get(profileId) === write) storePreference(preference, profileId);
   });
   languageWrites.set(profileId, write);
   try { await write; } finally { if (languageWrites.get(profileId) === write) languageWrites.delete(profileId); }

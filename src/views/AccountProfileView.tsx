@@ -32,7 +32,7 @@ export function AccountProfileView({ tab, profile, user, busy, dirty, onDirty, o
   catch { /* Invalid legacy time zone can be corrected in the personal form. */ }
   useEffect(() => { if (tab === "Profil") onDirty(personalDirty || deleteDirty); }, [tab, personalDirty, deleteDirty, onDirty]);
   if (tab === "Bezpieczeństwo") return <><h1>{ui("Bezpieczeństwo")}</h1><SecuritySettings user={user} onDirty={onDirty} onBusy={onBusy} confirmAction={confirmAction} /></>;
-  if (tab === "Preferencje") return <><h1>{ui("Preferencje")}</h1><LanguageSettings profileId={profile?.id} /><section className="panel"><h2>{ui("Ustawienia konta i rehabilitacji")}</h2>
+  if (tab === "Preferencje") return <><h1>{ui("Preferencje")}</h1><LanguageSettings profileId={profile?.id} persistedPreference={profile?.preferredLanguage} /><section className="panel"><h2>{ui("Ustawienia konta i rehabilitacji")}</h2>
     <p>{ui("Strefę czasową zmienisz w Moim profilu. Cel tygodniowy, godzinę pomiaru i monitorowane obszary znajdziesz w Rehabilitacji.")}</p>
     <div className="actions"><button className="secondary" onClick={() => void onNavigate("Profil")}>{ui("Dane profilu")}</button>
       <button className="secondary" onClick={() => void onNavigate("Ustawienia")}>{ui("Ustawienia rehabilitacji")}</button></div>

@@ -7,42 +7,47 @@ import {
   ui,
   type LanguagePreference,
 } from "../i18n/config";
-import { saveAccountLanguage } from "../account/accountRepository";
+import { pendingLanguageWrite, saveAccountLanguage } from "../account/accountRepository";
 
-export function LanguageSettings({ profileId }: { profileId?: string }) {
+export function LanguageSettings({ profileId, persistedPreference }: { profileId?: string; persistedPreference?: LanguagePreference }) {
   const { preference, choose } = useLanguage();
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">(
-    () => (readCachedPreference(profileId)?.pending ? "error" : "idle"),
+    () => profileId && pendingLanguageWrite(profileId) ? "saving" :
+      readCachedPreference(profileId)?.pending && readCachedPreference(profileId)?.value !== persistedPreference ? "error" : "idle",
   );
-  const queue = useRef(Promise.resolve());
   const revision = useRef(0);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
+    const cached = readCachedPreference(profileId);
+    const pending = profileId ? pendingLanguageWrite(profileId) : undefined;
+    if (pending) {
+      const current = ++revision.current;
+      setStatus("saving");
+      observe(pending, current);
+    } else if (profileId && cached?.pending && cached.value === persistedPreference) {
+      storePreference(cached.value, profileId);
+      setStatus("saved");
+    }
     return () => {
       mounted.current = false;
       revision.current++;
     };
-  }, []);
+  }, [profileId, persistedPreference]);
+  function observe(write: Promise<unknown>, current: number) {
+    void write.then(() => {
+      if (mounted.current && current === revision.current) setStatus("saved");
+    }, () => {
+      if (mounted.current && current === revision.current) setStatus("error");
+    });
+  }
   function save(value: LanguagePreference) {
     choose(value);
     storePreference(value, profileId ?? "guest", !!profileId);
     if (!profileId) return;
     const current = ++revision.current;
     setStatus("saving");
-    queue.current = queue.current
-      .catch(() => {})
-      .then(async () => {
-        if (!mounted.current) return;
-        try {
-          await saveAccountLanguage(profileId, value);
-          if (readCachedPreference(profileId)?.value === value)
-            storePreference(value, profileId);
-          if (current === revision.current) setStatus("saved");
-        } catch {
-          if (current === revision.current) setStatus("error");
-        }
-      });
+    observe(saveAccountLanguage(profileId, value), current);
   }
   return (
     <section className="panel">
