@@ -1,3 +1,0 @@
-BODY RECONSTRUCTION
-Polaczenie z serwerem aplikacji dziala.
-To nie jest strona routera.

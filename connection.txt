@@ -1,0 +1,3 @@
+BODY RECONSTRUCTION
+Static application files are being served successfully.
+This file does not verify authentication or the Supabase connection.
