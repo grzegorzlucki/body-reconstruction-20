@@ -1,3 +1,4 @@
+import { readPreference, type LanguagePreference } from "./i18n/config";
 import Dexie, { type Table } from "dexie";
 import {
   type PainLog,
@@ -13,7 +14,7 @@ import {
 import { remapMeasurementSessions, validateMeasurementLink } from "./analytics/metrics";
 
 export const legacyProfileId = "default-profile";
-export type Profile = ProfileSettings & { id: string; timeZone?: string; avatarPath?: string | null };
+export type Profile = ProfileSettings & { id: string; preferredLanguage?: LanguagePreference; timeZone?: string; avatarPath?: string | null };
 
 const defaultProfileSettings = (name: string): ProfileSettings => ({
   name,
@@ -102,8 +103,15 @@ class RehabDB extends Dexie {
     }).upgrade(async (tx) => {
       await tx.table("logs").toCollection().modify((log: PainLog) => { log.measurementPhase ??= "unspecified"; });
     });
+    this.version(8).stores({
+      logs: "id,[profileId+date],profileId,sessionId,[profileId+at]",
+      sessions: "id,[profileId+started],profileId",
+      templates: "id,[profileId+name],profileId", profiles: "id,name",
+    }).upgrade(async (tx) => {
+      await tx.table("profiles").toCollection().modify((profile: Profile) => { profile.preferredLanguage ??= "pl"; });
+    });
     this.on("populate", (tx) => {
-      tx.table("profiles").add({ id: legacyProfileId, ...defaultProfileSettings("Profil główny") });
+      tx.table("profiles").add({ id: legacyProfileId, preferredLanguage: readPreference() ?? "auto", ...defaultProfileSettings("Profil główny") });
       tx.table("templates").add(starter(legacyProfileId));
     });
   }
@@ -114,7 +122,7 @@ export const db = new RehabDB();
 export async function createProfile(name: string): Promise<Profile> {
   const clean = name.trim();
   if (!clean || clean.length > 80) throw Error("Nazwa profilu musi mieć od 1 do 80 znaków.");
-  const profile = { id: crypto.randomUUID(), ...defaultProfileSettings(clean) };
+  const profile: Profile = { id: crypto.randomUUID(), preferredLanguage: "auto", ...defaultProfileSettings(clean) };
   await db.transaction("rw", db.profiles, db.templates, async () => {
     await db.profiles.add(profile);
     await db.templates.add(starter(profile.id));

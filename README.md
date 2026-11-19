@@ -101,3 +101,9 @@ npx playwright test
 ```
 
 Po teście usuń zmienną poleceniem `Remove-Item Env:VITE_BASE_PATH`, aby wrócić do lokalnej ścieżki głównej. Szczegóły w [TESTOWANIE.md](docs/TESTOWANIE.md).
+
+## Polish and English
+
+Choose **Polski**, **English**, or **Automatic** on the sign-in screen or under **Profile → Preferences** (mobile: **More → Profile**). Language changes preserve running timers and unsaved input. User-created names and notes remain unchanged.
+
+Before deploying this release, apply [the language migration](supabase/migrations/20261122_profile_language.sql). See [deployment and verification](docs/I18N_PL_EN_DEPLOYMENT.md), including the separate Supabase email-template setup.

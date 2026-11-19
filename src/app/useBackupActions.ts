@@ -1,3 +1,4 @@
+import { message as systemMessage } from "../i18n/config";
 import type { Dispatch, SetStateAction } from "react";
 import type { Profile } from "../db";
 import type { AppRepository } from "./repository";
@@ -29,7 +30,7 @@ export function useBackupActions({ database, cloud, localProfiles, sourceProfile
       const target = profiles.find((p) => p.id === profileId);
       if (!source || !target) throw Error("Wybierz profil źródłowy i docelowy.");
       const backup = await exportLocalBackup(source.id);
-      if (!await confirmAction(`Przenieść dane lokalnego profilu „${source.name}” do konta, do profilu „${target.name}”? Zastąpi to obecne dane profilu na serwerze. Lokalna kopia pozostanie na urządzeniu.`)) return;
+      if (!await confirmAction(systemMessage("Przenieść dane lokalnego profilu „{{v0}}” do konta, do profilu „{{v1}}”? Zastąpi to obecne dane profilu na serwerze. Lokalna kopia pozostanie na urządzeniu.",{v0: source.name, v1: target.name}))) return;
       await importCloudBackup(backup, target.id);
       setWorkout(structuredClone((await database.templates.where("profileId").equals(target.id).toArray())[0] ?? defaultTemplate()));
       setWorkoutDirty(false);
@@ -63,7 +64,7 @@ export function useBackupActions({ database, cloud, localProfiles, sourceProfile
       const data = backupSchema.parse(JSON.parse(await file.text()));
       if (
         !await confirmAction(
-          `Plik zawiera ${data.logs.length} wpisów i ${data.sessions.length} treningów. ZASTĄPI dane profilu „${profiles.find((p) => p.id === profileId)?.name}”. Pozostałe profile pozostaną bez zmian. Kontynuować?`,
+          systemMessage("Plik zawiera {{v0}} wpisów i {{v1}} treningów. ZASTĄPI dane profilu „{{v2}}”. Pozostałe profile pozostaną bez zmian. Kontynuować?",{v0: data.logs.length, v1: data.sessions.length, v2: profiles.find((p) => p.id === profileId)?.name}),
         )
       )
         return;

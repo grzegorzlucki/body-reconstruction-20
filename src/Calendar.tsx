@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui, locale } from "./i18n/config";
 import { useState } from "react";
 import { day, type Session, type PainLog, type RehabSite } from "./domain";
 export function Calendar({
@@ -15,6 +17,7 @@ export function Calendar({
   onEdit: (s: Session) => void;
   onPain: (date: string) => void;
 }) {
+  useTranslation();
   const [month, setMonth] = useState(
     () => new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12),
   );
@@ -34,29 +37,27 @@ export function Calendar({
   }
   return (
     <>
-      <h1>Kalendarz</h1>
+      <h1>{ui("Kalendarz")}</h1>
       <p className="intro">
-        Trening i monitoring bólu w jednym widoku. Wybierz dzień, aby dodać lub
-        poprawić wpis.
-      </p>
+         {ui("Trening i monitoring bólu w jednym widoku. Wybierz dzień, aby dodać lub poprawić wpis.")} </p>
       <section className="panel">
         <div className="section-title">
           <button
             className="secondary"
-            aria-label="Poprzedni miesiąc"
+            aria-label={ui("Poprzedni miesiąc")}
             onClick={() => move(-1)}
           >
             ←
           </button>
           <h2 aria-live="polite">
-            {month.toLocaleDateString("pl-PL", {
+            {month.toLocaleDateString(locale(), {
               month: "long",
               year: "numeric",
             })}
           </h2>
           <button
             className="secondary"
-            aria-label="Następny miesiąc"
+            aria-label={ui("Następny miesiąc")}
             onClick={() => move(1)}
           >
             →
@@ -65,7 +66,7 @@ export function Calendar({
         <div className="calendar-grid">
           {["Pn", "Wt", "Śr", "Cz", "Pt", "So", "Nd"].map((d) => (
             <span className="weekday" key={d}>
-              {d}
+              {ui(d)}
             </span>
           ))}
           {days.map((d) => {
@@ -80,7 +81,7 @@ export function Calendar({
                 key={key}
                 data-date={key}
                 aria-pressed={selected === key}
-                aria-label={`${key}${training ? ", trening" : ""}${active ? ", trening w trakcie" : ""}${logged ? ", pomiar bólu" : ""}`}
+                aria-label={`${key}${training ? ui(", trening") : ""}${active ? ui(", trening w trakcie") : ""}${logged ? ui(", pomiar bólu") : ""}`}
                 className={`calendar-day ${d.getMonth() !== month.getMonth() ? "muted" : ""} ${selected === key ? "chosen" : ""} ${key === day(new Date()) ? "today" : ""}`}
                 onClick={() => setSelected(key)}
               >
@@ -96,19 +97,16 @@ export function Calendar({
         </div>
         <p className="calendar-legend">
           <span>
-            <i className="training-dot" /> Trening
-          </span>
+            <i className="training-dot" />  {ui("Trening")} </span>
           <span>
-            <i className="pain-dot" /> Wpis bólu
-          </span>
+            <i className="pain-dot" />  {ui("Wpis bólu")} </span>
           <span>
-            <i className="active-dot" /> Trening w trakcie
-          </span>
+            <i className="active-dot" />  {ui("Trening w trakcie")} </span>
         </p>
       </section>
       <section className="panel">
         <h2>
-          {new Date(selected + "T12:00:00").toLocaleDateString("pl-PL", {
+          {new Date(selected + "T12:00:00").toLocaleDateString(locale(), {
             day: "numeric",
             month: "long",
             year: "numeric",
@@ -118,35 +116,34 @@ export function Calendar({
           selectedSessions.map((s) => (
             <div className="history-row" key={s.id}>
               <p>
-                {s.ended ? "Trening ukończony" : "Trening w trakcie"} ·{" "}
-                {new Date(s.started).toLocaleTimeString("pl-PL", {
+                {s.ended ? ui("Trening ukończony") : ui("Trening w trakcie")} ·{" "}
+                {new Date(s.started).toLocaleTimeString(locale(), {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
               </p>
               <button className="text-button" onClick={() => onEdit(s)}>
-                {s.ended ? "Edytuj trening" : "Wznów trening"}
+                {s.ended ? ui("Edytuj trening") : ui("Wznów trening")}
               </button>
             </div>
           ))
         ) : (
-          <p>Brak treningu.</p>
+          <p>{ui("Brak treningu.")}</p>
         )}
         <p>
           {pain
-            ? `B\u00f3l: ${pain.values.map((value) => `${sites.find((site) => site.id === value.siteId)?.name ?? value.siteId} ${value.value}/10`).join(" \u00b7 ")}`
-            : "Brak wpisu bólu."}
+            ? ui("Ból: {{v0}}", {v0: pain.values.map((value) => `${sites.find((site) => site.id === value.siteId)?.name ?? value.siteId} ${value.value}/10`).join(" \u00b7 ")})
+            : ui("Brak wpisu bólu.")}
         </p>
         <div className="actions">
           <button disabled={future} onClick={() => onTraining(selected)}>
-            Dodaj trening w tym dniu
-          </button>
+             {ui("Dodaj trening w tym dniu")} </button>
           <button
             className="secondary"
             disabled={future}
             onClick={() => onPain(selected)}
           >
-            {pain ? "Edytuj ból" : "Dodaj ból"}
+            {pain ? ui("Edytuj ból") : ui("Dodaj ból")}
           </button>
         </div>
       </section>

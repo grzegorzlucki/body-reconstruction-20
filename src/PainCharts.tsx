@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui, locale } from "./i18n/config";
 import {
   useMemo,
   useRef,
@@ -16,7 +18,7 @@ const WIDTH = 400,
   BOTTOM = 174;
 const dayTime = (log: PainLog) => Date.parse(log.at);
 const shortDate = (log: PainLog) =>
-  new Date(log.date + "T12:00:00").toLocaleDateString("pl-PL", {
+  new Date(log.date + "T12:00:00").toLocaleDateString(locale(), {
     day: "numeric",
     month: "short",
   });
@@ -31,6 +33,7 @@ function PainChart({
   color: string;
   daily: boolean;
 }) {
+  useTranslation();
   const svg = useRef<SVGSVGElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const value = (log: PainLog) => log.values.find((item) => item.siteId === site.id)!.value;
@@ -51,7 +54,7 @@ function PainChart({
       : LEFT + ((dayTime(log) - start) / (end! - start)) * (RIGHT - LEFT);
   const y = (value: number) => BOTTOM - (value / 10) * (BOTTOM - TOP);
   const describe = (log: PainLog) =>
-    `${new Date(log.date + "T12:00:00").toLocaleDateString("pl-PL")} · ${daily ? "Mediana dnia" : new Date(log.at).toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })} · ${value(log)}/10`;
+    `${new Date(log.date + "T12:00:00").toLocaleDateString(locale())} · ${daily ? "Mediana dnia" : new Date(log.at).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })} · ${value(log)}/10`;
   function selectAt(event: PointerEvent<SVGSVGElement>) {
     const matrix = svg.current?.getScreenCTM();
     if (!matrix || !logs.length) return;
@@ -78,10 +81,10 @@ function PainChart({
     setSelectedId(logs[Math.max(0, Math.min(logs.length - 1, next))].id);
   }
   return (
-    <section className="panel pain-chart" aria-label={`Wykres: ${site.name}`}>
+    <section className="panel pain-chart" aria-label={ui("Wykres: {{v0}}",{v0: site.name})}>
       <h3>{site.name}</h3>
       {!current ? (
-        <p>Brak pomiarów.</p>
+        <p>{ui("Brak pomiarów.")}</p>
       ) : (
         <>
           <p
@@ -91,11 +94,11 @@ function PainChart({
           >
             <span>
               {new Date(current.date + "T12:00:00").toLocaleDateString(
-                "pl-PL",
+                locale(),
                 { day: "numeric", month: "long", year: "numeric" },
               )}{" "}
               ·{" "}
-              {daily ? "Mediana dnia" : new Date(current.at).toLocaleTimeString("pl-PL", {
+              {daily ? ui("Mediana dnia") : new Date(current.at).toLocaleTimeString(locale(), {
                 hour: "2-digit",
                 minute: "2-digit",
               })}
@@ -109,7 +112,7 @@ function PainChart({
             ref={svg}
             viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
             role="slider"
-            aria-label={`Pomiar bólu: ${site.name}`}
+            aria-label={ui("Pomiar bólu: {{v0}}", {v0: site.name})}
             tabIndex={0}
             aria-valuemin={0}
             aria-valuemax={logs.length - 1}
@@ -123,8 +126,7 @@ function PainChart({
             onPointerMove={selectAt}
           >
             <title>
-              {site.name}: ostatnie {logs.length} pomiarów, skala 0–10
-            </title>
+              {site.name}{ui(": ostatnie")} {logs.length}  {ui("pomiarów, skala 0–10")} </title>
             {[0, 2, 4, 6, 8, 10].map((value) => (
               <g key={value}>
                 <line
@@ -215,6 +217,7 @@ function PainChart({
 }
 
 export function PainCharts({ logs, sites, limit = 14, daily = false }: { logs: PainLog[]; sites: RehabSite[]; limit?: number | null; daily?: boolean }) {
+  useTranslation();
   const recent = useMemo(
     () =>
       [...logs]
@@ -225,13 +228,10 @@ export function PainCharts({ logs, sites, limit = 14, daily = false }: { logs: P
     [logs, limit],
   );
   return (
-    <section aria-label="Trendy bólu">
-      <h2>{limit === null ? "Ból · cały wybrany zakres" : `Ból · ostatnie ${limit} pomiarów`}</h2>
+    <section aria-label={ui("Trendy bólu")}>
+      <h2>{limit === null ? ui("Ból · cały wybrany zakres") : ui("Ból · ostatnie {{v0}} pomiarów", {v0: limit})}</h2>
       <p className="footnote">
-        Przesuwaj palcem po wykresie lub wskaż punkt, aby odczytać datę, godzinę
-        i wartość. Na komputerze możesz też używać strzałek. Oś czasu pokazuje
-        rzeczywiste odstępy między pomiarami. Dłuższe luki pozostają bez linii.
-      </p>
+         {ui("Przesuwaj palcem po wykresie lub wskaż punkt, aby odczytać datę, godzinę i wartość. Na komputerze możesz też używać strzałek. Oś czasu pokazuje rzeczywiste odstępy między pomiarami. Dłuższe luki pozostają bez linii.")} </p>
       {sites.filter((site) => recent.some((log) => log.values.some((item) => item.siteId === site.id))).map((site) => (
         <PainChart key={site.id} logs={recent.filter((log) => log.values.some((item) => item.siteId === site.id))}
           site={site} color="var(--color-text-secondary)" daily={daily} />

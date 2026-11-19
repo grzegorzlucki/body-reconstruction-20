@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui } from "../i18n/config";
 export function LoadingScreen({
   fullScreen = false,
   inline = false,
@@ -5,6 +7,7 @@ export function LoadingScreen({
   fullScreen?: boolean;
   inline?: boolean;
 }) {
+  useTranslation();
   return (
     <div
       className={`loading-screen${fullScreen ? " loading-screen-full" : ""}${inline ? " loading-screen-inline" : ""}`}
@@ -12,7 +15,7 @@ export function LoadingScreen({
       aria-live="polite"
     >
       <span className="loading-ring" aria-hidden="true" />
-      <span>Wczytywanie…</span>
+      <span>{ui("Wczytywanie…")}</span>
     </div>
   );
 }

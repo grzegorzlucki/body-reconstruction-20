@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import { ui, locale } from "../i18n/config";
+import { formatNumber } from "../i18n/formatters";
 import {
   exerciseById,
   sessionPlan,
@@ -16,28 +19,29 @@ export function MeasurementReading({
   match: MatchedMeasurement | null;
   baseline?: MatchedMeasurement | null;
 }) {
-  if (!match) return <>Brak pomiaru</>;
+  useTranslation();
+  if (!match) return <>{ui("Brak pomiaru")}</>;
   const comparable = baseline && baseline.log.context === match.log.context;
   return (
     <>
       <strong>{match.value}/10</strong>
       <small>
-        {new Date(match.log.at).toLocaleString("pl-PL")} ·{" "}
-        {match.elapsedHours.toFixed(1)} h
+        {new Date(match.log.at).toLocaleString(locale())} ·{" "}
+        {formatNumber(match.elapsedHours)} h
       </small>
       <small>
         {match.source === "confirmed"
-          ? "Powiązanie zapisane"
-          : "Kandydat czasowy — niepotwierdzony"}
+          ? ui("Powiązanie zapisane")
+          : ui("Kandydat czasowy — niepotwierdzony")}
       </small>
       {match.interveningSession && (
-        <small>Inny trening przed tym pomiarem</small>
+        <small>{ui("Inny trening przed tym pomiarem")}</small>
       )}
       {baseline && (
         <small>
           {comparable
-            ? `Różnica: ${match.value - baseline.value > 0 ? "+" : ""}${match.value - baseline.value} pkt`
-            : "Inny kontekst — bez porównania"}
+            ? ui("Różnica: {{v0}}{{v1}} pkt", {v0: match.value - baseline.value > 0 ? "+" : "", v1: match.value - baseline.value})
+            : ui("Inny kontekst — bez porównania")}
         </small>
       )}
     </>
@@ -61,29 +65,29 @@ export function WorkoutResponseView({
   onAdd: (id: string, phase: MeasurementPhase) => void;
   onEdit: (id: string) => void;
 }) {
+  useTranslation();
   if (!session)
-    return <p>Wybierz trening z listy. Brak sesji w wybranym zakresie.</p>;
+    return <p>{ui("Wybierz trening z listy. Brak sesji w wybranym zakresie.")}</p>;
   const dose = sessionDose(session);
   return (
     <section className="panel">
       <h2>
         {session.planName ?? "Trening"} ·{" "}
-        {new Date(session.started).toLocaleString("pl-PL")}
+        {new Date(session.started).toLocaleString(locale())}
       </h2>
       <p>
-        {dose.status} · {dose.completed}/{dose.planned} serii ·{" "}
-        {dose.repetitions} powtórzeń (z obu stron).
-      </p>
+        {ui(dose.status)} · {dose.completed}/{dose.planned}  {ui("serii ·")}{" "}
+        {dose.repetitions}  {ui("powtórzeń (z obu stron).")} </p>
       {session.note && <p>{session.note}</p>}
       <details>
-        <summary>Ćwiczenia i wykonana dawka</summary>
+        <summary>{ui("Ćwiczenia i wykonana dawka")}</summary>
         {sessionPlan(session).map((entry) => {
           const exerciseDose = sessionDose(session, entry.exerciseId);
           return (
             <p key={entry.exerciseId}>
               {exerciseById(entry.exerciseId).name}: {exerciseDose.completed}/
-              {exerciseDose.planned} serii · {exerciseDose.repetitions}{" "}
-              powtórzeń{entry.note ? ` · ${entry.note}` : ""}
+              {exerciseDose.planned}  {ui("serii ·")} {exerciseDose.repetitions}{" "}
+               {ui("powtórzeń")}{entry.note ? ` · ${entry.note}` : ""}
             </p>
           );
         })}
@@ -91,17 +95,17 @@ export function WorkoutResponseView({
       <div
         className="table-scroll"
         role="region"
-        aria-label="Reakcja po treningu — tabela przewijana"
+        aria-label={ui("Reakcja po treningu — tabela przewijana")}
         tabIndex={0}
       >
         <table className="analytics-table">
           <thead>
             <tr>
-              <th>Obszar</th>
-              <th>Przed</th>
-              <th>Po</th>
-              <th>Około 24 h</th>
-              <th>Około 48 h</th>
+              <th>{ui("Obszar")}</th>
+              <th>{ui("Przed")}</th>
+              <th>{ui("Po")}</th>
+              <th>{ui("Około 24 h")}</th>
+              <th>{ui("Około 48 h")}</th>
             </tr>
           </thead>
           <tbody>
@@ -128,8 +132,7 @@ export function WorkoutResponseView({
                           className="text-button"
                           onClick={() => onEdit(response[phase]!.log.id)}
                         >
-                          Sprawdź / powiąż pomiar
-                        </button>
+                           {ui("Sprawdź / powiąż pomiar")} </button>
                       )}
                     </td>
                   ))}
@@ -146,14 +149,10 @@ export function WorkoutResponseView({
             onAdd(session.id, session.ended ? "followup" : "during")
           }
         >
-          Dodaj pomiar do tego treningu
-        </button>
+           {ui("Dodaj pomiar do tego treningu")} </button>
       </div>
       <p className="footnote">
-        Przed: do 24 h przed startem. Po: tylko jawnie powiązany raport. Okna
-        kontrolne: 18–30 i 42–54 h od końca. To reguły organizacji danych, nie
-        progi medyczne. Brak pomiaru nie oznacza braku bólu.
-      </p>
+         {ui("Przed: do 24 h przed startem. Po: tylko jawnie powiązany raport. Okna kontrolne: 18–30 i 42–54 h od końca. To reguły organizacji danych, nie progi medyczne. Brak pomiaru nie oznacza braku bólu.")} </p>
     </section>
   );
 }

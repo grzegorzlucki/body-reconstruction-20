@@ -1,5 +1,7 @@
 # Weryfikacja aplikacji
 
+Wersje PL/EN: `src/i18n/*.test.ts` sprawdzają wybór języka, pary tłumaczeń i interpolacje, odmianę liczebników, formatowanie, izolację cache i odmowę storage, kolejność zapisów RPC oraz migrację Dexie v7→v8. `src/db.test.ts` sprawdza zachowanie preferencji po imporcie kopii v6. `e2e/i18n.spec.ts` sprawdza trwałość wyboru, angielskie lazy views, wyszukiwanie ćwiczeń PL/EN oraz przełączenie bez resetu zegara i bez utraty szkicu planu. Polskie scenariusze mają jawne `locale: pl-PL`; nowe konta mogą używać automatycznej detekcji. Zdalne RLS i dostarczanie e-maili wymagają osobnego odbioru opisanym w `docs/I18N_PL_EN_DEPLOYMENT.md`.
+
 Skalowanie formularzy: `e2e/rehab-layout.spec.ts` sprawdza ustawienia przy 320, 390, 768, 1024, 1440 i 1920 px, w tym checkbox obok tekstu, rozmiar i brak obcięcia przycisków, brak nadmiarowego marginesu desktopowego i nierozciągnięte pozycje nawigacji. Po poprawce skalowania: TypeScript/build, 34 testy jednostkowe i 15 scenariuszy przeglądarkowych zaliczone; wygląd formularza sprawdzony na zrzutach mobilnym i desktopowym.
 
 Układ desktopowy: `e2e/responsive-navigation.spec.ts` sprawdza karty treningu i pomiaru obok siebie przy 1440×650, dostęp do zegara z przewijanej nawigacji oraz brak poziomego przewijania przy szerokościach 320–1440 px. Test profilu sprawdza również, że po zmianie nazwy strona Dzisiaj wita użytkownika nową nazwą, a mobilny profil jest dostępny przez Więcej. Weryfikacja tej zmiany: TypeScript/build, 34 testy jednostkowe i 10 wybranych testów przeglądarkowych zakończone powodzeniem.

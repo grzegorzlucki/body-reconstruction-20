@@ -1,3 +1,5 @@
+import { message as systemMessage } from "./i18n/config";
+import { isPreference, readPreference, storePreference } from "./i18n/config";
 import { remapMeasurementSessions } from "./analytics/metrics";
 import { supabase } from "./supabase";
 import { backupSchema, defaultTemplate, exerciseById, sessionPlan, type Injury, type PainLog, type Session, type SetLog, type WorkoutTemplate } from "./domain";
@@ -59,7 +61,7 @@ const userId = async () => {
 // application stores timestamps as canonical UTC ISO strings ending in Z.
 export function cloudTimestamp(value: string): string {
   const timestamp = new Date(value);
-  if (Number.isNaN(timestamp.getTime())) throw Error(`Nieprawidłowa data z Supabase: ${value}`);
+  if (Number.isNaN(timestamp.getTime())) throw Error(systemMessage("Nieprawidłowa data z Supabase: {{v0}}",{v0: value}));
   return timestamp.toISOString();
 }
 
@@ -68,7 +70,19 @@ async function insertProfileWithStarter(id: string, name: string) {
   const result = await client().rpc("create_profile_with_template", {
     payload: { id, name, template },
   });
-  if (!result.error) return;
+  if (!result.error) {
+    const preference = readPreference();
+    if (preference) {
+      // Only a newly created profile adopts the explicit pre-login choice.
+      // A missing language migration must not prevent account creation.
+      storePreference(preference, id, true);
+      try {
+        const saved = await client().rpc("update_profile_language", { target_profile_id: id, language_preference: preference });
+        if (!saved.error) storePreference(preference, id);
+      } catch { /* Keep the pending preference and let the user retry. */ }
+    }
+    return;
+  }
   if (result.error.code === "PGRST202")
     throw Error("Brak migracji profilu konta. Zastosuj 20261116_account_profile_settings.sql w Supabase SQL Editor.");
   throw Error(`Tworzenie profilu: ${result.error.message}`);
@@ -115,6 +129,7 @@ async function profiles(): Promise<Profile[]> {
   return rows.map((row) => ({
     id: row.id,
     name: row.name,
+    preferredLanguage: isPreference(row.preferred_language) ? row.preferred_language : "pl",
     timeZone: row.time_zone ?? "Europe/Warsaw", avatarPath: row.avatar_path ?? null,
     weeklyGoal: row.weekly_goal,
     checkInTime: String(row.check_in_time).slice(0, 5),
@@ -157,7 +172,7 @@ async function putTemplate(template: WorkoutTemplate) {
       throw Error("Brak funkcji zapisu planów w Supabase. Uruchom migracje 20261115_atomic_writes.sql oraz 20261115_exercise_timers.sql w SQL Editor.");
     if (result.error.code === "23503" && result.error.message.includes("template_exercises_exercise_id_fkey"))
       throw Error("W bazie Supabase brakuje ćwiczeń użytych w planie. Uruchom migrację 20261115_exercise_catalog_seed.sql w SQL Editor.");
-    throw Error(`Nie udało się zapisać planu: ${result.error.message}`);
+    throw Error(systemMessage("Nie udało się zapisać planu: {{v0}}",{v0: result.error.message}));
   }
 }
 
@@ -237,7 +252,7 @@ export async function saveCloudSessionSets(session: Session, changed: SetLog[]) 
     await putSession(session);
     return;
   }
-  throw Error(`Nie udało się zapisać serii: ${result.error.message}`);
+  throw Error(systemMessage("Nie udało się zapisać serii: {{v0}}",{v0: result.error.message}));
 }
 
 export const cloudDb = {

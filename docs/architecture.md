@@ -6,6 +6,8 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 
 ## Quick Navigation
 
+Polish/English UI: start at `src/i18n/config.ts`, `translations.ts` and `LanguageProvider.tsx` (above AuthGate/App). Language selection lives in `src/profile/LanguageSettings.tsx`, with focused writes in `src/account/accountRepository.ts`. See `docs/I18N_PL_EN_DEPLOYMENT.md` for behaviour and deployment; apply `supabase/migrations/20261122_profile_language.sql` before the frontend. Dexie v8 preserves Polish for existing profiles. Internal navigation IDs/URLs and backup v6 stay unchanged; translate display labels, never user-owned text or identifiers. Tests: `src/i18n/` and `e2e/i18n.spec.ts`.
+
 | Task | Start here | Related modules |
 |---|---|---|
 | Compose app, select views, wire persistence/actions | `src/main.tsx` | `src/app/`, `src/views/` |

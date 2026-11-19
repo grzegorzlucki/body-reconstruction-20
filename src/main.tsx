@@ -1,3 +1,6 @@
+import { LanguageProvider, useAccountLanguage } from "./i18n/LanguageProvider";
+import { useTranslation } from "react-i18next";
+import { ui } from "./i18n/config";
 import React, { useEffect, useRef, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createRoot } from "react-dom/client";
@@ -62,6 +65,7 @@ const db: AppRepository = supabase ? cloudDb : {
   },
 };
 function App({ user }: { user?: User }) {
+  useTranslation();
   const { ask: confirmAction, dialog: confirmationDialog } = useConfirmation();
   const approvedReload = useRef(false);
   const [localProfiles, setLocalProfiles] = useState<Profile[]>([]);
@@ -234,6 +238,7 @@ function App({ user }: { user?: User }) {
     ? (Date.now() - new Date(last.ended!).getTime()) / 36e5
     : Infinity;
   const selectedProfile = profiles.find((profile) => profile.id === profileId);
+  useAccountLanguage(selectedProfile?.id, selectedProfile?.preferredLanguage);
   async function signOut() {
     if (!supabase || busy) return;
     if ((profileDirty || workoutDirty || planDirty || !!editing) &&
@@ -284,8 +289,8 @@ function App({ user }: { user?: User }) {
         {isProfileTab(tab) && <ProfileNavigation tab={tab} onNavigate={navigate} />}
         {!ready && !["Profil", "Bezpieczeństwo", "Preferencje", "Aplikacja"].includes(tab) ? (
           <div>
-            <p>{loadingData ? supabase ? "Ładowanie danych konta…" : "Otwieranie lokalnej bazy…" : "Nie udało się załadować danych."}</p>
-            {error && <button type="button" disabled={loadingData} onClick={() => { void refresh().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Nieznany błąd")); }}>Spróbuj ponownie</button>}
+            <p>{loadingData ? supabase ? ui("Ładowanie danych konta…") : ui("Otwieranie lokalnej bazy…") : ui("Nie udało się załadować danych.")}</p>
+            {error && <button type="button" disabled={loadingData} onClick={() => { void refresh().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Nieznany błąd")); }}>{ui("Spróbuj ponownie")}</button>}
           </div>
         ) : (
           <>
@@ -414,5 +419,5 @@ function App({ user }: { user?: User }) {
   );
 }
 createRoot(document.getElementById("root")!).render(
-  supabase ? <AuthGate>{(session) => <App key={session.user.id} user={session.user} />}</AuthGate> : <App />,
+  <LanguageProvider>{supabase ? <AuthGate>{(session) => <App key={session.user.id} user={session.user} />}</AuthGate> : <App />}</LanguageProvider>,
 );

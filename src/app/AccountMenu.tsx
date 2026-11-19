@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui } from "../i18n/config";
 import { useEffect, useId, useRef, useState } from "react";
 import { ProfileAvatar } from "../profile/ProfileAvatar";
 import { profileSections, type MainTab } from "./navigation";
@@ -6,6 +8,7 @@ export function AccountMenu({ name, email, avatarPath, onNavigate, onSignOut, bu
   name: string; email?: string; avatarPath?: string | null; busy: boolean;
   onNavigate: (tab: MainTab) => Promise<boolean>; onSignOut: () => Promise<void>;
 }) {
+  useTranslation();
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
@@ -29,12 +32,12 @@ export function AccountMenu({ name, email, avatarPath, onNavigate, onSignOut, bu
     </button>
     {open && <div className="account-dropdown" id={id}>
       <strong>{name}</strong><p>{email || "Dane na tym urządzeniu"}</p>
-      <nav aria-label="Ustawienia konta">{profileSections.map((item) => <button key={item.tab} type="button"
+      <nav aria-label={ui("Ustawienia konta")}>{profileSections.map((item) => <button key={item.tab} type="button"
         onClick={async () => {
           if (await onNavigate(item.tab)) setOpen(false);
           else { setOpen(true); trigger.current?.focus(); }
-        }}>{item.label}</button>)}</nav>
-      {email && <button type="button" className="secondary" disabled={busy} onClick={() => void onSignOut()}>Wyloguj</button>}
+        }}>{ui(item.label)}</button>)}</nav>
+      {email && <button type="button" className="secondary" disabled={busy} onClick={() => void onSignOut()}>{ui("Wyloguj")}</button>}
     </div>}
   </div>;
 }

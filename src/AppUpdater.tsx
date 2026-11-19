@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui } from "./i18n/config";
 import { useEffect, useState } from "react";
 
 const installationFinished = (worker: ServiceWorker) =>
@@ -39,6 +41,7 @@ export function AppUpdater({
   confirmAction: (message: string) => Promise<boolean>;
   onApprovedReload: () => void;
 }) {
+  useTranslation();
   const [updating, setUpdating] = useState(false);
   const [available, setAvailable] = useState(false);
   const [error, setError] = useState("");
@@ -158,14 +161,13 @@ export function AppUpdater({
         disabled={disabled || updating}
         onClick={refresh}
       >
-        {updating ? "Sprawdzanie aktualizacji…" : "Odśwież aplikację"}
+        {updating ? ui("Sprawdzanie aktualizacji…") : ui("Odśwież aplikację")}
       </button>
       {available && (
         <p role="status">
-          Dostępna nowa wersja. Naciśnij „Odśwież aplikację”, aby ją wczytać.
-        </p>
+           {ui("Dostępna nowa wersja. Naciśnij „Odśwież aplikację”, aby ją wczytać.")} </p>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{ui(error)}</p>}
     </div>
   );
 }

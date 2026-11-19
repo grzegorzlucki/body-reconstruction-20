@@ -1,3 +1,4 @@
+import { message as systemMessage } from "../i18n/config";
 import type { Dispatch, SetStateAction } from "react";
 import type { AppRepository } from "./repository";
 import { completedGroups, day, exerciseById, logSchema, newSession, replaceSessionExercise, sessionSchema, templateSchema, visibleSets,
@@ -138,7 +139,7 @@ export function useWorkoutActions({ database, cloud, profileId, active, sessions
           injuryIds: [], context: "", note: "Pomiar po treningu" });
         try { await database.logs.put(log); }
         catch (cause) {
-          throw Error(`Trening zapisany, ale pomiar bólu nie został zapisany. Dodaj go w Dzienniku. ${cause instanceof Error ? cause.message : ""}`);
+          throw Error(systemMessage("Trening zapisany, ale pomiar bólu nie został zapisany. Dodaj go w Dzienniku. {{v0}}",{v0: cause instanceof Error ? cause.message : ""}));
         }
       }
       setNotice(pain ? "Trening i pomiar bólu zapisane." : "Trening ukończony. Zapisz reakcję następnego ranka.");

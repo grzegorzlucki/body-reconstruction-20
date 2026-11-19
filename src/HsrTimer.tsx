@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui } from "./i18n/config";
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabase";
 import { UnilateralTimerFields } from "./UnilateralTimerFields";
@@ -27,6 +29,7 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
   profileId?: string;
   confirmAction: (message: string) => Promise<boolean>;
 }) {
+  useTranslation();
   const [settings, setSettings] = useState(() => loadSettings(profileId));
   const [remoteReady, setRemoteReady] = useState(!supabase);
   const [settingsDirty, setSettingsDirty] = useState(false);
@@ -216,13 +219,13 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
   return (
     <section className="hsr-timer">
       <div className="heading">
-        <p className="eyebrow">TWÓJ RYTM ĆWICZENIA</p>
-        <h1>Zegar HSR</h1>
-        <p>Ruch 1 → zatrzymanie → ruch 2. Ty wybierasz kierunek ruchu.</p>
+        <p className="eyebrow">{ui("TWÓJ RYTM ĆWICZENIA")}</p>
+        <h1>{ui("Zegar HSR")}</h1>
+        <p>{ui("Ruch 1 → zatrzymanie → ruch 2. Ty wybierasz kierunek ruchu.")}</p>
       </div>
       {message && (
         <p role="status" className="notice">
-          {message}
+          {ui(message)}
         </p>
       )}
       {active || status === "done" ? (
@@ -231,41 +234,41 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
             {status === "paused"
               ? "PAUZA"
               : status === "done"
-                ? "UKOŃCZONO"
-                : "W TOKU"}
+                ? ui("UKOŃCZONO")
+                : ui("W TOKU")}
           </p>
-          <h2 aria-live="polite">{position?.phase}</h2>
-          {settings.unilateral && <p className="timer-side" role="status">{timerSideLabel(position?.side)}</p>}
+          <h2 aria-live="polite">{ui(position?.phase ?? "")}</h2>
+          {settings.unilateral && <p className="timer-side" role="status">{ui(timerSideLabel(position?.side))}</p>}
           <div
             className="timer-clock"
             role="timer"
-            aria-label="Pozostały czas fazy"
+            aria-label={ui("Pozostały czas fazy")}
           >
             {formatTimer(position?.remaining ?? 0)}
           </div>
           <div className="timer-counts">
             <span>
-              Powtórzenie{" "}
+               {ui("Powtórzenie")}{" "}
               <b>
                 {position?.rep}/{settings.reps}
               </b>
             </span>
             <span>
-              Seria{" "}
+               {ui("Seria")}{" "}
               <b>
                 {position?.set}/{settings.sets}
               </b>
             </span>
           </div>
-          <progress aria-label="Postęp zegara" max={total} value={elapsed} />
+          <progress aria-label={ui("Postęp zegara")} max={total} value={elapsed} />
           <p>
-            Do końca: {formatTimer(Math.ceil(total - elapsed))}
+             {ui("Do końca:")} {formatTimer(Math.ceil(total - elapsed))}
             {position?.kind === "rest"
-              ? ` · Następna seria: ${(position?.set ?? 0) + 1}`
+              ? " " + ui("· Następna seria: {{v0}}", { v0: (position?.set ?? 0) + 1 })
               : ""}
           </p>
           <div className="actions">
-            {status === "running" && <button onClick={pause}>Pauza</button>}
+            {status === "running" && <button onClick={pause}>{ui("Pauza")}</button>}
             {status === "paused" && (
               <button
                 onClick={() => {
@@ -274,8 +277,7 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
                   setStatus("running");
                 }}
               >
-                Wznów
-              </button>
+                 {ui("Wznów")} </button>
             )}
             {active && (
               <button
@@ -287,12 +289,11 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
                   }
                 }}
               >
-                Zakończ
-              </button>
+                 {ui("Zakończ")} </button>
             )}
             {status === "done" && (
               <>
-                <button onClick={start}>Uruchom ponownie</button>
+                <button onClick={start}>{ui("Uruchom ponownie")}</button>
                 <button
                   className="secondary"
                   onClick={() => {
@@ -300,8 +301,7 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
                     setElapsed(0);
                   }}
                 >
-                  Zmień ustawienia
-                </button>
+                   {ui("Zmień ustawienia")} </button>
               </>
             )}
           </div>
@@ -314,23 +314,20 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
           }}
         >
           <div className="panel">
-            <h2>Ustawienia zegara</h2>
+            <h2>{ui("Ustawienia zegara")}</h2>
             <p>
-              Czasy w sekundach. Wpisz 0, żeby pominąć fazę ruchu, początkowe
-              przygotowanie lub przerwę. Ostatnie 5 sekund każdej przerwy to
-              przygotowanie do następnej serii.
-            </p>
+               {ui("Czasy w sekundach. Wpisz 0, żeby pominąć fazę ruchu, początkowe przygotowanie lub przerwę. Ostatnie 5 sekund każdej przerwy to przygotowanie do następnej serii.")} </p>
             <div className="timer-settings">
               {timerFields.map(([key, label, min, max]) => (
                 <label className={`timer-field timer-${key}`} key={key}>
                   <span>
-                    {label}
+                    {ui(label)}
                     <small>
                       {key === "reps" || key === "sets" ? "liczba" : "sekundy"}
                     </small>
                   </span>
                   <input
-                    aria-label={label}
+                    aria-label={ui(label)}
                     type="number"
                     inputMode="numeric"
                     min={min}
@@ -356,9 +353,8 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
               setSettingsDirty(true); setSettings((current) => ({ ...current, ...patch }));
             }} />
             <label>
-              Dźwięk
-              <select
-                aria-label="Dźwięk"
+               {ui("Dźwięk")} <select
+                aria-label={ui("Dźwięk")}
                 value={settings.sound ? "beep" : "silent"}
                 onChange={(event) => {
                   setSettingsDirty(true);
@@ -368,40 +364,28 @@ export function IntervalTimer({ visible, profileId = "default-profile", confirmA
                   });
                 }}
               >
-                <option value="beep">Piknięcia co sekundę</option>
-                <option value="silent">Cisza</option>
+                <option value="beep">{ui("Piknięcia co sekundę")}</option>
+                <option value="silent">{ui("Cisza")}</option>
               </select>
             </label>
             {!validTimer(settings) && (
               <p role="alert">
-                Wpisz całkowite wartości w dozwolonym zakresie. Powtórzenia i
-                serie: 1–100, czasy: 0–3600 s. Przynajmniej jedna faza ruchu
-                musi trwać dłużej niż 0 sekund.
-              </p>
+                 {ui("Wpisz całkowite wartości w dozwolonym zakresie. Powtórzenia i serie: 1–100, czasy: 0–3600 s. Przynajmniej jedna faza ruchu musi trwać dłużej niż 0 sekund.")} </p>
             )}
           </div>
           <div className="panel timer-summary">
             <div>
-              <span>Łączny czas</span>
+              <span>{ui("Łączny czas")}</span>
               <strong>{validTimer(settings) ? formatTimer(total) : "—"}</strong>
-              {settings.unilateral && <p>{settings.reps} powtórzeń na każdą stronę · {settings.sets} serii obu stron</p>}
+              {settings.unilateral && <p>{settings.reps}  {ui("powtórzeń na każdą stronę ·")} {settings.sets}  {ui("serii obu stron")}</p>}
             </div>
             <button disabled={!validTimer(settings)} type="submit">
-              Start
-            </button>
+               {ui("Start")} </button>
           </div>
         </form>
       )}
       <p className="footnote">
-        Przygotowanie jest przed pierwszą serią oraz w ostatnich sekundach
-        każdej przerwy. Końcowe przygotowanie do serii wlicza się w przerwę.
-        W trybie jednostronnym osobne przygotowanie do zmiany strony wydłuża
-        serię, a odpoczynek jest dopiero po obu stronach.
-        Zegar działa także w innych zakładkach tej aplikacji. Podczas
-        ćwiczenia pozostaw aplikację na ekranie — blokada telefonu lub przejście
-        do innej aplikacji może zakłócić dźwięk. Ustawienia zapisują się
-        automatycznie na tym urządzeniu.
-      </p>
+        {ui("Przygotowanie jest przed pierwszą serią oraz w ostatnich sekundach każdej przerwy. Końcowe przygotowanie do serii wlicza się w przerwę. W trybie jednostronnym osobne przygotowanie do zmiany strony wydłuża serię, a odpoczynek jest dopiero po obu stronach. Zegar działa także w innych zakładkach tej aplikacji. Podczas ćwiczenia pozostaw aplikację na ekranie — blokada telefonu lub przejście do innej aplikacji może zakłócić dźwięk. Ustawienia zapisują się automatycznie na tym urządzeniu.")}</p>
     </section>
   );
 }

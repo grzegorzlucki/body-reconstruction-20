@@ -1,3 +1,4 @@
+import { isPreference, type LanguagePreference } from "../i18n/config";
 import { supabase } from "../supabase";
 import { db } from "../db";
 import { accountIdentitySchema } from "../domain";
@@ -43,3 +44,15 @@ export async function removeAvatar(path: string) {
 }
 
 export const accountRedirect = () => new URL(import.meta.env.BASE_URL, window.location.origin).href;
+
+const languageWrites = new Map<string, Promise<unknown>>();
+export async function saveAccountLanguage(profileId: string, preference: LanguagePreference) {
+  if (!isPreference(preference)) throw Error("Invalid language preference");
+  if (!supabase) { await db.profiles.update(profileId, { preferredLanguage: preference }); return; }
+  const write = (languageWrites.get(profileId) ?? Promise.resolve()).catch(() => {}).then(async () => {
+    const { error } = await supabase!.rpc("update_profile_language", { target_profile_id: profileId, language_preference: preference });
+    if (error) throw error;
+  });
+  languageWrites.set(profileId, write);
+  try { await write; } finally { if (languageWrites.get(profileId) === write) languageWrites.delete(profileId); }
+}

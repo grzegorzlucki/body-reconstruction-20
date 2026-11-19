@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui } from "./i18n/config";
 import { useId } from "react";
 
 export function painLevelColor(value: number) {
@@ -15,13 +17,14 @@ export function PainSlider({ name, detail, value, onChange, disabled = false }: 
   onChange: (value: string) => void;
   disabled?: boolean;
 }) {
+  useTranslation();
   const id = useId();
   return <label className="pain-row">
     <span>{name}{detail && <small> · {detail}</small>}</span>
     <span className="pain-slider-control">
       <input id={id} type="range" min="0" max="10" step="1" value={value === "" ? "5" : value} disabled={disabled}
         data-pain-unrated={value === "" ? "true" : undefined} aria-describedby={`${id}-scale`}
-        aria-label={`Odczuwany ból: ${name}`} aria-valuetext={value === "" ? "Nie wybrano oceny" : `${value} na 10`}
+        aria-label={ui("Odczuwany ból: {{v0}}", {v0: name})} aria-valuetext={value === "" ? ui("Nie wybrano oceny") : `${value} / 10`}
         style={{ accentColor: value === "" ? "var(--color-accent-fill)" : painLevelColor(Number(value)) }}
         onPointerUp={(event) => onChange(event.currentTarget.value)}
         onKeyDown={(event) => {
@@ -30,9 +33,9 @@ export function PainSlider({ name, detail, value, onChange, disabled = false }: 
           }
         }}
         onChange={(event) => onChange(event.target.value)} />
-      <output htmlFor={id} aria-live="polite">{value === "" ? "Nie oceniono" : `${value} / 10`}</output>
+      <output htmlFor={id} aria-live="polite">{value === "" ? ui("Nie oceniono") : `${value} / 10`}</output>
     </span>
-    <span id={`${id}-scale`} className="pain-slider-ends"><span>0 — brak bólu</span><span>10 — najsilniejszy wyobrażalny ból</span></span>
-    {value === "" && <small>Przesuń suwak lub wskaż ocenę. Klawiatura: strzałki, Enter zatwierdza.</small>}
+    <span id={`${id}-scale`} className="pain-slider-ends"><span>{ui("0 — brak bólu")}</span><span>{ui("10 — najsilniejszy wyobrażalny ból")}</span></span>
+    {value === "" && <small>{ui("Przesuń suwak lub wskaż ocenę. Klawiatura: strzałki, Enter zatwierdza.")}</small>}
   </label>;
 }

@@ -7,6 +7,13 @@ beforeEach(async () => {
   await db.sessions.clear();
 });
 describe("Baza i kopie", () => {
+  it("keeps language out of rehabilitation backups and preserves it on import", async () => {
+    await db.profiles.update(legacyProfileId, { preferredLanguage: "en" });
+    const backup = await exportBackup();
+    expect(backup.profileSettings).not.toHaveProperty("preferredLanguage");
+    await importBackup(JSON.parse(JSON.stringify(backup)));
+    expect((await db.profiles.get(legacyProfileId))?.preferredLanguage).toBe("en");
+  });
   it("odtwarza wpisy i aktywną sesję bez utraty danych", async () => {
     const session = newSession(
       Object.fromEntries(

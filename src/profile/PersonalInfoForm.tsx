@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui } from "../i18n/config";
 import { useEffect, useState, type FormEvent } from "react";
 import type { User } from "@supabase/supabase-js";
 import type { Profile } from "../db";
@@ -8,6 +10,7 @@ import { ProfileAvatar } from "./ProfileAvatar";
 export function PersonalInfoForm({ profile, user, onChanged, onDirty, onBusy, disabled = false }: {
   profile: Profile; user?: User; onChanged: () => Promise<unknown>; onDirty: (dirty: boolean) => void; onBusy: (busy: boolean) => void; disabled?: boolean;
 }) {
+  useTranslation();
   const [name, setName] = useState(profile.name);
   const [timeZone, setTimeZone] = useState(profile.timeZone ?? "Europe/Warsaw");
   const [photo, setPhoto] = useState<File | null>(null);
@@ -48,11 +51,11 @@ export function PersonalInfoForm({ profile, user, onChanged, onDirty, onBusy, di
     } finally { setBusy(false); onBusy(false); }
   }
   return <form className="panel account-form" onSubmit={(event) => void save(event)}>
-    <h2>Dane osobowe</h2>
-    {preview ? <img className="profile-avatar" src={preview} alt="Podgląd wybranego zdjęcia" width="48" height="48" />
+    <h2>{ui("Dane osobowe")}</h2>
+    {preview ? <img className="profile-avatar" src={preview} alt={ui("Podgląd wybranego zdjęcia")} width="48" height="48" />
       : <ProfileAvatar name={name} path={remove ? null : profile.avatarPath} />}
     {user && <>
-      <label>Zdjęcie profilowe<input key={`${remove}-${photo?.name ?? ""}`} type="file" accept="image/jpeg,image/png,image/webp" disabled={busy}
+      <label>{ui("Zdjęcie profilowe")}<input key={`${remove}-${photo?.name ?? ""}`} type="file" accept="image/jpeg,image/png,image/webp" disabled={busy}
         onChange={(event) => {
           const file = event.target.files?.[0];
           if (file && (file.size > 2097152 || !["image/jpeg", "image/png", "image/webp"].includes(file.type))) {
@@ -60,19 +63,19 @@ export function PersonalInfoForm({ profile, user, onChanged, onDirty, onBusy, di
           }
           setPhoto(file ?? null); setRemove(false); setMessage("");
         }} /></label>
-      <p>JPEG, PNG lub WebP, maksymalnie 2 MB. Zdjęcie zostanie przycięte do kwadratu.</p>
-      {photo && <p>Wybrano: {photo.name}</p>}
+      <p>{ui("JPEG, PNG lub WebP, maksymalnie 2 MB. Zdjęcie zostanie przycięte do kwadratu.")}</p>
+      {photo && <p>{ui("Wybrano:")}{photo.name}</p>}
       {(profile.avatarPath || photo) && <button className="secondary" type="button" disabled={busy}
-        onClick={() => { setPhoto(null); setRemove(true); }}>Usuń zdjęcie</button>}
+        onClick={() => { setPhoto(null); setRemove(true); }}>{ui("Usuń zdjęcie")}</button>}
     </>}
-    <label>Nazwa wyświetlana<input name="displayName" autoComplete="nickname" required maxLength={80} disabled={busy}
+    <label>{ui("Nazwa wyświetlana")}<input name="displayName" autoComplete="nickname" required maxLength={80} disabled={busy}
       value={name} onChange={(event) => setName(event.target.value)} /></label>
-    <label>Strefa czasowa konta<input name="timeZone" list="account-time-zones" required disabled={busy} value={timeZone}
+    <label>{ui("Strefa czasowa konta")}<input name="timeZone" list="account-time-zones" required disabled={busy} value={timeZone}
       onChange={(event) => setTimeZone(event.target.value)} /></label>
     <datalist id="account-time-zones">{["Europe/Warsaw", "Europe/London", "Europe/Berlin", "America/New_York", "UTC"].map((zone) => <option key={zone} value={zone} />)}</datalist>
-    <p>Strefa określa zegar konta. Daty historycznych pomiarów pozostają takie, jak zapisano; formularze używają czasu urządzenia.</p>
-    {message && <p role="status">{message}</p>}
-    <div className="actions"><button type="submit" disabled={busy || !dirty}>{busy ? "Zapisywanie…" : "Zapisz zmiany"}</button>
-      <button type="button" className="secondary" disabled={busy || !dirty} onClick={cancel}>Anuluj</button></div>
+    <p>{ui("Strefa określa zegar konta. Daty historycznych pomiarów pozostają takie, jak zapisano; formularze używają czasu urządzenia.")}</p>
+    {message && <p role="status">{ui(message)}</p>}
+    <div className="actions"><button type="submit" disabled={busy || !dirty}>{busy ? ui("Zapisywanie…") : ui("Zapisz zmiany")}</button>
+      <button type="button" className="secondary" disabled={busy || !dirty} onClick={cancel}>{ui("Anuluj")}</button></div>
   </form>;
 }

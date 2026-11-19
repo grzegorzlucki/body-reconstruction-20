@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { countLabel, searchLabels, ui, message as systemMessage } from "./i18n/config";
 import { useState, useEffect } from "react";
 import {
   exerciseCatalog,
@@ -21,6 +23,7 @@ export function ExercisePicker({
   onPick: (id: string) => void;
   label?: string;
 }) {
+  useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [equipment, setEquipment] = useState("");
@@ -34,7 +37,7 @@ export function ExercisePicker({
     (e) =>
       !excluded.includes(e.id) &&
       (!equipment || e.equipment === equipment) &&
-      normalize(e.name + " " + e.detail + " " + e.id).includes(
+      normalize(searchLabels(e.name) + " " + searchLabels(e.detail) + " " + e.id).includes(
         normalize(query),
       ),
   );
@@ -46,36 +49,34 @@ export function ExercisePicker({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
       >
-        {label}
+        {ui(label)}
       </button>
       {open && (
-        <section className="exercise-library" aria-label="Baza ćwiczeń">
+        <section className="exercise-library" aria-label={ui("Baza ćwiczeń")}>
           <div className="grid two">
             <label>
-              Szukaj ćwiczenia
-              <input
+               {ui("Szukaj ćwiczenia")} <input
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
             </label>
             <label>
-              Sprzęt
-              <select
-                aria-label="Sprzęt"
+               {ui("Sprzęt")} <select
+                aria-label={ui("Sprzęt")}
                 value={equipment}
                 onChange={(e) => setEquipment(e.target.value)}
               >
-                <option value="">Wszystkie</option>
+                <option value="">{ui("Wszystkie")}</option>
                 {[...new Set(exerciseCatalog.map((e) => e.equipment))].map(
                   (value) => (
-                    <option key={value}>{value}</option>
+                    <option key={value} value={value}>{ui(value ?? "")}</option>
                   ),
                 )}
               </select>
             </label>
           </div>
-          <p>{results.length} ćwiczeń do wyboru</p>
+          <p>{results.length}  {ui("ćwiczeń do wyboru")}</p>
           <div className="exercise-results">
             {results.map((e) => (
               <button
@@ -87,14 +88,14 @@ export function ExercisePicker({
                   setOpen(false);
                 }}
               >
-                <strong>{e.name}</strong>
+                <strong>{ui(e.name)}</strong>
                 <span>
-                  {e.equipment} · {e.detail}
+                  {ui(e.equipment ?? "")} · {ui(e.detail)}
                 </span>
               </button>
             ))}
           </div>
-          {!results.length && <p>Brak pasujących ćwiczeń.</p>}
+          {!results.length && <p>{ui("Brak pasujących ćwiczeń.")}</p>}
         </section>
       )}
     </div>
@@ -108,6 +109,7 @@ export function PlanComposer({
   entries: PlanEntry[];
   onChange: (entries: PlanEntry[]) => void;
 }) {
+  useTranslation();
   function update(index: number, patch: Partial<PlanEntry>) {
     onChange(entries.map((e, i) => (i === index ? { ...e, ...patch } : e)));
   }
@@ -124,15 +126,15 @@ export function PlanComposer({
           <section
             className="panel"
             key={entry.exerciseId}
-            aria-label={`Ustawienia: ${exercise.name}`}
+            aria-label={ui("Ustawienia: {{v0}}",{v0: ui(exercise.name)})}
           >
-            <h2>{exercise.name}</h2>
-            <p>{exercise.detail}</p>
+            <h2>{ui(exercise.name)}</h2>
+            <p>{ui(exercise.detail)}</p>
             <div className="actions plan-actions">
               <button
                 type="button"
                 className="secondary"
-                aria-label={`Przesuń w górę: ${exercise.name}`}
+                aria-label={ui("Przesuń w górę: {{v0}}", {v0: ui(exercise.name)})}
                 disabled={index === 0}
                 onClick={() => move(index, -1)}
               >
@@ -141,14 +143,14 @@ export function PlanComposer({
               <button
                 type="button"
                 className="secondary"
-                aria-label={`Przesuń w dół: ${exercise.name}`}
+                aria-label={ui("Przesuń w dół: {{v0}}", {v0: ui(exercise.name)})}
                 disabled={index === entries.length - 1}
                 onClick={() => move(index, 1)}
               >
                 ↓
               </button>
               <ExercisePicker
-                label={`Zamień: ${exercise.name}`}
+                label={ui("Zamień: {{v0}}", {v0: ui(exercise.name)})}
                 excluded={entries.map((e) => e.exerciseId)}
                 onPick={(exerciseId) =>
                   update(index, { exerciseId, weight: 0, reps: 0, note: "", timer: undefined })
@@ -159,14 +161,13 @@ export function PlanComposer({
                 className="text-button"
                 onClick={() => onChange(entries.filter((_, i) => i !== index))}
               >
-                Usuń: {exercise.name}
+                 {ui("Usuń:")} {ui(exercise.name)}
               </button>
             </div>
             <div className="grid three plan-numbers">
               <label>
-                Liczba serii
-                <select
-                  aria-label="Liczba serii"
+                 {ui("Liczba serii")} <select
+                  aria-label={ui("Liczba serii")}
                   value={entry.sets}
                   onChange={(event) =>
                     update(index, { sets: Number(event.target.value) })
@@ -180,7 +181,7 @@ export function PlanComposer({
                 </select>
               </label>
               <label>
-                Ciężar {exercise.id === "calf" ? "dodatkowy " : ""}(kg)
+                 {ui("Ciężar")} {exercise.id === "calf" ? "dodatkowy " : ""}(kg)
                 <SetNumberInput
                   type="number"
                   min={0}
@@ -191,7 +192,7 @@ export function PlanComposer({
                 />
               </label>
               <label>
-                Powtórzenia w serii{exercise.unilateral ? " (na stronę)" : ""}
+                 {ui("Powtórzenia w serii")}{exercise.unilateral ? " " + ui("(na stronę)") : ""}
                 <SetNumberInput
                   type="number"
                   min={0}
@@ -202,13 +203,13 @@ export function PlanComposer({
               </label>
             </div>
             <label>
-              Notatka do ćwiczenia: {exercise.name}
+               {ui("Notatka do ćwiczenia:")} {ui(exercise.name)}
               <input
                 maxLength={1000}
                 placeholder={
                   exercise.equipment === "Guma"
-                    ? "Np. kolor i opór gumy"
-                    : "Wskazówki, sprzęt, ustawienie maszyny"
+                    ? ui("Np. kolor i opór gumy")
+                    : ui("Wskazówki, sprzęt, ustawienie maszyny")
                 }
                 value={entry.note}
                 onChange={(e) => update(index, { note: e.target.value })}
@@ -226,27 +227,26 @@ export function PlanComposer({
                       reps: Math.max(1, entry.reps) }
                   : { timer: undefined })}
               />
-              Użyj zegara HSR dla tego ćwiczenia
-            </label>
+               {ui("Użyj zegara HSR dla tego ćwiczenia")} </label>
             {entry.timer && <div className="timer-settings">
               {([ ["prepare", "Przygotowanie"], ["move1", "Ruch 1"],
                 ["hold", "Zatrzymanie"], ["move2", "Ruch 2"],
                 ["rest", "Przerwa między seriami"] ] as const).map(([key, label]) =>
-                <label className="timer-field" key={key}>{label} (s)
+                <label className="timer-field" key={key}>{ui(label)} (s)
                   <input type="number" min={0} max={3600} step={1}
-                    aria-label={`${label}: ${exercise.name}`}
+                    aria-label={`${ui(label)}: ${ui(exercise.name)}`}
                     value={entry.timer![key]}
                     onChange={(event) => update(index, { timer: { ...entry.timer!, [key]: Number(event.target.value) } })} />
                 </label>)}
               <label className="timer-option"><input type="checkbox" checked={entry.timer.sound}
-                onChange={(event) => update(index, { timer: { ...entry.timer!, sound: event.target.checked } })} /> Dźwięk</label>
+                onChange={(event) => update(index, { timer: { ...entry.timer!, sound: event.target.checked } })} />  {ui("Dźwięk")}</label>
               <UnilateralTimerFields settings={entry.timer} onChange={(patch) => update(index, { timer: { ...entry.timer!, ...patch } })} />
-              <p>Serii i powtórzeń zegar użyje z ustawień ćwiczenia powyżej.</p>
+              <p>{ui("Serii i powtórzeń zegar użyje z ustawień ćwiczenia powyżej.")}</p>
             </div>}
           </section>
         );
       })}
-      {!entries.length && <p>Wybierz ćwiczenia z bazy, aby zbudować plan.</p>}
+      {!entries.length && <p>{ui("Wybierz ćwiczenia z bazy, aby zbudować plan.")}</p>}
       {entries.length < 30 && (
         <ExercisePicker
           excluded={entries.map((e) => e.exerciseId)}
@@ -276,6 +276,7 @@ export function Plans({
   onDelete: (id: string) => Promise<void>;
   confirmAction: (message: string) => Promise<boolean>;
 }) {
+  useTranslation();
   const [editing, setEditing] = useState<WorkoutTemplate | null>(null);
   useEffect(() => {
     onDirty(!!editing);
@@ -300,14 +301,13 @@ export function Plans({
   }
   return (
     <>
-      <h1>Twoje plany</h1>
+      <h1>{ui("Twoje plany")}</h1>
       <p className="intro">
-        Wybierz zapisany plan albo utwórz nowy. Zmiany planu nie wpływają na zapisane treningi.
-      </p>
+         {ui("Wybierz zapisany plan albo utwórz nowy. Zmiany planu nie wpływają na zapisane treningi.")} </p>
       {error && <ErrorNotice message={error} />}
       {message && (
         <p role="status" className="notice">
-          {message}
+          {ui(message)}
         </p>
       )}
       {!editing ? (
@@ -322,9 +322,8 @@ export function Plans({
                     .join(" · ")}
                 </p>
                 <p>
-                  {t.entries.reduce((sum, e) => sum + e.sets, 0)} serii ·{" "}
-                  {t.entries.length} ćwiczeń
-                </p>
+                  {t.entries.reduce((sum, e) => sum + e.sets, 0)}  {ui("serii ·")}{" "}
+                  {countLabel("exercises", t.entries.length)} </p>
                 <div className="actions">
                   <button
                     className="secondary"
@@ -334,7 +333,7 @@ export function Plans({
                       setError("");
                     }}
                   >
-                    Edytuj: {t.name}
+                    {ui("Edytuj:")}{t.name}
                   </button>
                   <button
                     className="secondary"
@@ -342,19 +341,19 @@ export function Plans({
                       setEditing({
                         ...structuredClone(t),
                         id: crypto.randomUUID(),
-                        name: t.name + " — kopia",
+                        name: t.name + " " + ui("— kopia"),
                       });
                       setMessage("");
                     }}
                   >
-                    Kopiuj: {t.name}
+                    {ui("Kopiuj:")}{t.name}
                   </button>
                   <button
                     className="text-button"
                     onClick={async () => {
                       if (
                         !await confirmAction(
-                          `Usunąć plan „${t.name}”? Historia treningów zostanie zachowana.`,
+                          systemMessage("Usunąć plan „{{v0}}”? Historia treningów zostanie zachowana.", {v0: t.name}),
                         )
                       )
                         return;
@@ -368,7 +367,7 @@ export function Plans({
                       }
                     }}
                   >
-                    Usuń plan: {t.name}
+                     {ui("Usuń plan:")} {t.name}
                   </button>
                 </div>
               </article>
@@ -376,9 +375,7 @@ export function Plans({
           </div>
           {!templates.length && (
             <p>
-              Nie masz jeszcze szablonów. Utwórz pierwszy plan lub skopiuj plan
-              początkowy.
-            </p>
+               {ui("Nie masz jeszcze szablonów. Utwórz pierwszy plan lub skopiuj plan początkowy.")} </p>
           )}
           <button
             onClick={() => {
@@ -387,27 +384,24 @@ export function Plans({
               setError("");
             }}
           >
-            Nowy plan
-          </button>{" "}
+             {ui("Nowy plan")} </button>{" "}
           <button
             className="secondary"
             onClick={() =>
               setEditing({ ...defaultTemplate(), id: crypto.randomUUID() })
             }
           >
-            Utwórz z planu początkowego
-          </button>
+             {ui("Utwórz z planu początkowego")} </button>
         </>
       ) : (
         <form onSubmit={save}>
           <label>
-            Nazwa planu
-            <input
+             {ui("Nazwa planu")} <input
               required
               maxLength={80}
               value={editing.name}
               onChange={(e) => setEditing({ ...editing, name: e.target.value })}
-              placeholder="Np. Lower A"
+              placeholder={ui("Np. Lower A")}
             />
           </label>
           <fieldset disabled={saving} className="plan-fieldset">
@@ -418,8 +412,7 @@ export function Plans({
           </fieldset>
           <div className="actions">
             <button disabled={saving || !editing.entries.length}>
-              Zapisz plan
-            </button>
+               {ui("Zapisz plan")} </button>
             <button
               type="button"
               className="secondary"
@@ -431,8 +424,7 @@ export function Plans({
                 }
               }}
             >
-              Anuluj edycję planu
-            </button>
+               {ui("Anuluj edycję planu")} </button>
           </div>
         </form>
       )}

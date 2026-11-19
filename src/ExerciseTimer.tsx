@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui } from "./i18n/config";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { formatTimer, timerPosition, timerSideLabel, totalSeconds } from "./intervalTimer";
 import { timerForEntry, type PlanEntry, type Session } from "./domain";
@@ -11,6 +13,7 @@ export function ExerciseTimer({ entry, savedStatus, disabled, onFinish, confirmA
   onFinish: (status: FinishStatus) => Promise<void>;
   confirmAction: (message: string) => Promise<boolean>;
 }) {
+  useTranslation();
   const settings = useMemo(() => timerForEntry(entry), [entry.timer, entry.sets, entry.reps]);
   const [state, setState] = useState<"idle" | "running" | "paused" | "done">("idle");
   const [elapsed, setElapsed] = useState(0);
@@ -52,8 +55,8 @@ export function ExerciseTimer({ entry, savedStatus, disabled, onFinish, confirmA
   }, [state, total, settings, onFinish]);
   useEffect(() => () => { void audio.current?.close(); }, []);
 
-  if (!settings) return <p role="alert">Ustaw powtórzenia i poprawne czasy zegara w planie.</p>;
-  if (savedStatus) return <p className="notice" role="status">{savedStatus === "completed" ? "Zegar ukończony" : savedStatus === "finishedEarly" ? "Ćwiczenie zakończone wcześniej" : "Ćwiczenie przerwane"}</p>;
+  if (!settings) return <p role="alert">{ui("Ustaw powtórzenia i poprawne czasy zegara w planie.")}</p>;
+  if (savedStatus) return <p className="notice" role="status">{savedStatus === "completed" ? ui("Zegar ukończony") : savedStatus === "finishedEarly" ? ui("Ćwiczenie zakończone wcześniej") : ui("Ćwiczenie przerwane")}</p>;
 
   async function finish(status: FinishStatus) {
     if (finishing.current) return;
@@ -77,26 +80,26 @@ export function ExerciseTimer({ entry, savedStatus, disabled, onFinish, confirmA
     setState("running");
   }
   return <div className="exercise-timer panel">
-    <h3>Zegar HSR</h3>
-    {message && <p role="alert">{message}</p>}
-    <strong>{position?.phase}</strong>
-    {settings.unilateral && <p className="timer-side" role="status">{timerSideLabel(position?.side)}</p>}
-    <div className="timer-clock" role="timer" aria-label="Pozostały czas fazy">{formatTimer(position?.remaining ?? 0)}</div>
-    <p>Seria {position?.set}/{settings.sets} · Powtórzenie {position?.rep}/{settings.reps}</p>
-    <progress aria-label="Postęp ćwiczenia" max={total} value={elapsed} />
+    <h3>{ui("Zegar HSR")}</h3>
+    {message && <p role="alert">{ui(message)}</p>}
+    <strong>{ui(position?.phase ?? "")}</strong>
+    {settings.unilateral && <p className="timer-side" role="status">{ui(timerSideLabel(position?.side))}</p>}
+    <div className="timer-clock" role="timer" aria-label={ui("Pozostały czas fazy")}>{formatTimer(position?.remaining ?? 0)}</div>
+    <p>{ui("Seria")} {position?.set}/{settings.sets}  {ui("· Powtórzenie")} {position?.rep}/{settings.reps}</p>
+    <progress aria-label={ui("Postęp ćwiczenia")} max={total} value={elapsed} />
     <div className="actions">
-      {state === "idle" && <button type="button" disabled={disabled} onClick={start}>Uruchom zegar</button>}
+      {state === "idle" && <button type="button" disabled={disabled} onClick={start}>{ui("Uruchom zegar")}</button>}
       {state === "running" && <button type="button" disabled={disabled} onClick={() => {
         base.current = Math.min(total, base.current + (performance.now() - anchor.current) / 1000);
         setElapsed(base.current);
         setState("paused");
-      }}>Pauza</button>}
-      {state === "paused" && <button type="button" disabled={disabled} onClick={start}>Wznów</button>}
+      }}>{ui("Pauza")}</button>}
+      {state === "paused" && <button type="button" disabled={disabled} onClick={start}>{ui("Wznów")}</button>}
       {(state === "running" || state === "paused") && <>
-        <button type="button" className="secondary" disabled={disabled} onClick={() => void finish("finishedEarly")}>Zakończ wcześniej</button>
-        <button type="button" className="secondary" disabled={disabled} onClick={() => void finish("stopped")}>Przerwij ćwiczenie</button>
+        <button type="button" className="secondary" disabled={disabled} onClick={() => void finish("finishedEarly")}>{ui("Zakończ wcześniej")}</button>
+        <button type="button" className="secondary" disabled={disabled} onClick={() => void finish("stopped")}>{ui("Przerwij ćwiczenie")}</button>
       </>}
-      {state === "done" && <button type="button" disabled={disabled || finishing.current} onClick={() => void finish("completed")}>Zapisz ukończenie zegara</button>}
+      {state === "done" && <button type="button" disabled={disabled || finishing.current} onClick={() => void finish("completed")}>{ui("Zapisz ukończenie zegara")}</button>}
     </div>
   </div>;
 }

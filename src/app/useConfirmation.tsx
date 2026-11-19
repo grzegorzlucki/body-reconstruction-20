@@ -1,3 +1,4 @@
+import { ui } from "../i18n/config";
 import { useEffect, useRef, useState } from "react";
 
 export function useConfirmation() {
@@ -39,11 +40,11 @@ export function useConfirmation() {
       }
       finish(false);
     }}>
-    <h2 id="confirm-title">Potwierdź działanie</h2>
-    <p id="confirm-message">{message}</p>
+    <h2 id="confirm-title">{ui("Potwierdź działanie")}</h2>
+    <p id="confirm-message">{ui(message ?? "")}</p>
     <div className="actions">
-      <button type="button" className="secondary" autoFocus onClick={() => finish(false)}>Anuluj</button>
-      <button type="button" onClick={() => finish(true)}>Potwierdź</button>
+      <button type="button" className="secondary" autoFocus onClick={() => finish(false)}>{ui("Anuluj")}</button>
+      <button type="button" onClick={() => finish(true)}>{ui("Potwierdź")}</button>
     </div>
   </dialog>;
 

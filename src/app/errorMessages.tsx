@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { hasUiTranslation, ui } from "../i18n/config";
 export function errorExplanation(message: string): string | null {
   if (/email rate limit exceeded|over_email_send_rate_limit/i.test(message))
     return "Limit wysyłania wiadomości e-mail został przekroczony. Spróbuj ponownie później.";
@@ -17,11 +19,19 @@ export function errorExplanation(message: string): string | null {
 }
 
 export function ErrorNotice({ message }: { message: string }) {
+  useTranslation();
   const explanation = errorExplanation(message);
+  let validation = "";
+  try {
+    const issues: unknown = JSON.parse(message);
+    if (Array.isArray(issues) && issues.every((issue) => typeof issue?.message === "string"))
+      validation = issues.map((issue) => hasUiTranslation(issue.message) ? ui(issue.message) : ui("Sprawdź poprawność wprowadzonych danych.")).join(" · ");
+  } catch { /* Plain system messages are not JSON. */ }
+  const display = explanation ?? (validation || (hasUiTranslation(message) ? ui(message) : ui("Nie udało się wykonać operacji. Spróbuj ponownie.")));
   return <div role="alert" className="alert">
-    {explanation ?? message}
-    {explanation && <details className="error-details">
-      <summary>Szczegóły techniczne</summary>
+    {ui(display)}
+    {(explanation || validation || !hasUiTranslation(message)) && <details className="error-details">
+      <summary>{ui("Szczegóły techniczne")}</summary>
       <code>{message}</code>
     </details>}
   </div>;

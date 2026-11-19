@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui, locale } from "../i18n/config";
 import type { ReactNode } from "react";
 import { AppUpdater } from "../AppUpdater";
 import { AppNavigation } from "./AppNavigation";
@@ -24,36 +26,37 @@ export function AppShell({ tab, onNavigate, busy, dirty, cloud, accountId, profi
   notice: string;
   children: ReactNode;
 }) {
+  useTranslation();
   return <div className="shell">
-    <a className="skip-link" href="#main-content">Przejdź do treści</a>
+    <a className="skip-link" href="#main-content">{ui("Przejdź do treści")}</a>
     <aside>
       <button type="button" className="brand" onClick={() => onNavigate("Dzisiaj")}
-        aria-label="Body Reconstruction — Dzisiaj">
+        aria-label={ui("Body Reconstruction — Dzisiaj")}>
         <span className="brand-icon" aria-hidden="true">↗</span> Body<br /><span>Reconstruction</span>
       </button>
-      <p className="eyebrow">TWÓJ PROCES. TWOJE TEMPO.</p>
+      <p className="eyebrow">{ui("TWÓJ PROCES. TWOJE TEMPO.")}</p>
       <div className="sidebar-navigation">
         <AppNavigation current={tab} onNavigate={onNavigate} profileName={profileName} avatarPath={avatarPath} />
       </div>
       <div className="sidebar-footer">
         <div className="sidebar-updater"><AppUpdater disabled={busy} hasUnsavedChanges={dirty} confirmAction={confirmAction} onApprovedReload={onApprovedReload} /></div>
       <div className="local">
-        <i aria-hidden="true" /> {cloud ? "Dane na koncie" : "Dane na tym urządzeniu"}
-        <small>{cloud ? ready && !error ? "Dane załadowane" : loadingData ? "Łączenie z Supabase" : "Błąd połączenia" : "Tryb lokalny"}</small>
+        <i aria-hidden="true" /> {cloud ? ui("Dane na koncie") : ui("Dane na tym urządzeniu")}
+        <small>{cloud ? ready && !error ? ui("Dane załadowane") : loadingData ? ui("Łączenie z Supabase") : ui("Błąd połączenia") : ui("Tryb lokalny")}</small>
       </div>
       </div>
     </aside>
     <main id="main-content" tabIndex={-1} aria-busy={loadingData}>
-      <header><span>REHABILITACJA / {tab.toUpperCase()}</span>
-        <div className="header-account"><span>{new Date().toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
+      <header><span>{ui("REHABILITACJA /")} {ui(tab).toUpperCase()}</span>
+        <div className="header-account"><span>{new Date().toLocaleDateString(locale(), { day: "numeric", month: "long", year: "numeric" })}</span>
           <AccountMenu name={profileName ?? (cloud ? "Konto" : "Profil lokalny")} email={accountId} avatarPath={avatarPath}
             onNavigate={onNavigate} onSignOut={onSignOut} busy={busy} /></div>
       </header>
       {error && <ErrorNotice message={error} />}
       {ready && loadingData && <LoadingScreen inline />}
-      {notice && <div role="status" className="notice">{notice}</div>}
+      {notice && <div role="status" className="notice">{ui(notice)}</div>}
       {children}
     </main>
-    <footer>BODY RECONSTRUCTION <span>Konsekwencja, nie pośpiech.</span></footer>
+    <footer>BODY RECONSTRUCTION <span>{ui("Konsekwencja, nie pośpiech.")}</span></footer>
   </div>;
 }

@@ -1,3 +1,6 @@
+import { useTranslation } from "react-i18next";
+import { ui, locale } from "../i18n/config";
+import { formatNumber } from "../i18n/formatters";
 import { exerciseById, type PainLog, type Session } from "../domain";
 import { useState } from "react";
 import { sessionDose, weeklyDose } from "./metrics";
@@ -27,6 +30,7 @@ export function TrainingDoseView({
   context?: string;
   onSelect: (id: string) => void;
 }) {
+  useTranslation();
   const [limit, setLimit] = useState(50);
   const all = [...allSessions]
     .filter((s) => s.ended && sessionDose(s).performedRows > 0)
@@ -34,44 +38,38 @@ export function TrainingDoseView({
   const weeks = weeklyDose(sessions, exerciseId);
   return (
     <section className="panel">
-      <h2>Dawka i regularność</h2>
+      <h2>{ui("Dawka i regularność")}</h2>
       <p>
-        Liczymy tylko serie oznaczone jako wykonane z co najmniej jednym
-        powtórzeniem. Para L/P jest jedną serią; powtórzenia obejmują obie
-        strony.
-      </p>
+         {ui("Liczymy tylko serie oznaczone jako wykonane z co najmniej jednym powtórzeniem. Para L/P jest jedną serią; powtórzenia obejmują obie strony.")} </p>
       <details>
-        <summary>Podsumowanie tygodni · {weeks.length}</summary>
+        <summary>{ui("Podsumowanie tygodni ·")} {weeks.length}</summary>
         {weeks.map((week) => (
           <p key={week.week}>
-            Tydzień od {week.week}: {week.sets} serii · {week.repetitions}{" "}
-            powtórzeń · {week.sessions} sesji z pracą
-          </p>
+             {ui("Tydzień od")} {week.week}: {week.sets}  {ui("serii ·")} {week.repetitions}{" "}
+             {ui("powtórzeń ·")} {week.sessions}  {ui("sesji z pracą")} </p>
         ))}
         <p className="footnote">
-          Pierwszy i ostatni tydzień mogą obejmować tylko część tygodnia z
-          wybranego zakresu. Uwzględniamy także wykonaną pracę sesji w toku.
-        </p>
+           {ui("Pierwszy i ostatni tydzień mogą obejmować tylko część tygodnia z wybranego zakresu. Uwzględniamy także wykonaną pracę sesji w toku.")} </p>
       </details>
       {!sessions.length ? (
-        <p>Brak treningów dla tych filtrów.</p>
+        <p>{ui("Brak treningów dla tych filtrów.")}</p>
       ) : (
         <div
           className="table-scroll"
           role="region"
-          aria-label="Wykonana dawka treningu"
+          aria-label={ui("Wykonana dawka treningu")}
           tabIndex={0}
         >
           <table className="analytics-table">
             <thead>
               <tr>
-                <th>Sesja</th>
-                <th>Status / serie</th>
-                <th>Powtórzenia</th>
-                {exerciseId && <th>Ciężar × powtórzenia</th>}
-                <th>Odstęp / czas sesji</th>
-                <th>Ocena około 24 h</th>
-                <th>Powód zakończenia</th>
+                <th>{ui("Sesja")}</th>
+                <th>{ui("Status / serie")}</th>
+                <th>{ui("Powtórzenia")}</th>
+                {exerciseId && <th>{ui("Ciężar × powtórzenia")}</th>}
+                <th>{ui("Odstęp / czas sesji")}</th>
+                <th>{ui("Ocena około 24 h")}</th>
+                <th>{ui("Powód zakończenia")}</th>
               </tr>
             </thead>
             <tbody>
@@ -112,36 +110,36 @@ export function TrainingDoseView({
                         {session.planName ?? "Trening"}
                       </button>
                       <small>
-                        {new Date(session.started).toLocaleString("pl-PL")}
+                        {new Date(session.started).toLocaleString(locale())}
                       </small>
                     </th>
                     <td>
-                      {dose.status}
+                      {ui(dose.status)}
                       <small>
                         {dose.completed}/{dose.planned}
                       </small>
                     </td>
                     <td>{dose.repetitions}</td>
-                    {exerciseId && <td>{dose.volume?.toFixed(0)} kg·powt.</td>}
+                    {exerciseId && <td>{dose.volume == null ? "—" : formatNumber(dose.volume, 0)} {ui("kg·powt.")}</td>}
                     <td>
                       {previous
-                        ? `${((Date.parse(session.started) - Date.parse(previous.ended!)) / 3600000).toFixed(1)} h przerwy`
-                        : "Brak poprzedniej sesji"}
+                        ? ui("{{v0}} h przerwy", { v0: formatNumber((Date.parse(session.started) - Date.parse(previous.ended!)) / 3600000) })
+                        : ui("Brak poprzedniej sesji")}
                       <small>
                         {dose.durationMinutes === null
-                          ? "W toku"
-                          : `${Math.round(dose.durationMinutes)} min czasu sesji`}
+                          ? ui("W toku")
+                          : ui("{{v0}} min czasu sesji", { v0: Math.round(dose.durationMinutes) })}
                       </small>
                     </td>
                     <td>
                       {!siteId
-                        ? "Wybierz obszar"
+                        ? ui("Wybierz obszar")
                         : paired
-                          ? `${match!.value}/10 · ${match!.value - baseline!.value} pkt względem przed`
-                          : "Brak porównywalnej, potwierdzonej pary"}
+                          ? ui("{{v0}}/10 · {{v1}} pkt względem przed", {v0: match!.value, v1: match!.value - baseline!.value})
+                          : ui("Brak porównywalnej, potwierdzonej pary")}
                     </td>
                     <td>
-                      {reasons[session.completionReason ?? "unspecified"]}
+                      {ui(reasons[session.completionReason ?? "unspecified"])}
                     </td>
                   </tr>
                 );
@@ -156,21 +154,14 @@ export function TrainingDoseView({
           className="secondary"
           onClick={() => setLimit(limit + 50)}
         >
-          Pokaż kolejne 50 sesji
-        </button>
+           {ui("Pokaż kolejne 50 sesji")} </button>
       )}
       {exerciseId && (
         <p>
-          Objętość dotyczy tylko ćwiczenia: {exerciseById(exerciseId).name}.
-          Porównuj ten sam wariant i sprzęt; pokazujemy wyłącznie zapisany
-          ciężar dodatkowy.
-        </p>
+           {ui("Objętość dotyczy tylko ćwiczenia:")} {ui(exerciseById(exerciseId).name)}{ui(". Porównuj ten sam wariant i sprzęt; pokazujemy wyłącznie zapisany ciężar dodatkowy.")} </p>
       )}
       <p className="footnote">
-        Czas sesji zawiera pauzy i pozostawienie aplikacji otwartej. Ból może
-        wpływać na zmniejszenie dawki. Samo następstwo w czasie nie dowodzi
-        przyczyny.
-      </p>
+         {ui("Czas sesji zawiera pauzy i pozostawienie aplikacji otwartej. Ból może wpływać na zmniejszenie dawki. Samo następstwo w czasie nie dowodzi przyczyny.")} </p>
     </section>
   );
 }

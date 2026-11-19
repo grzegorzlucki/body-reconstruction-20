@@ -1,3 +1,6 @@
+import { formatNumber } from "../i18n/formatters";
+import { useTranslation } from "react-i18next";
+import { ui, locale } from "../i18n/config";
 import { useMemo, useState } from "react";
 import { summarizeAnalytics } from "../analytics";
 import { PainCharts } from "../PainCharts";
@@ -29,9 +32,9 @@ const screens = {
   dose: "Dawka i regularność",
   areas: "Obszary i kontuzje",
 };
-const dateLabel = (value: string) => new Date(value).toLocaleString("pl-PL");
+const dateLabel = (value: string) => new Date(value).toLocaleString(locale());
 const valueLabel = (value: number | null) =>
-  value === null ? "Brak danych" : `${value.toFixed(1)} / 10`;
+  value === null ? ui("Brak danych") : `${formatNumber(value)} / 10`;
 
 export function AnalyticsView({
   logs,
@@ -50,6 +53,7 @@ export function AnalyticsView({
   onEditLog: (id: string) => void;
   onAddMeasurement: (id: string, phase: MeasurementPhase) => void;
 }) {
+  useTranslation();
   const { filters: f, update } = useAnalyticsNavigation();
   const [reportLimit, setReportLimit] = useState(50);
   const [raw, setRaw] = useState(false);
@@ -159,12 +163,10 @@ export function AnalyticsView({
     update({ screen: "response", session: id });
   return (
     <>
-      <h1>Analizy</h1>
+      <h1>{ui("Analizy")}</h1>
       <p className="intro">
-        Porównuj swoje pomiary z wykonaną pracą. Zależność czasowa nie wskazuje
-        przyczyny bólu.
-      </p>
-      <nav className="analytics-tabs" aria-label="Widoki analiz">
+         {ui("Porównuj swoje pomiary z wykonaną pracą. Zależność czasowa nie wskazuje przyczyny bólu.")} </p>
+      <nav className="analytics-tabs" aria-label={ui("Widoki analiz")}>
         {analyticsViews.map((screen) => (
           <button
             type="button"
@@ -173,14 +175,14 @@ export function AnalyticsView({
             aria-current={f.screen === screen ? "page" : undefined}
             onClick={() => update({ screen })}
           >
-            {screens[screen]}
+            {ui(screens[screen])}
           </button>
         ))}
       </nav>
       <details className="panel analytics-filter-disclosure">
         <summary>
-          Filtry · {f.from} – {f.to}
-          {f.site ? " · wybrany obszar" : ""}
+           {ui("Filtry ·")} {f.from} – {f.to}
+          {f.site ? " " + ui("· wybrany obszar") : ""}
         </summary>
         <div className="actions">
           {[7, 30, 90, 365].map((period) => (
@@ -194,14 +196,12 @@ export function AnalyticsView({
                 update({ from: day(start), to: day(new Date()) });
               }}
             >
-              {period} dni
-            </button>
+              {period} {ui("dni")}</button>
           ))}
         </div>
         <div className="grid two analytics-filters">
           <label>
-            Od
-            <input
+             {ui("Od")} <input
               type="date"
               value={f.from}
               onChange={(e) => {
@@ -210,8 +210,7 @@ export function AnalyticsView({
             />
           </label>
           <label>
-            Do
-            <input
+             {ui("Do")} <input
               type="date"
               value={f.to}
               onChange={(e) => {
@@ -220,27 +219,25 @@ export function AnalyticsView({
             />
           </label>
           <label>
-            Obszar
-            <select
+             {ui("Obszar")} <select
               value={f.site}
               onChange={(e) => update({ site: e.target.value })}
             >
-              <option value="">Wszystkie obszary</option>
+              <option value="">{ui("Wszystkie obszary")}</option>
               {sites.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
-                  {s.archived ? " · archiwalny" : ""}
+                  {s.archived ? " " + ui("· archiwalny") : ""}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Kontuzja
-            <select
+             {ui("Kontuzja")} <select
               value={f.injury}
               onChange={(e) => update({ injury: e.target.value })}
             >
-              <option value="">Wszystkie</option>
+              <option value="">{ui("Wszystkie")}</option>
               {injuries.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.name}
@@ -249,13 +246,12 @@ export function AnalyticsView({
             </select>
           </label>
           <label>
-            Kontekst
-            <select
+             {ui("Kontekst")} <select
               value={f.context}
               onChange={(e) => update({ context: e.target.value })}
             >
-              <option value="*">Wszystkie konteksty (mieszane)</option>
-              <option value="">Bez kontekstu</option>
+              <option value="*">{ui("Wszystkie konteksty (mieszane)")}</option>
+              <option value="">{ui("Bez kontekstu")}</option>
               {[
                 ...new Set([
                   ...contexts.map((c) => c.value),
@@ -269,26 +265,24 @@ export function AnalyticsView({
             </select>
           </label>
           <label>
-            Faza pomiaru
-            <select
+             {ui("Faza pomiaru")} <select
               value={f.phase}
               onChange={(e) => update({ phase: e.target.value })}
             >
-              <option value="">Wszystkie fazy</option>
+              <option value="">{ui("Wszystkie fazy")}</option>
               {measurementPhases.map((phase) => (
                 <option key={phase} value={phase}>
-                  {measurementPhaseLabels[phase]}
+                  {ui(measurementPhaseLabels[phase])}
                 </option>
               ))}
             </select>
           </label>
           <label>
-            Plan (nazwa w zapisanej sesji)
-            <select
+             {ui("Plan (nazwa w zapisanej sesji)")} <select
               value={f.plan}
               onChange={(e) => update({ plan: e.target.value })}
             >
-              <option value="">Wszystkie</option>
+              <option value="">{ui("Wszystkie")}</option>
               {[...new Set(sessions.map((s) => s.planName ?? "Trening"))].map(
                 (name) => (
                   <option key={name}>{name}</option>
@@ -297,15 +291,14 @@ export function AnalyticsView({
             </select>
           </label>
           <label>
-            Ćwiczenie
-            <select
+             {ui("Ćwiczenie")} <select
               value={f.exercise}
               onChange={(e) => update({ exercise: e.target.value })}
             >
-              <option value="">Wszystkie</option>
+              <option value="">{ui("Wszystkie")}</option>
               {exerciseCatalog.map((e) => (
                 <option key={e.id} value={e.id}>
-                  {e.name}
+                  {ui(e.name)}
                 </option>
               ))}
             </select>
@@ -313,71 +306,62 @@ export function AnalyticsView({
         </div>
       </details>
       {!validRange ? (
-        <p role="alert">Data „Od” musi poprzedzać datę „Do”.</p>
+        <p role="alert">{ui("Data „Od” musi poprzedzać datę „Do”.")}</p>
       ) : (
         <>
           <p className="footnote">
-            {f.from} – {f.to} · {days} dni. Daty według kalendarza urządzenia.
-            Pomiary kontrolne mogą pochodzić spoza zakresu sesji. Filtry
-            obszaru/kontuzji/kontekstu/fazy obejmują wyłącznie jawnie powiązane
-            sesje; plan i ćwiczenie obejmują tylko powiązane raporty.
-          </p>
+            {f.from} – {f.to} · {days} {ui("dni. Daty według kalendarza urządzenia. Pomiary kontrolne mogą pochodzić spoza zakresu sesji. Filtry obszaru/kontuzji/kontekstu/fazy obejmują wyłącznie jawnie powiązane sesje; plan i ćwiczenie obejmują tylko powiązane raporty.")}</p>
           {f.context === "*" && (
             <p className="notice">
-              Wyświetlasz różne konteksty. Wybierz jeden kontekst, aby
-              porównywać podobne pomiary.
-            </p>
+               {ui("Wyświetlasz różne konteksty. Wybierz jeden kontekst, aby porównywać podobne pomiary.")} </p>
           )}
           {f.screen === "overview" && (
             <>
               <div className="grid three analytics-summary">
                 <article>
-                  <h2>Wykonane serie</h2>
+                  <h2>{ui("Wykonane serie")}</h2>
                   <strong>{performed}</strong>
                   <p>
-                    {summary.completedSessions} zakończonych sesji z pracą ·{" "}
-                    {doses.filter((d) => d.status === "Pusty").length} pustych ·{" "}
-                    {doses.filter((d) => d.status === "W toku").length} w toku
-                  </p>
+                    {summary.completedSessions}  {ui("zakończonych sesji z pracą ·")}{" "}
+                    {doses.filter((d) => d.status === "Pusty").length}  {ui("pustych ·")}{" "}
+                    {doses.filter((d) => d.status === "W toku").length}  {ui("w toku")} </p>
                 </article>
                 <article>
-                  <h2>Pomiary</h2>
+                  <h2>{ui("Pomiary")}</h2>
                   <strong>{visibleLogs.length}</strong>
                   <p>
-                    {summary.diaryDays}/{days} dni ·{" "}
-                    {Math.round((summary.diaryDays / days) * 100)}% pokrycia
-                  </p>
+                    {summary.diaryDays}/{days}  {ui("dni ·")}{" "}
+                    {Math.round((summary.diaryDays / days) * 100)}{ui("% pokrycia")} </p>
                 </article>
                 <article>
-                  <h2>Sesje częściowe</h2>
+                  <h2>{ui("Sesje częściowe")}</h2>
                   <strong>
                     {doses.filter((d) => d.status === "Częściowy").length}
                   </strong>
                   <p>
-                    z {scopedSessions.filter((s) => s.ended).length}{" "}
-                    zakończonych sesji w zakresie
-                  </p>
+                    {ui("z")}{scopedSessions.filter((s) => s.ended).length}{" "}
+                     {ui("zakończonych sesji w zakresie")} </p>
                 </article>
               </div>
               <section className="panel">
-                <h2>Oceny według obszaru</h2>
+                <h2>{ui("Oceny według obszaru")}</h2>
                 {!summary.siteStats.length ? (
-                  <p>Brak ocen w tym i poprzednim okresie.</p>
+                  <p>{ui("Brak ocen w tym i poprzednim okresie.")}</p>
                 ) : (
                   <div
                     className="table-scroll"
                     role="region"
-                    aria-label="Statystyki obszarów"
+                    aria-label={ui("Statystyki obszarów")}
                     tabIndex={0}
                   >
                     <table className="analytics-table">
                       <thead>
                         <tr>
-                          <th>Obszar</th>
-                          <th>Ostatnia ocena</th>
-                          <th>Średnia dziennych median</th>
-                          <th>Poprzedni okres / różnica</th>
-                          <th>Pomiary / dni</th>
+                          <th>{ui("Obszar")}</th>
+                          <th>{ui("Ostatnia ocena")}</th>
+                          <th>{ui("Średnia dziennych median")}</th>
+                          <th>{ui("Poprzedni okres / różnica")}</th>
+                          <th>{ui("Pomiary / dni")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -399,17 +383,13 @@ export function AnalyticsView({
                               <td>
                                 {valueLabel(previousAverage)}
                                 <small>
-                                  {previousCount} pomiarów / {previousDays} dni
-                                </small>
+                                  {previousCount}  {ui("pomiarów /")} {previousDays} {ui("dni")}</small>
                                 {average !== null &&
                                   previousAverage !== null && (
                                     <small>
                                       {average - previousAverage > 0 ? "+" : ""}
-                                      {(average - previousAverage).toFixed(
-                                        1,
-                                      )}{" "}
-                                      pkt
-                                    </small>
+                                      {formatNumber(average - previousAverage)}{" "}
+                                      {ui("pkt")}</small>
                                   )}
                               </td>
                               <td>
@@ -423,14 +403,12 @@ export function AnalyticsView({
                   </div>
                 )}
                 <p className="footnote">
-                  Każdy dzień z oceną ma taką samą wagę. Braki nie są zerami.
-                  Poprzedni okres ma tę samą długość i filtry.
-                </p>
+                   {ui("Każdy dzień z oceną ma taką samą wagę. Braki nie są zerami. Poprzedni okres ma tę samą długość i filtry.")} </p>
               </section>
               <section className="panel">
-                <h2>Ostatnie sesje</h2>
+                <h2>{ui("Ostatnie sesje")}</h2>
                 {!scopedSessions.length && (
-                  <p>Brak powiązanych sesji w tym zakresie.</p>
+                  <p>{ui("Brak powiązanych sesji w tym zakresie.")}</p>
                 )}
                 {[...scopedSessions]
                   .sort((a, b) => b.started.localeCompare(a.started))
@@ -446,8 +424,7 @@ export function AnalyticsView({
                         className="secondary"
                         onClick={() => chooseSession(s.id)}
                       >
-                        Zobacz reakcję
-                      </button>
+                         {ui("Zobacz reakcję")} </button>
                     </div>
                   ))}
               </section>
@@ -461,12 +438,9 @@ export function AnalyticsView({
                   checked={raw}
                   onChange={(e) => setRaw(e.target.checked)}
                 />
-                Wszystkie pomiary zamiast dziennych median
-              </label>
+                 {ui("Wszystkie pomiary zamiast dziennych median")} </label>
               <p>
-                {raw ? "Surowe pomiary" : "Jedna mediana na dzień i obszar"}.
-                Luki nie są uzupełniane. Pełny wybrany zakres.
-              </p>
+                {raw ? ui("Surowe pomiary") : ui("Jedna mediana na dzień i obszar")}{ui(". Luki nie są uzupełniane. Pełny wybrany zakres.")} </p>
               <PainCharts
                 logs={raw ? visibleLogs : daily}
                 sites={visibleSites}
@@ -474,7 +448,7 @@ export function AnalyticsView({
                 daily={!raw}
               />
               <section className="panel">
-                <h2>Wspólna oś czasu · dane tekstowe</h2>
+                <h2>{ui("Wspólna oś czasu · dane tekstowe")}</h2>
                 {timeline.slice(0, reportLimit).map((event) => (
                   <article className="history-row" key={event.id}>
                     <div>
@@ -499,8 +473,7 @@ export function AnalyticsView({
                           : onEditLog(event.log!.id)
                       }
                     >
-                      Szczegóły
-                    </button>
+                       {ui("Szczegóły")} </button>
                   </article>
                 ))}
                 {timeline.length > reportLimit && (
@@ -508,8 +481,7 @@ export function AnalyticsView({
                     type="button"
                     onClick={() => setReportLimit(reportLimit + 50)}
                   >
-                    Pokaż kolejne 50 zdarzeń
-                  </button>
+                     {ui("Pokaż kolejne 50 zdarzeń")} </button>
                 )}
               </section>
             </>
@@ -517,14 +489,12 @@ export function AnalyticsView({
           {f.screen === "response" && (
             <>
               <label>
-                Sesja
-                <select
+                {ui("Sesja")}<select
                   value={selected?.id ?? ""}
                   onChange={(e) => update({ session: e.target.value })}
                 >
                   <option value="" disabled>
-                    Wybierz trening
-                  </option>
+                     {ui("Wybierz trening")} </option>
                   {[...scopedSessions]
                     .sort((a, b) => b.started.localeCompare(a.started))
                     .map((s) => (
@@ -569,8 +539,8 @@ export function AnalyticsView({
             />
           )}
           <section className="panel">
-            <h2>Raporty · {reports.length}</h2>
-            {!reports.length && <p>Brak pomiarów dla wybranych filtrów.</p>}
+            <h2>{ui("Raporty ·")} {reports.length}</h2>
+            {!reports.length && <p>{ui("Brak pomiarów dla wybranych filtrów.")}</p>}
             {reports.slice(0, reportLimit).map((log) => (
               <article className="history-row" key={log.id}>
                 <div>
@@ -585,17 +555,17 @@ export function AnalyticsView({
                   </p>
                   <small>
                     {
-                      measurementPhaseLabels[
+                      ui(measurementPhaseLabels[
                         log.measurementPhase ?? "unspecified"
-                      ]
+                      ])
                     }{" "}
                     ·{" "}
                     {contextById.get(log.context)?.label ??
                       (log.context || "Bez kontekstu")}{" "}
                     ·{" "}
                     {log.sessionId
-                      ? "Powiązany z treningiem"
-                      : "Bez powiązania"}
+                      ? ui("Powiązany z treningiem")
+                      : ui("Bez powiązania")}
                   </small>
                   {log.note && <p>{log.note}</p>}
                 </div>
@@ -604,8 +574,7 @@ export function AnalyticsView({
                   className="secondary"
                   onClick={() => onEditLog(log.id)}
                 >
-                  Edytuj ten pomiar
-                </button>
+                   {ui("Edytuj ten pomiar")} </button>
               </article>
             ))}
             {reports.length > reportLimit && (
@@ -613,8 +582,7 @@ export function AnalyticsView({
                 type="button"
                 onClick={() => setReportLimit(reportLimit + 50)}
               >
-                Pokaż kolejne 50 raportów
-              </button>
+                 {ui("Pokaż kolejne 50 raportów")} </button>
             )}
           </section>
         </>

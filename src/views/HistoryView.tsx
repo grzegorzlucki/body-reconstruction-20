@@ -1,7 +1,9 @@
+import { useTranslation } from "react-i18next";
+import { ui, locale } from "../i18n/config";
 import { PainCharts } from "../PainCharts";
 import { exerciseCatalog, sessionExercises, sessionPlan, completedGroups, visibleSets, type Injury, type PainLog, type Session, type RehabSite, type PainContext } from "../domain";
 
-const fmt = (date: string) => new Date(date).toLocaleDateString("pl-PL", { day: "numeric", month: "short" });
+const fmt = (date: string) => new Date(date).toLocaleDateString(locale(), { day: "numeric", month: "short" });
 
 export function HistoryView({ logs, sessions, sites, contexts, injuries, historyExercise, setHistoryExercise, openSessionEditor, editLog, navigate, onAnalyze }: {
   logs: PainLog[];
@@ -16,30 +18,28 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
   navigate: (next: "Dziennik") => Promise<boolean>;
   onAnalyze: (id: string) => void;
 }) {
+  useTranslation();
   return <>
 
                 <div className="section-title">
-                  <h1>Historia procesu</h1>
+                  <h1>{ui("Historia procesu")}</h1>
                   <button onClick={() => openSessionEditor()}>
-                    Dodaj trening historyczny
-                  </button>
+                     {ui("Dodaj trening historyczny")} </button>
                 </div>
                 <p className="intro">
-                  Twoje rzeczywiste wpisy. Brak pomiaru pozostaje brakiem.
-                </p>
+                   {ui("Twoje rzeczywiste wpisy. Brak pomiaru pozostaje brakiem.")} </p>
                 <PainCharts logs={logs} sites={sites} />
-                <h2>Pomiary</h2>
+                <h2>{ui("Pomiary")}</h2>
                 {!logs.length && (
                   <p>
-                    Jeszcze bez pomiarów. Zacznij od dzisiejszego check-inu.
-                  </p>
+                     {ui("Jeszcze bez pomiarów. Zacznij od dzisiejszego check-inu.")} </p>
                 )}
                 {[...logs].reverse().map((l) => (
                   <article className="history-row" key={l.id}>
                     <div>
                       <b>
                         {fmt(l.at)} ·{" "}
-                        {new Date(l.at).toLocaleTimeString("pl-PL", {
+                        {new Date(l.at).toLocaleTimeString(locale(), {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
@@ -58,20 +58,18 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                         if (await navigate("Dziennik")) editLog(l.id);
                       }}
                     >
-                      Edytuj
-                    </button>
+                       {ui("Edytuj")} </button>
                   </article>
                 ))}
-                <h2>Treningi</h2>
-                {!sessions.length && <p>Jeszcze bez treningów.</p>}
+                <h2>{ui("Treningi")}</h2>
+                {!sessions.length && <p>{ui("Jeszcze bez treningów.")}</p>}
                 <label>
-                  Filtr ćwiczenia w historii
-                  <select
-                    aria-label="Filtr ćwiczenia w historii"
+                   {ui("Filtr ćwiczenia w historii")} <select
+                    aria-label={ui("Filtr ćwiczenia w historii")}
                     value={historyExercise}
                     onChange={(event) => setHistoryExercise(event.target.value)}
                   >
-                    <option value="">Wszystkie ćwiczenia</option>
+                    <option value="">{ui("Wszystkie ćwiczenia")}</option>
                     {exerciseCatalog
                       .filter((e) =>
                         sessions.some((s) =>
@@ -80,7 +78,7 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                       )
                       .map((e) => (
                         <option key={e.id} value={e.id}>
-                          {e.name}
+                          {ui(e.name)}
                         </option>
                       ))}
                   </select>
@@ -88,7 +86,7 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                 {historyExercise &&
                   !sessions.some((s) =>
                     s.sets.some((row) => row.exerciseId === historyExercise),
-                  ) && <p>Brak treningów tego ćwiczenia.</p>}
+                  ) && <p>{ui("Brak treningów tego ćwiczenia.")}</p>}
                 {[...sessions]
                   .filter(
                     (s) =>
@@ -100,16 +98,15 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                     <details className="panel" key={s.id}>
                       <summary>
                         {fmt(s.started)} · {s.planName ?? "Plan początkowy"} ·{" "}
-                        {s.ended ? completedGroups(s) < visibleSets(s).length ? "Zakończony wcześniej" : "Ukończony" : "W trakcie"} ·{" "}
-                        {completedGroups(s)}/{visibleSets(s).length} serii
-                      </summary>
+                        {s.ended ? completedGroups(s) < visibleSets(s).length ? ui("Zakończony wcześniej") : ui("Ukończony") : ui("W trakcie")} ·{" "}
+                        {completedGroups(s)}/{visibleSets(s).length}  {ui("serii")} </summary>
                       {sessionExercises(s)
                         .filter(
                           (e) => !historyExercise || e.id === historyExercise,
                         )
                         .map((e) => (
                           <p key={e.id}>
-                            <b>{e.name}</b>
+                            <b>{ui(e.name)}</b>
                             <br />
                             {sessionPlan(s).find(
                               (entry) => entry.exerciseId === e.id,
@@ -135,16 +132,16 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                       {s.note && <p>{s.note}</p>}
                       {s.editedAt && (
                         <p className="footnote">
-                          Poprawiono:{" "}
-                          {new Date(s.editedAt).toLocaleString("pl-PL")}
+                          {ui("Poprawiono:")}{" "}
+                          {new Date(s.editedAt).toLocaleString(locale())}
                         </p>
                       )}
-                      <button type="button" className="secondary" onClick={() => onAnalyze(s.id)}>Analiza reakcji</button>
+                      <button type="button" className="secondary" onClick={() => onAnalyze(s.id)}>{ui("Analiza reakcji")}</button>
                       <button
                         className="secondary"
                         onClick={() => openSessionEditor(s)}
                       >
-                        {s.ended ? "Edytuj trening" : "Wznów trening"}
+                        {s.ended ? ui("Edytuj trening") : ui("Wznów trening")}
                       </button>
                     </details>
                   ))}

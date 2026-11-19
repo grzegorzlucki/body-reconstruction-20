@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { ui } from "../i18n/config";
 import type { FormEvent } from "react";
 import { SessionFields } from "../SessionFields";
 import { replaceSessionExercise, type Session } from "../domain";
@@ -16,24 +18,21 @@ export function SessionEditorView({ editing, editingExisting, editStart, editEnd
   removeSession: () => void;
   confirmAction: (message: string) => Promise<boolean>;
 }) {
+  useTranslation();
   return <>
 
                 <h1>
                   {editingExisting
-                    ? "Edytuj trening"
-                    : "Dodaj trening historyczny"}
+                    ? ui("Edytuj trening")
+                    : ui("Dodaj trening historyczny")}
                 </h1>
                 <p className="intro">
-                  Wpisz faktyczne wykonanie. Dane dla lewej i prawej nogi
-                  uzupełniasz wspólnie. Zmiany zostaną zapisane dopiero po
-                  zatwierdzeniu.
-                </p>
+                   {ui("Wpisz faktyczne wykonanie. Dane dla lewej i prawej nogi uzupełniasz wspólnie. Zmiany zostaną zapisane dopiero po zatwierdzeniu.")} </p>
                 <form onSubmit={saveHistorical}>
                   <section className="panel">
                     <div className="grid two date-time-fields">
                       <label>
-                        Początek treningu
-                        <input
+                         {ui("Początek treningu")} <input
                           type="datetime-local"
                           required
                           value={editStart}
@@ -41,8 +40,7 @@ export function SessionEditorView({ editing, editingExisting, editStart, editEnd
                         />
                       </label>
                       <label>
-                        Koniec treningu
-                        <input
+                         {ui("Koniec treningu")} <input
                           type="datetime-local"
                           required
                           value={editEnd}
@@ -51,8 +49,7 @@ export function SessionEditorView({ editing, editingExisting, editStart, editEnd
                       </label>
                     </div>
                     <label>
-                      Notatka treningu
-                      <textarea
+                       {ui("Notatka treningu")} <textarea
                         maxLength={2000}
                         value={editing.note}
                         onChange={(e) =>
@@ -61,9 +58,7 @@ export function SessionEditorView({ editing, editingExisting, editStart, editEnd
                       />
                     </label>
                     <p className="footnote">
-                      Wpisz rzeczywiste godziny treningu. Przyszłe i nakładające
-                      się treningi nie są dozwolone.
-                    </p>
+                       {ui("Wpisz rzeczywiste godziny treningu. Przyszłe i nakładające się treningi nie są dozwolone.")} </p>
                   </section>
                   <SessionFields
                     session={editing}
@@ -80,15 +75,14 @@ export function SessionEditorView({ editing, editingExisting, editStart, editEnd
                     }}
                   />
                   <div className="actions">
-                    <button disabled={busy}>Zapisz trening</button>
+                    <button disabled={busy}>{ui("Zapisz trening")}</button>
                     <button
                       type="button"
                       className="secondary"
                       disabled={busy}
                       onClick={() => navigate("Historia")}
                     >
-                      Anuluj
-                    </button>
+                       {ui("Anuluj")} </button>
                     {editingExisting && (
                       <button
                         type="button"
@@ -96,8 +90,7 @@ export function SessionEditorView({ editing, editingExisting, editStart, editEnd
                         disabled={busy}
                         onClick={removeSession}
                       >
-                        Usuń trening
-                      </button>
+                         {ui("Usuń trening")} </button>
                     )}
                   </div>
                 </form>

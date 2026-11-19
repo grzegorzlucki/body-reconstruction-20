@@ -7,6 +7,7 @@ export default defineConfig({
     ...devices["iPhone 13"],
     browserName: "chromium",
     timezoneId: "Europe/Warsaw",
+    locale: "pl-PL",
     screenshot: "only-on-failure",
   },
   webServer: {
