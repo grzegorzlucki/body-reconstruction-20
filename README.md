@@ -6,6 +6,7 @@ Dokumentacja projektu znajduje się w `docs/`. Przed zmianą kodu przeczytaj [in
 
 - [Weryfikacja aplikacji](docs/TESTOWANIE.md)
 - [Konfiguracja i migracje Supabase](docs/supabase/README.md)
+- [Ikony PWA i kontrola plików GitHub Pages](docs/PAGES_ASSETS.md)
 - [Plan zmian UI i wyniki weryfikacji](docs/UI_REFINEMENT_PLAN.md)
 
 Lokalne skille znajdują się w `docs/skills/` i zachowują strukturę katalogów wraz z plikami pomocniczymi. Instrukcje `docs/AGENTS.md` trzeba wskazać narzędziu, jeśli automatycznie odczytuje ono wyłącznie `AGENTS.md` z katalogu głównego.

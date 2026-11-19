@@ -26,6 +26,7 @@ Polish/English UI: start at `src/i18n/config.ts`, `translations.ts` and `Languag
 | Data validation, schemas, backup compatibility | `src/domain.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/useBackupActions.ts` |
 | Database schema and migrations | `supabase/bootstrap.sql` | `supabase/migrations/`, `docs/supabase/README.md` |
 | Global styles and responsive behavior | `src/style.css` | `src/styles/tokens.css`, `shell.css`, `forms.css`, `responsive.css`, `views.css`, `timer.css` |
+| App icons, PWA metadata and Pages artifact integrity | `public/icon.svg`, `scripts/generate-icons.mjs`, `scripts/verify-pages.mjs` | `vite.config.ts`, `index.html`, `.github/workflows/pages.yml`, `e2e/pages-assets.spec.ts` |
 
 ## Data Ownership and Flow
 
@@ -70,6 +71,10 @@ UI refinement scope and acceptance results are tracked in `docs/UI_REFINEMENT_PL
 ## Supabase Setup
 
 The explicit refresh action in `src/AppUpdater.tsx` activates the waiting worker and clears only caches with this app's `rehab-<base>-` prefix before reloading. IndexedDB and authentication storage are preserved. `vite.config.ts` generates the production service worker and manifest, including the light theme colors.
+
+`public/icon.svg` is the single artwork source: a coral rounded tile and dark diagonal arrow on the light page colour, matching the app brand. `npm run generate:icons` exports the committed 32px favicon, 180px Apple icon and 192/512px PWA PNGs using the locally installed Playwright Chromium (no external resources). Manifest icons support both any and maskable purposes. `vite.config.ts` owns one manifest definition for the dev middleware and production output; there is no duplicate static public manifest. The worker precaches favicon/PWA assets with reload requests. `public/connection.txt` is an English static-file diagnostic and explicitly does not test Auth or Supabase.
+
+`npm run verify:pages -- /body-reconstruction-20/` checks generated HTML references, lazy JS/CSS imports, PNG dimensions, manifest base/scope/id, precached files and accidental source/environment/privileged-key inclusion. The workflow runs its regression tests and verifies both `dist` and the copied publication directory before committing. Only generated assets belong to `gh-pages`; do not merge source branches into it. See `docs/PAGES_ASSETS.md` for the prepared local worktree and publication rules.
 
 For an existing project, apply the migration sequence in `docs/supabase/README.md`, ending with `20261121_analytics_links.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
 

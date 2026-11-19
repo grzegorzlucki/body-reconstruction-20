@@ -20,6 +20,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm test
+      - name: Test Pages artifact validation
+        run: node --test scripts/verify-pages.test.mjs
       - name: Check Supabase configuration
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
@@ -30,12 +32,15 @@ jobs:
           VITE_BASE_PATH: /body-reconstruction-20/
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      - name: Validate generated Pages files
+        run: npm run verify:pages -- /body-reconstruction-20/
       - name: Publish static branch
         run: |
           git fetch origin gh-pages
           git worktree add "$RUNNER_TEMP/pages-out" origin/gh-pages
           rsync -a --delete --exclude='.git' dist/ "$RUNNER_TEMP/pages-out/"
           touch "$RUNNER_TEMP/pages-out/.nojekyll"
+          node scripts/verify-pages.mjs "$RUNNER_TEMP/pages-out" /body-reconstruction-20/
           git -C "$RUNNER_TEMP/pages-out" config user.name "github-actions[bot]"
           git -C "$RUNNER_TEMP/pages-out" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C "$RUNNER_TEMP/pages-out" add --all

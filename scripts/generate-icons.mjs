@@ -1,0 +1,26 @@
+import { chromium } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+
+const directory = new URL("../public/", import.meta.url);
+const svg = await readFile(new URL("icon.svg", directory), "utf8");
+const browser = await chromium.launch();
+try {
+  const page = await browser.newPage({ deviceScaleFactor: 1 });
+  await page.route("**/*", (route) => route.abort());
+  for (const [size, name] of [
+    [32, "favicon-32.png"],
+    [180, "apple-touch-icon.png"],
+    [192, "icon-192.png"],
+    [512, "icon-512.png"],
+  ]) {
+    await page.setViewportSize({ width: size, height: size });
+    await page.setContent(
+      `<style>html,body{margin:0;width:100%;height:100%}svg{display:block;width:100%;height:100%}</style>${svg}`,
+    );
+    await page.screenshot({ path: fileURLToPath(new URL(name, directory)) });
+    console.log(`Generated ${name} (${size}×${size})`);
+  }
+} finally {
+  await browser.close();
+}
