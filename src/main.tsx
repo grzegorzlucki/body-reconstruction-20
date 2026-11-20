@@ -341,12 +341,12 @@ function App({ user }: { user?: User }) {
               <Calendar
                 sessions={sessions}
                 logs={logs} sites={selectedProfile?.rehabSites ?? []}
+                contexts={selectedProfile?.painContexts ?? []} injuries={selectedProfile?.injuries ?? []}
                 onTraining={(d) => openSessionEditor(undefined, d)}
                 onEdit={(s) => openSessionEditor(s)}
-                onPain={(d) => {
-                  editDate(d);
-                  navigate("Dziennik");
-                }}
+                onResume={(s) => { if (active?.id === s.id) void navigate("Trening"); else openSessionEditor(s); }}
+                onEditLog={async (id) => { if (await navigate("Dziennik")) editLog(id); }}
+                onPain={async (d) => { if (await navigate("Dziennik")) newMeasurement(d); }}
               />
               </React.Suspense>
             )}

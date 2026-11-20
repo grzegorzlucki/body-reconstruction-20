@@ -1,6 +1,19 @@
 // Source labels are indexed separately from the stable resource keys. They are
 // used only for application UI, never for names or notes loaded from a profile.
 export const translations: [string, string][] = `
+Wybierz dzień, aby zobaczyć szczegóły.|Select a day to see its details.
+Treningi: {{v0}} · Pomiary: {{v1}}|Workouts: {{v0}} · Measurements: {{v1}}
+Poprzedni dzień|Previous day
+Wróć do kalendarza|Back to calendar
+Pomiary bólu|Pain measurements
+Dodaj pomiar|Add measurement
+Ćwiczenia i serie|Exercises and sets
+Wykonane serie: {{v0}} / {{v1}}|Completed sets: {{v0}} / {{v1}}
+Trening zakończony wcześniej|Workout ended early
+Nie wykonano|Not completed
+Powiązany trening|Linked workout
+Obie strony|Both sides
+Inny powód|Other reason
 Dzisiaj|Today
 Trening|Workout
 Dziennik|Diary

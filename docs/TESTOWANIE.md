@@ -1,5 +1,7 @@
 # Weryfikacja aplikacji
 
+Kalendarz ze szczegółami dnia: `src/calendar/calendarData.test.ts` sprawdza zachowanie wszystkich pomiarów, sortowanie i nienaruszanie danych wejściowych. `e2e/calendar-details.spec.ts` obejmuje układ 320–1920 px, dwie kolumny na desktopie, wszystkie pomiary dnia, edycję po ID, obsługę strzałek/Enter i fokusu, blokadę przyszłych wpisów oraz szczegóły niepełnego treningu w języku angielskim. Brak zmian schematu bazy.
+
 Zasoby Pages i PWA: `node --test scripts/verify-pages.test.mjs` sprawdza kompletny build oraz odrzucanie brakującego skryptu wejściowego/lazy chunku, złej ścieżki bazowej, błędnego rozmiaru PNG i przypadkowych plików środowiska/kluczy uprzywilejowanych. `e2e/pages-assets.spec.ts` sprawdza manifest, favikony, ikony PWA, angielski plik diagnostyczny i odczyt ikony/strony offline pod `/body-reconstruction-20/`. `npm run verify:pages -- /body-reconstruction-20/` jest wykonywane w CI przed i po skopiowaniu plików publikacji.
 
 Reset formularza i potwierdzenia zapisu: `e2e/diary-feedback.spec.ts` sprawdza czyszczenie ocen/kontekstu/komentarza po dodaniu i edycji, zachowanie wybranego dnia, tworzenie kolejnego odrębnego wpisu oraz zachowanie szkicu po symulowanym błędzie IndexedDB. Powiadomienie jest sprawdzane na telefonie i desktopie: brak przechwytywania kliknięć, pozycja nad mobilną nawigacją, zanikanie, usunięcie po czasie i nowy czas widoczności przy identycznym kolejnym zapisie. Scenariusze analiz oczekują teraz nowego, pustego pomiaru po zapisaniu zamiast pozostawania w edycji.
