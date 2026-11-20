@@ -13,7 +13,7 @@ test("Today greeting follows live language changes and the saved account prefere
   });
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
   await expect(page.getByRole("heading", { name: "Hi, Ada!", exact: true })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Your own plan.", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Your week at a glance", exact: true })).toBeVisible();
   await page.evaluate(() => {
     Object.defineProperty(navigator, "languages", { configurable: true, value: ["pl-PL"] });
     window.dispatchEvent(new Event("languagechange"));

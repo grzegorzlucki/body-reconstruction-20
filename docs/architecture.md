@@ -10,7 +10,7 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 
 Polish/English UI: start at `src/i18n/config.ts`, `translations.ts` and `LanguageProvider.tsx` (above AuthGate/App). Language selection lives in `src/profile/LanguageSettings.tsx`, with focused writes in `src/account/accountRepository.ts`. See `docs/I18N_PL_EN_DEPLOYMENT.md` for behaviour and deployment; apply `supabase/migrations/20261122_profile_language.sql` before the frontend. Dexie v8 preserves Polish for existing profiles. Internal navigation IDs/URLs and backup v6 stay unchanged; translate display labels, never user-owned text or identifiers. Tests: `src/i18n/` and `e2e/i18n.spec.ts`.
 
-`e2e/today-language.spec.ts` covers the Today greeting and empty-plan heading during live PL/EN switching, returning to the account language selector and reloading a saved preference. User/profile and saved plan names remain unchanged; only the greeting sentence and system fallback heading are translated.
+`e2e/today-language.spec.ts` covers the Today greeting and dashboard heading during live PL/EN switching, returning to the account language selector and reloading a saved preference. User/profile and saved plan names remain unchanged.
 
 | Task | Start here | Related modules |
 |---|---|---|
@@ -49,6 +49,8 @@ Polish/English UI: start at `src/i18n/config.ts`, `translations.ts` and `Languag
 - Local Dexie remains multi-profile only to support old local data and source selection during local-to-cloud migration. The normal app shell no longer offers profile switching.
 
 ## UI and Responsive Structure
+
+Today dashboard: `src/today/TodayDashboard.tsx` replaces the generic plan hero with seven-day workout/diary progress rings, completed-set bars, time since the last completed workout and per-area pain mini charts. `dashboardData.ts` reuses `sessionDose` and `dailyMeasurements`: only actual ended workouts count, diary coverage counts distinct days, chart points are daily medians, missing dates remain gaps and zero is a real measurement. Area cards show the latest raw rating within the range separately from the median chart; archived/inactive areas are excluded. No health/readiness score is inferred. `TodayView.tsx` keeps active-workout completion/resume and diary actions; `src/styles/dashboard.css` owns responsive dashboard geometry. Tests: `src/today/dashboardData.test.ts`, `e2e/today-dashboard.spec.ts`.
 
 Calendar: `src/Calendar.tsx` owns month/day selection and keyboard/focus navigation. Desktop selection opens a narrower month on the left and `src/calendar/CalendarDayDetails.tsx` on the right; smaller screens stack details below. `calendarData.ts` groups already-loaded sessions by the existing start-day convention and reports by their recorded date, retaining every report and sorting by measurement instant. `CalendarWorkoutCard.tsx` uses existing bilateral/unilateral set-group counting; `CalendarPainCard.tsx` displays individual values, phase, context, injury links and notes. Calendar edits target report IDs; Add measurement always starts a fresh diary entry. No schema change or extra network reads. Tests: `src/calendar/calendarData.test.ts`, `e2e/calendar-details.spec.ts`.
 

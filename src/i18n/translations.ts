@@ -1,6 +1,27 @@
 // Source labels are indexed separately from the stable resource keys. They are
 // used only for application UI, never for names or notes loaded from a profile.
 export const translations: [string, string][] = `
+Twoja aktywność i samopoczucie w jednym miejscu.|Your activity and wellbeing in one place.
+Twój tydzień w skrócie|Your week at a glance
+Cel treningowy|Workout goal
+Treningi w ostatnich 7 dniach|Workouts in the last 7 days
+Regularność pomiarów|Measurement consistency
+Dni z pomiarem bólu|Days with a pain measurement
+Rzeczywista aktywność · 7 dni|Recorded activity · 7 days
+Ostatni trening|Last workout
+{{v0}} dni|{{v0}} days
+Czas od zakończenia|Time since completion
+Ból w ostatnich 7 dniach · dzienne mediany|Pain over the last 7 days · daily medians
+Ostatni pomiar: {{v0}}|Latest measurement: {{v0}}
+Brak pomiarów w tym tygodniu|No measurements this week
+Dodaj pomiar, aby zobaczyć wykres.|Add a measurement to see the chart.
+Dodaj monitorowane obszary w ustawieniach profilu.|Add tracked areas in your profile settings.
+Luki na wykresie oznaczają brak pomiaru.|Gaps in the chart mean no measurement was recorded.
+Aktywne kontuzje: {{v0}}|Active injuries: {{v0}}
+Kontynuuj trening|Continue workout
+Czas na ruch?|Ready to move?
+Wróć do rozpoczętej sesji.|Return to your current session.
+Wybierz zapisany trening i zacznij, kiedy chcesz.|Choose a saved workout and start when you are ready.
 Wybierz dzień, aby zobaczyć szczegóły.|Select a day to see its details.
 Treningi: {{v0}} · Pomiary: {{v1}}|Workouts: {{v0}} · Measurements: {{v1}}
 Poprzedni dzień|Previous day

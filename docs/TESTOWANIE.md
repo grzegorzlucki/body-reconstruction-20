@@ -1,5 +1,7 @@
 # Weryfikacja aplikacji
 
+Pulpit Dzisiaj: `src/today/dashboardData.test.ts` sprawdza mediany dzienne, brak interpolowania luk, prawidłowe zero, wykluczanie przyszłych pomiarów oraz liczenie faktycznie wykonanych treningów i grup serii. `e2e/today-dashboard.spec.ts` sprawdza cztery karty, puste stany, geometrię 320–1920 px, wykres z luką i zerową oceną, liczbę dni z pomiarem oraz przejście do Dziennika/Analiz. Powitanie i nagłówek pulpitu PL/EN pozostają objęte `e2e/today-language.spec.ts`.
+
 Kalendarz ze szczegółami dnia: `src/calendar/calendarData.test.ts` sprawdza zachowanie wszystkich pomiarów, sortowanie i nienaruszanie danych wejściowych. `e2e/calendar-details.spec.ts` obejmuje układ 320–1920 px, dwie kolumny na desktopie, wszystkie pomiary dnia, edycję po ID, obsługę strzałek/Enter i fokusu, blokadę przyszłych wpisów oraz szczegóły niepełnego treningu w języku angielskim. Brak zmian schematu bazy.
 
 Zasoby Pages i PWA: `node --test scripts/verify-pages.test.mjs` sprawdza kompletny build oraz odrzucanie brakującego skryptu wejściowego/lazy chunku, złej ścieżki bazowej, błędnego rozmiaru PNG i przypadkowych plików środowiska/kluczy uprzywilejowanych. `e2e/pages-assets.spec.ts` sprawdza manifest, favikony, ikony PWA, angielski plik diagnostyczny i odczyt ikony/strony offline pod `/body-reconstruction-20/`. `npm run verify:pages -- /body-reconstruction-20/` jest wykonywane w CI przed i po skopiowaniu plików publikacji.
