@@ -1,7 +1,6 @@
 // Source labels are indexed separately from the stable resource keys. They are
 // used only for application UI, never for names or notes loaded from a profile.
 export const translations: [string, string][] = `
-Nowa kontuzja|New injury
 Zmniejsz wykres|Reduce chart
 Powiększ wykres|Expand chart
 Pokaż kolejne pomiary|Show more measurements
