@@ -66,8 +66,6 @@ export const profileSettingsSchema = z.object({
     ctx.addIssue({ code: "custom", message: "Pozycje kontekstów muszą być unikalne" });
   if (new Set(settings.painContexts.map((context) => context.label.toLocaleLowerCase())).size !== settings.painContexts.length)
     ctx.addIssue({ code: "custom", message: "Nazwy kontekstów muszą być unikalne" });
-  if (!editableSites.length || !editableSites.some((site) => site.active))
-    ctx.addIssue({ code: "custom", message: "Wybierz co najmniej jeden obszar do monitorowania" });
   if (settings.rehabSites.some((site) => site.archived && site.active))
     ctx.addIssue({ code: "custom", message: "Usunięty obszar nie może być aktywny" });
   if (new Set(settings.injuries.map((injury) => injury.id)).size !== settings.injuries.length)

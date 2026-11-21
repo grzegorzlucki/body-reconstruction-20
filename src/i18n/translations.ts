@@ -1,6 +1,37 @@
 // Source labels are indexed separately from the stable resource keys. They are
 // used only for application UI, never for names or notes loaded from a profile.
 export const translations: [string, string][] = `
+Wybierz z katalogu obszarów|Choose from the area catalog
+Szukaj obszaru|Search areas
+Własny obszar|Custom area
+Dodaj własny obszar|Add custom area
+Brak aktywnych obszarów. Włącz monitorowanie w ustawieniach profilu.|No active areas. Enable monitoring in profile settings.
+Ścięgno rzepki|Patellar tendon
+Rozcięgno podeszwowe|Plantar fascia
+Ścięgno piszczelowego tylnego|Posterior tibial tendon
+Ścięgna strzałkowe|Peroneal tendons
+Przywodziciele|Adductors
+Ścięgna pośladkowe|Gluteal tendons
+Zginacze biodra|Hip flexors
+Stożek rotatorów|Rotator cuff
+Ścięgno bicepsa|Biceps tendon
+Ścięgno tricepsa|Triceps tendon
+Prostowniki nadgarstka|Wrist extensors
+Zginacze nadgarstka|Wrist flexors
+Nadgarstek i dłoń|Wrist and hand
+Okolica szyjna|Neck area
+Okolica lędźwiowa|Lower back area
+Staw skokowy|Ankle
+Tył uda|Back of thigh
+Przód uda|Front of thigh
+Kolano|Knee
+Stopa|Foot
+Pachwina|Groin
+Biodro|Hip
+Bark|Shoulder
+Łokieć|Elbow
+Nadgarstek|Wrist
+Kręgosłup|Spine
 Język zmieniony.|Language changed.
 Podaj nazwę aktywności i rzeczywiste godziny. Pomiar bólu możesz dodać po zapisaniu.|Enter the activity name and actual times. You can add a pain measurement after saving.
 Rodzaj treningu|Workout type

@@ -2,6 +2,8 @@ import { useTranslation } from "react-i18next";
 import { ui } from "../i18n/config";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { Profile } from "../db";
+import { RehabAreaPicker } from "../profile/RehabAreaPicker";
+import { linkRehabArea } from "../rehabCatalog";
 import { day, profileSettingsSchema, type ProfileSettings } from "../domain";
 
 export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
@@ -154,6 +156,7 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
               onChange={(event) => updateInjury(injury.id, { resolvedOn: event.target.value || undefined })} />
           </label>}
           <fieldset className="injury-sites"><legend>{ui("Powiązane ścięgna i obszary")}</legend>
+            <RehabAreaPicker disabled={busy} onChoose={area=>setSettings(current=>linkRehabArea(current,area,injury.id))}/>
             {settings.rehabSites.map((site) => <label className="profile-config-toggle" key={site.id}>
               <input type="checkbox" checked={injury.siteIds.includes(site.id)} disabled={site.archived}
                 onChange={(event) => updateInjury(injury.id, { siteIds: event.target.checked
@@ -179,6 +182,7 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
             rehabSites: [...current.rehabSites, { id: crypto.randomUUID(), name: "", bodyArea: "", position: current.rehabSites.filter((site) => !site.archived).length, active: true, archived: false }],
           }))}>{ui("Dodaj obszar")}</button>
         </div>
+        <RehabAreaPicker disabled={busy} onChoose={area=>setSettings(current=>linkRehabArea(current,area))}/>
         <p>{ui("Wyłączony obszar znika z nowych pomiarów. Usunięcie chowa go z ustawień, ale zachowuje wcześniejsze pomiary i nazwy w historii.")}</p>
         {settings.rehabSites.filter((site) => !site.archived).sort((a, b) => a.position - b.position).map((site, index, visibleSites) => <fieldset className="profile-config-row rehab-site-config" key={site.id}>
           <legend className="visually-hidden">{ui("Obszar rehabilitacji")}</legend>

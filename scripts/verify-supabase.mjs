@@ -51,6 +51,7 @@ try {
     "005_storage",
     "006_verify",
     "007_external_activities",
+    "008_optional_monitoring",
   ]) {
     await pg.exec(readFileSync(`supabase/${name}.sql`, "utf8"));
     console.log(`PASS ${name}`);

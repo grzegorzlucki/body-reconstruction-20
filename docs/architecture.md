@@ -1,5 +1,7 @@
 # Architecture Map
 
+`rehabCatalog.ts` / `profile/RehabAreaPicker.tsx` provide a searchable shared area catalog. Selecting an injury area upserts the monitored area and injury link in the same profile-settings draft; existing IDs and history survive. All areas may be inactive after `008_optional_monitoring.sql`; Diary disables new writes when no areas are active. Custom areas remain supported. Unit tests cover deduplication and atomic draft linking.
+
 Language Preferences reattempts pending sync on open instead of immediately displaying a stale failure. Confirmed saves use the shared transient ToastNotice with Language changed; genuine persistence failures remain visible with retry. The compact selector has one label, without a duplicated section heading.
 
 Diary entry opens directly as a form; the selected day's compact measurement list follows it, and New measurement is only offered during editing. `src/diarySessions.ts` limits suggested links to sessions overlapping today/yesterday while preserving an already selected historic link. Workout exposes the existing historical editor action. Tests: `src/diarySessions.test.ts`.

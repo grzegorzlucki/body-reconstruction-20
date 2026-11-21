@@ -53,6 +53,7 @@ export function DiaryView({ editingId, sessionId, measurementPhase, sessions, on
         </select></label>
       </div>
       {missingRatings && <p className="alert" role="alert">{ui("Oceń każdy monitorowany obszar. Brak bólu oznacz jako 0.")}</p>}
+      {!activeSites.length && <p role="status">{ui("Brak aktywnych obszarów. Włącz monitorowanie w ustawieniach profilu.")}</p>}
       {activeSites.map((site) => <PainSlider key={site.id} name={site.name} detail={site.bodyArea}
         value={pain[site.id] ?? ""} disabled={busy} onChange={(value) => { setMissingRatings(false); onPain(site.id, value); }} />)}
       <fieldset className="diary-injuries">
@@ -75,7 +76,7 @@ export function DiaryView({ editingId, sessionId, measurementPhase, sessions, on
       </label>
       <label>{ui("Notatka (opcjonalnie)")}<textarea name="painNote" maxLength={2000} value={note}
         onChange={(event) => onNote(event.target.value)} placeholder={ui("Dodatkowe informacje")} /></label>
-      <div className="actions"><button disabled={busy}>{ui("Zapisz pomiar")}</button>
+      <div className="actions"><button disabled={busy || !activeSites.length}>{ui("Zapisz pomiar")}</button>
         {editingId && <button type="button" className="secondary" disabled={busy} onClick={onRemove}>{ui("Usuń pomiar")}</button>}
       </div>
     </form>

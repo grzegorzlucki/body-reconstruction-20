@@ -15,6 +15,7 @@ In Supabase Dashboard → SQL Editor → New query, paste and run each **complet
 | 5 | `supabase/005_storage.sql` | Private avatars bucket and ownership policies; API schema reload |
 | 6 | `supabase/006_verify.sql` | Read-only structural and permission checks; expect `Installation checks passed` |
 | 7 | `supabase/007_external_activities.sql` | External activities, plan association, dedicated save and v7 import RPCs |
+| 8 | `supabase/008_optional_monitoring.sql` | Allows all configured areas to be inactive; preserves history |
 
 Existing current projects need only step 7 for external activities. New projects run all seven files; verification file 006 can be rerun afterwards. Backup v7 preserves activities and pain links; older v1–v6 backups remain importable.
 
