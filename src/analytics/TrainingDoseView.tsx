@@ -33,7 +33,7 @@ export function TrainingDoseView({
   useTranslation();
   const [limit, setLimit] = useState(50);
   const all = [...allSessions]
-    .filter((s) => s.ended && sessionDose(s).performedRows > 0)
+    .filter((s) => s.ended && sessionDose(s).performed)
     .sort((a, b) => a.ended!.localeCompare(b.ended!));
   const weeks = weeklyDose(sessions, exerciseId);
   return (
@@ -107,7 +107,7 @@ export function TrainingDoseView({
                         className="text-button"
                         onClick={() => onSelect(session.id)}
                       >
-                        {session.planName ?? "Trening"}
+                        {session.activityName || session.planName || ui("Trening")}
                       </button>
                       <small>
                         {new Date(session.started).toLocaleString(locale())}

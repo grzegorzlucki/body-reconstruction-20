@@ -74,7 +74,7 @@ export function CalendarPainCard({
       )}
       {log.sessionId && (
         <p>
-          {ui("Powiązany trening")}: {linked?.planName || ui("Trening")}
+          {ui("Powiązany trening")}: {linked?.activityName || linked?.planName || ui("Trening")}
         </p>
       )}
       {log.note && <p className="calendar-note">{log.note}</p>}

@@ -50,6 +50,7 @@ try {
     "004_rls",
     "005_storage",
     "006_verify",
+    "007_external_activities",
   ]) {
     await pg.exec(readFileSync(`supabase/${name}.sql`, "utf8"));
     console.log(`PASS ${name}`);
@@ -237,15 +238,44 @@ try {
       .unilateral,
     true,
   );
+  const external = {
+    id: "70000000-0000-4000-8000-000000000001",
+    profileId: a,
+    activityType: "external",
+    activityName: "Synthetic running",
+    templateId: templateA,
+    planName: "Synthetic plan A",
+    started: "2026-11-19T10:00:00Z",
+    ended: "2026-11-19T11:00:00Z",
+    sets: [],
+    plan: [],
+    note: "",
+  };
+  await rpc("save_external_activity", external);
+  check(
+    (
+      await pg.query(
+        "SELECT activity_name FROM public.workout_sessions WHERE id=$1",
+        [external.id],
+      )
+    ).rows[0].activity_name,
+    "Synthetic running",
+  );
+  await rejected("SELECT public.save_workout_session_analytics($1::jsonb)", [
+    JSON.stringify({ ...external, templateId: templateB }),
+  ]);
+  await rejected("SELECT public.save_workout_session_analytics($1::jsonb)", [
+    JSON.stringify({ ...external, activityName: "" }),
+  ]);
   const backup = {
     profileSettings: settings,
     templates: [
       { id: templateA, name: "Synthetic imported", entries: [entry] },
     ],
-    sessions: [session],
+    sessions: [session, external],
     logs: [report],
   };
-  await pg.query("SELECT public.replace_profile_data_analytics($1,$2::jsonb)", [
+  await pg.query("SELECT public.replace_profile_data_v7($1,$2::jsonb)", [
     a,
     JSON.stringify(backup),
   ]);
@@ -255,6 +285,7 @@ try {
     ),
     1,
   );
+  check((await pg.query("SELECT activity_name FROM public.workout_sessions WHERE id=$1",[external.id])).rows[0].activity_name,"Synthetic running");
   await pg.query("DELETE FROM public.workout_sessions WHERE id=$1", [
     sessionId,
   ]);

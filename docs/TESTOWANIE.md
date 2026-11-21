@@ -1,5 +1,7 @@
 # Weryfikacja aplikacji
 
+Inne aktywności: `src/externalActivity.test.ts` sprawdza walidację, brak sztucznych serii i rozdzielenie celu od liczników aktywności. `e2e/external-activity.spec.ts` obejmuje dodanie aktywności ze strony głównej, pomiar bólu powiązany po ID, przypisanie kolejnej aktywności do planu, przeliczenie celu po przeładowaniu oraz nowy styl zaznaczenia zakładki Analiz. `npm run test:sql` wykonuje także `007_external_activities.sql`, sprawdza uprawnienia przypisania planu i import aktywności.
+
 Instalacja bazy od zera: `npm run test:sql` wykonuje kolejno sześć nowych plików `supabase/001_schema.sql`–`006_verify.sql` w lokalnym PostgreSQL/PGlite. Obejmuje m.in. izolację kont, uprawnienia RPC, zapis serii, dwa pomiary w jednym dniu, kursory, import, rollback, odpinanie pomiarów przy usunięciu sesji i uprzywilejowane czyszczenie konta. Auth i Storage mają lokalne interfejsy testowe; pełne usługi Supabase wymagają osobnej walidacji. Archiwalne SQL-e są w `supabase/old/` i nie są częścią nowej instalacji.
 
 Optymalizacja odczytów: `src/app/resourceCache.test.ts` obejmuje deduplikację, TTL, izolację kopii, błędy, invalidację i odrzucanie opóźnionej odpowiedzi po wylogowaniu. `src/app/apiTransport.test.ts` sprawdza limit równoległości, timeout z rzeczywistym AbortSignal i usuwanie anulowanych żądań z kolejki. Test obciążeniowy obsługuje nowy kontrakt stron RPC; zachowane wyniki po zmianach są w `docs/performance/optimized-results.json`. Nie wykonuje SQL i nie potwierdza planów PostgreSQL/RLS.

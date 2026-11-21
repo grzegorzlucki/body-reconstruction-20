@@ -135,7 +135,7 @@ export async function exportBackup(profileId = legacyProfileId) {
     const profile = await db.profiles.get(profileId);
     if (!profile) throw Error("Nie znaleziono profilu.");
     return {
-      version: 6 as const,
+      version: 7 as const,
       profileName: profile.name,
       profileSettings: {
         name: profile.name,

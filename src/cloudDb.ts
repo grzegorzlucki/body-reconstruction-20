@@ -233,7 +233,7 @@ async function sessions(profileId: string, signal?: AbortSignal, since?: string)
   const plansBySession = groupRows(plans, "session_id");
   const setsBySession = groupRows(sets, "session_id");
   return rows.map((row) => ({
-    id: row.id, profileId, started: cloudTimestamp(row.started_at),
+    id: row.id, profileId, activityType: row.activity_type ?? "strength", activityName: row.activity_name ?? undefined, started: cloudTimestamp(row.started_at),
     ...(row.ended_at ? { ended: cloudTimestamp(row.ended_at) } : {}),
     note: row.note, ...(row.plan_name ? { planName: row.plan_name } : {}),
     ...(row.source_template_id ? { templateId: row.source_template_id } : {}),
@@ -251,7 +251,7 @@ async function sessions(profileId: string, signal?: AbortSignal, since?: string)
 }
 async function putSession(session: Session) {
   if (!session.profileId) throw Error("Brak profilu treningu.");
-  const result = await client().rpc("save_workout_session_analytics", { payload: {
+  const result = await client().rpc(session.activityType === "external" ? "save_external_activity" : "save_workout_session_analytics", { payload: {
     ...session,
     templateId: session.templateId && /^[0-9a-f-]{36}$/i.test(session.templateId) ? session.templateId : null,
     plan: (session.plan ?? []).map((entry) => ({ ...entry,
@@ -259,7 +259,7 @@ async function putSession(session: Session) {
       unilateral: exerciseById(entry.exerciseId).unilateral,
     })),
   } });
-  if (result.error?.code === "PGRST202") throw Error("Brak migracji powiązań analiz. Zastosuj 20261121_analytics_links.sql w Supabase SQL Editor.");
+  if (result.error?.code === "PGRST202") throw Error("Brak funkcji zapisu. Zastosuj wymagane migracje, w tym 007_external_activities.sql dla aktywności.");
   checked(result);
 }
 
@@ -311,7 +311,7 @@ export async function exportCloudBackup(profileId: string) {
   const profile = (await profiles()).find((row) => row.id === profileId);
   if (!profile) throw Error("Nie znaleziono profilu.");
   const strip = <T extends { profileId?: string }>(rows: T[]) => rows.map(({ profileId: _id, ...row }) => row);
-  return { version: 6 as const, profileName: profile.name,
+  return { version: 7 as const, profileName: profile.name,
     profileSettings: { name: profile.name, weeklyGoal: profile.weeklyGoal,
       checkInTime: profile.checkInTime, rehabSites: profile.rehabSites, painContexts: profile.painContexts,
       injuries: profile.injuries },
@@ -337,7 +337,7 @@ export async function importCloudBackup(raw: unknown, profileId: string) {
       })),
     })),
   };
-  const result = await client().rpc("replace_profile_data_analytics", { target_profile: profileId, payload });
+  const result = await client().rpc(data.sessions.some(session => session.activityType === "external") ? "replace_profile_data_v7" : "replace_profile_data_analytics", { target_profile: profileId, payload });
   if (result.error?.code === "PGRST202") throw Error("Brak migracji powiązań analiz. Zastosuj 20261121_analytics_links.sql w Supabase SQL Editor.");
   checked(result);
   invalidateResources("profiles:"); invalidateResources(`sessions:${profileId}`); invalidateResources(`logs:${profileId}`); invalidateResources(`templates:${profileId}`); invalidateResources(`recent-sessions:${profileId}`); invalidateResources(`recent-logs:${profileId}`);

@@ -14,6 +14,9 @@ In Supabase Dashboard → SQL Editor → New query, paste and run each **complet
 | 4 | `supabase/004_rls.sql` | Account ownership policies and explicit authenticated table grants |
 | 5 | `supabase/005_storage.sql` | Private avatars bucket and ownership policies; API schema reload |
 | 6 | `supabase/006_verify.sql` | Read-only structural and permission checks; expect `Installation checks passed` |
+| 7 | `supabase/007_external_activities.sql` | External activities, plan association, dedicated save and v7 import RPCs |
+
+Existing current projects need only step 7 for external activities. New projects run all seven files; verification file 006 can be rerun afterwards. Backup v7 preserves activities and pain links; older v1–v6 backups remain importable.
 
 There is no need to run anything in `supabase/old/` after these files. Do not run this fresh installer against the current database: step 1 deliberately rejects an existing application schema. The installer never drops existing user data. It is not a database reset command. SQL files 001–004 are install-once; 006 is safe to rerun. Each file is transactional, so a failed file rolls back its own changes. Previously completed files remain installed; correct the failed step before continuing.
 

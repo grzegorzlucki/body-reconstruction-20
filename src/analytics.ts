@@ -107,7 +107,7 @@ export function summarizeAnalytics(
   const completedSessions = sessions.filter(
     (session) =>
       session.ended &&
-      sessionDose(session).performedRows > 0 &&
+      sessionDose(session).performed &&
       day(session.started) >= start &&
       day(session.started) <= end,
   ).length;

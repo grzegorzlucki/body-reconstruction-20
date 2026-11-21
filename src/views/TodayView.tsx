@@ -24,6 +24,7 @@ export function TodayView({
   onWorkout,
   onDiary,
   onAnalytics,
+  onActivity,
 }: {
   active?: Session;
   sessions: Session[];
@@ -39,6 +40,7 @@ export function TodayView({
   onWorkout: () => void;
   onDiary: () => void;
   onAnalytics: (sessionId?: string) => void;
+  onActivity: () => void;
 }) {
   useTranslation();
   return (
@@ -113,6 +115,7 @@ export function TodayView({
               <button type="button" disabled={busy} onClick={onWorkout}>
                 {ui("Przejdź do treningu")}
               </button>
+            <button type="button" className="text-button" disabled={busy} onClick={onActivity}>{ui("Dodaj inną aktywność")}</button>
             </div>
           </section>
           <section

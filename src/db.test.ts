@@ -66,7 +66,7 @@ it("eksportuje i przywraca plany razem z niezależną sesją", async () => {
   await importBackup(backup);
   expect((await db.templates.toArray())[0].name).toBe(template.name);
   expect((await db.sessions.toArray())[0]?.planName).toBe("Lower A");
-  expect(backup.version).toBe(6);
+  expect(backup.version).toBe(7);
 });
 
 it("preserves multiple same-day reports and remaps session links on restore, then detaches on deletion", async () => {

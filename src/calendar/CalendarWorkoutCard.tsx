@@ -31,7 +31,7 @@ export function CalendarWorkoutCard({
   };
   return (
     <article className="calendar-record">
-      <h4>{s.planName || ui("Plan początkowy")}</h4>
+    <h4>{s.activityName || s.planName || ui("Plan początkowy")}</h4>
       <p>
         {ui(
           !s.ended
@@ -52,7 +52,7 @@ export function CalendarWorkoutCard({
           </>
         )}
       </p>
-      <p>
+      {s.activityType !== "external" && <><p>
         {ui("Wykonane serie: {{v0}} / {{v1}}", {
           v0: completedGroups(s),
           v1: visibleSets(s).length,
@@ -83,7 +83,8 @@ export function CalendarWorkoutCard({
             </ul>
           </div>
         ))}
-      </details>
+      </details></>}
+      {s.activityType === "external" && <p>{s.templateId ? `${ui("Aktywność zaliczana do celu")} · ${s.planName ?? ""}` : ui("Aktywność poza celem treningowym")}</p>}
       {s.note && <p className="calendar-note">{s.note}</p>}
       {s.completionReason && s.completionReason !== "unspecified" && (
         <p>

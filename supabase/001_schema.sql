@@ -283,6 +283,8 @@ CREATE TABLE public.timer_settings (
 --
 
 CREATE TABLE public.workout_sessions (
+    activity_type text NOT NULL DEFAULT 'strength',
+    activity_name character varying(80),
     id uuid NOT NULL,
     profile_id uuid NOT NULL,
     source_template_id uuid,

@@ -57,6 +57,7 @@ export function sessionDose(session: Session, exerciseId = "") {
     group.every((row) => row.done && row.reps > 0),
   ).length;
   return {
+    performed: performed.length > 0 || (session.activityType === "external" && !!session.ended && session.ended > session.started),
     completed,
     planned: groups.size,
     performedRows: performed.length,
@@ -65,7 +66,7 @@ export function sessionDose(session: Session, exerciseId = "") {
     volume: exerciseId
       ? performed.reduce((sum, row) => sum + row.weight * row.reps, 0)
       : null,
-    status: !session.ended
+    status: session.activityType === "external" ? "Aktywność" : !session.ended
       ? "W toku"
       : !performed.length
         ? "Pusty"
@@ -131,7 +132,7 @@ export function weeklyDose(sessions: Session[], exerciseId = "") {
     };
     row.sets += dose.completed;
     row.repetitions += dose.repetitions;
-    if (dose.performedRows > 0) row.sessions++;
+    if (dose.performed) row.sessions++;
     weeks.set(key, row);
   }
   return [...weeks.values()].sort((a, b) => b.week.localeCompare(a.week));

@@ -207,8 +207,10 @@ export const sessionSchema = z
     started: z.string().datetime(),
     ended: z.string().datetime().optional(),
     completionReason: z.enum(["unspecified", "pain", "fatigue", "time", "other"]).optional(),
-    sets: z.array(setSchema).min(1).max(600),
-    plan: planEntriesSchema.optional(),
+    sets: z.array(setSchema).max(600),
+    plan: z.union([planEntriesSchema, z.tuple([])]).optional(),
+    activityType: z.enum(["strength", "external"]).optional(),
+    activityName: z.string().trim().min(1).max(80).optional(),
     planName: z.string().max(80).optional(),
     templateId: z.string().optional(),
     note: z.string().max(2000),
@@ -224,6 +226,12 @@ export const sessionSchema = z
     editedAt: z.string().datetime().optional(),
   })
   .superRefine((s, ctx) => {
+    if (s.activityType === "external") {
+      if (!s.activityName || !s.ended || s.ended <= s.started || s.sets.length || s.plan?.length)
+        ctx.addIssue({ code: "custom", message: "Aktywność wymaga nazwy, czasu zakończenia i pustej listy serii." });
+      return;
+    }
+    if (!s.sets.length || s.plan?.length === 0) ctx.addIssue({ code: "custom", message: "Trening wymaga ćwiczeń i serii." });
     const entries = s.plan ?? defaultTemplate().entries;
     const expected = entries.flatMap((entry) => {
       const e = exerciseById(entry.exerciseId);
@@ -310,7 +318,7 @@ export function validateHistoricalSession(
 }
 export const backupSchema = z
   .object({
-    version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6)]),
+    version: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4), z.literal(5), z.literal(6), z.literal(7)]),
     profileName: z.string().trim().min(1).max(80).optional(),
     profileSettings: profileSettingsSchema.optional(),
     templates: z.array(templateSchema).max(200).optional(),
@@ -396,6 +404,7 @@ export function newSession(
   };
 }
 export function sessionExercises(session: Session) {
+  if (session.activityType === "external") return [];
   return (session.plan?.map((entry) => entry.exerciseId) ??
     [...new Set(session.sets.map((s) => s.exerciseId))]).map(exerciseById);
 }

@@ -77,7 +77,7 @@ export function matchSessionMeasurements(
       (other) =>
         other.id !== session.id &&
         (!session.profileId || other.profileId === session.profileId) &&
-        other.sets.some((row) => row.done && row.reps > 0) &&
+        (other.activityType === "external" || other.sets.some((row) => row.done && row.reps > 0)) &&
         Date.parse(other.started) <= upper &&
         (other.ended ? Date.parse(other.ended) : upper) > lower,
     );

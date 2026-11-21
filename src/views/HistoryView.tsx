@@ -5,7 +5,8 @@ import { exerciseCatalog, sessionExercises, sessionPlan, completedGroups, visibl
 
 const fmt = (date: string) => new Date(date).toLocaleDateString(locale(), { day: "numeric", month: "short" });
 
-export function HistoryView({ logs, sessions, sites, contexts, injuries, historyExercise, setHistoryExercise, openSessionEditor, editLog, navigate, onAnalyze }: {
+export function HistoryView({ logs, sessions, sites, contexts, injuries, historyExercise, setHistoryExercise, openSessionEditor, editLog, navigate, onAnalyze, onPain }: {
+  onPain: (session: Session) => void;
   logs: PainLog[];
   sites: RehabSite[];
   contexts: PainContext[];
@@ -97,9 +98,9 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                   .map((s) => (
                     <details className="panel" key={s.id}>
                       <summary>
-                        {fmt(s.started)} · {s.planName ?? "Plan początkowy"} ·{" "}
+                        {fmt(s.started)} · {s.activityName || s.planName || ui("Plan początkowy")} ·{" "}
                         {s.ended ? completedGroups(s) < visibleSets(s).length ? ui("Zakończony wcześniej") : ui("Ukończony") : ui("W trakcie")} ·{" "}
-                        {completedGroups(s)}/{visibleSets(s).length}  {ui("serii")} </summary>
+                        {s.activityType === "external" ? ui("Inna aktywność") : `${completedGroups(s)}/${visibleSets(s).length} ${ui("serii")}`} </summary>
                       {sessionExercises(s)
                         .filter(
                           (e) => !historyExercise || e.id === historyExercise,
@@ -129,7 +130,9 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                               .join(" · ")}
                           </p>
                         ))}
+                      {s.activityType === "external" && <p>{s.templateId ? ui("Aktywność zaliczana do celu") : ui("Aktywność poza celem treningowym")}</p>}
                       {s.note && <p>{s.note}</p>}
+                      {s.ended && <button type="button" className="secondary" onClick={() => onPain(s)}>{ui("Dodaj pomiar po aktywności")}</button>}
                       {s.editedAt && (
                         <p className="footnote">
                           {ui("Poprawiono:")}{" "}

@@ -56,7 +56,7 @@ export function DiaryView({ editingId, sessionId, measurementPhase, sessions, on
         <label>{ui("Powiązany trening (opcjonalnie)")}<select value={sessionId} onChange={(e) => onSession(e.target.value)}>
           <option value="">{ui("Bez powiązania")}</option>
           {[...sessions].sort((a,b) => b.started.localeCompare(a.started)).map((session) => <option key={session.id} value={session.id}>
-            {session.planName ?? "Trening"} · {new Date(session.started).toLocaleString(locale())}</option>)}
+            {session.activityName || session.planName || ui("Trening")} · {new Date(session.started).toLocaleString(locale())}</option>)}
         </select></label>
       </div>
       {missingRatings && <p className="alert" role="alert">{ui("Oceń każdy monitorowany obszar. Brak bólu oznacz jako 0.")}</p>}

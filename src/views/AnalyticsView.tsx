@@ -320,6 +320,7 @@ export function AnalyticsView({
           {f.screen === "overview" && (
             <>
               <div className="grid three analytics-summary">
+                <article><h2>{ui("Rodzaj treningu")}</h2><p>{ui("Treningi z seriami: {{v0}} · Inne aktywności: {{v1}}", {v0: scopedSessions.filter(s => s.ended && s.activityType !== "external" && sessionDose(s).performed).length, v1: scopedSessions.filter(s => s.ended && s.activityType === "external").length})}</p><p>{ui("Aktywność zaliczana do celu")}: {scopedSessions.filter(s => s.ended && sessionDose(s).performed && (s.activityType !== "external" || !!s.templateId)).length}</p></article>
                 <article>
                   <h2>{ui("Wykonane serie")}</h2>
                   <strong>{performed}</strong>
@@ -418,7 +419,7 @@ export function AnalyticsView({
                   .map((s) => (
                     <div className="history-row" key={s.id}>
                       <span>
-                        {s.planName ?? "Trening"} · {dateLabel(s.started)} ·{" "}
+                        {s.activityName || s.planName || ui("Trening")} · {dateLabel(s.started)} ·{" "}
                         {sessionDose(s).status}
                       </span>
                       <button
@@ -457,7 +458,7 @@ export function AnalyticsView({
                       <strong>{dateLabel(event.at)}</strong>
                       <p>
                         {event.session
-                          ? `${event.session.planName ?? "Trening"} · ${sessionDose(event.session).status}`
+                          ? `${event.session.activityName || event.session.planName || ui("Trening")} · ${sessionDose(event.session).status}`
                           : event
                               .log!.values.map(
                                 (v) =>
@@ -501,7 +502,7 @@ export function AnalyticsView({
                     .sort((a, b) => b.started.localeCompare(a.started))
                     .map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.planName ?? "Trening"} · {dateLabel(s.started)}
+                        {s.activityName || s.planName || ui("Trening")} · {dateLabel(s.started)}
                       </option>
                     ))}
                 </select>

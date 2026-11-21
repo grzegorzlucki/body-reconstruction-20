@@ -157,7 +157,8 @@ export function TodayDashboard({
             <MetricIcon kind="workout" />
           </span>
           <h3>{ui("Cel treningowy")}</h3>
-          <Ring value={data.recent.length} total={weeklyGoal} />
+          <Ring value={data.goalSessions.length} total={weeklyGoal} />
+          <small>{ui("Treningi z seriami: {{v0}} · Inne aktywności: {{v1}}", { v0: data.strengthSessions, v1: data.externalSessions })}</small>
           <p>{ui("Treningi w ostatnich 7 dniach")}</p>
         </article>
         <article className="dashboard-metric">
@@ -206,7 +207,7 @@ export function TodayDashboard({
           </strong>
           <p>
             {data.last
-              ? data.last.planName || ui("Trening")
+              ? data.last.activityName || data.last.planName || ui("Trening")
               : ui("Jeszcze bez treningów.")}
           </p>
           <small>{ui("Czas od zakończenia")}</small>

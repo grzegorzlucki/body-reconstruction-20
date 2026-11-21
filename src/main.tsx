@@ -311,6 +311,7 @@ function App({ user }: { user?: User }) {
                 logs={logs} injuries={selectedProfile?.injuries ?? []}
                 sites={selectedProfile?.rehabSites ?? []} weeklyGoal={selectedProfile?.weeklyGoal ?? 2} profileName={selectedProfile?.name}
                 onWorkout={() => { navigate("Trening"); }}
+                onActivity={() => { openSessionEditor(); setEditing(previous => previous ? { ...previous, activityType: "external", activityName: "", templateId: undefined, planName: undefined, sets: [], plan: [] } : previous); }}
                 onDiary={async () => { if (await navigate("Dziennik")) editDate(day(new Date())); }}
                 onAnalytics={(id) => { void openAnalytics(id); }} />
             )}
@@ -355,7 +356,7 @@ function App({ user }: { user?: User }) {
               </React.Suspense>
             )}
             {tab === "Edytor treningu" && editing && (
-              <SessionEditorView editing={editing} editingExisting={editingExisting}
+              <SessionEditorView templates={templates} editing={editing} editingExisting={editingExisting}
                 confirmAction={confirmAction}
                 editStart={editStart} editEnd={editEnd} setEditStart={setEditStart}
                 setEditEnd={setEditEnd} setEditing={setEditing} busy={busy}
@@ -366,7 +367,8 @@ function App({ user }: { user?: User }) {
               <React.Suspense fallback={<LoadingScreen />}>
               <HistoryView logs={logs} sessions={sessions} sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []} injuries={selectedProfile?.injuries ?? []} historyExercise={historyExercise}
                 setHistoryExercise={setHistoryExercise} openSessionEditor={openSessionEditor}
-                editLog={editLog} navigate={navigate} onAnalyze={(id) => { void openAnalytics(id); }} />
+                editLog={editLog} navigate={navigate} onAnalyze={(id) => { void openAnalytics(id); }}
+                onPain={async (s) => { if (await navigate("Dziennik")) newMeasurement(day(new Date()),s.id,"post"); }} />
               </React.Suspense>
             )}
             {tab === "Analizy" && (

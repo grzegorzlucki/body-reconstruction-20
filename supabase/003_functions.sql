@@ -95,7 +95,7 @@ BEGIN
       ) AS row_data FROM public.workout_sessions s WHERE s.profile_id=target_profile
         AND (since_date IS NULL OR s.ended_at IS NULL OR s.started_at >= (since_date::timestamp AT TIME ZONE 'UTC')
           OR s.id=(SELECT latest.id FROM public.workout_sessions latest WHERE latest.profile_id=target_profile AND latest.ended_at IS NOT NULL
-            AND EXISTS (SELECT 1 FROM public.session_sets performed WHERE performed.session_id=latest.id AND performed.done AND performed.reps>0)
+            AND (latest.activity_type='external' OR EXISTS (SELECT 1 FROM public.session_sets performed WHERE performed.session_id=latest.id AND performed.done AND performed.reps>0))
             ORDER BY latest.ended_at DESC,latest.id DESC LIMIT 1))
         AND (before_time IS NULL OR (s.started_at,s.id)<(before_time,before_id))
       ORDER BY s.started_at DESC,s.id DESC LIMIT page_size
@@ -108,7 +108,7 @@ BEGIN
       ) AS row_data FROM public.pain_logs l WHERE l.profile_id=target_profile
         AND (since_date IS NULL OR l.log_date>=since_date OR l.session_id=(SELECT latest.id FROM public.workout_sessions latest
           WHERE latest.profile_id=target_profile AND latest.ended_at IS NOT NULL
-          AND EXISTS (SELECT 1 FROM public.session_sets performed WHERE performed.session_id=latest.id AND performed.done AND performed.reps>0)
+          AND (latest.activity_type='external' OR EXISTS (SELECT 1 FROM public.session_sets performed WHERE performed.session_id=latest.id AND performed.done AND performed.reps>0))
           ORDER BY latest.ended_at DESC,latest.id DESC LIMIT 1))
         AND (before_time IS NULL OR (l.measured_at,l.id)<(before_time,before_id))
       ORDER BY l.measured_at DESC,l.id DESC LIMIT page_size

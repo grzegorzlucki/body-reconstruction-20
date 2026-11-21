@@ -1,6 +1,21 @@
 // Source labels are indexed separately from the stable resource keys. They are
 // used only for application UI, never for names or notes loaded from a profile.
 export const translations: [string, string][] = `
+Podaj nazwę aktywności i rzeczywiste godziny. Pomiar bólu możesz dodać po zapisaniu.|Enter the activity name and actual times. You can add a pain measurement after saving.
+Rodzaj treningu|Workout type
+Trening z ćwiczeniami|Workout with exercises
+Inna aktywność, np. bieganie|Other activity, e.g. running
+Nazwa aktywności|Activity name
+Przypisz do planu (opcjonalnie)|Assign to a plan (optional)
+Bez planu — poza celem treningowym|No plan — excluded from the workout goal
+Aktywność przypisana do planu liczy się do celu. Pozostałe aktywności są liczone osobno.|Activities assigned to a plan count towards your goal. Other activities are counted separately.
+Aktywność zaliczana do celu|Activity counted towards the goal
+Aktywność poza celem treningowym|Activity outside the workout goal
+Dodaj pomiar po aktywności|Add a post-activity measurement
+Dodaj inną aktywność|Add another activity
+Inna aktywność|Other activity
+Treningi z seriami: {{v0}} · Inne aktywności: {{v1}}|Workouts with sets: {{v0}} · Other activities: {{v1}}
+Aktywność|Activity
 Okres i szczegóły dnia|Period and day details
 Tylko wybrany dzień|Selected day only
 Treningi w wybranym okresie|Workouts in the selected period

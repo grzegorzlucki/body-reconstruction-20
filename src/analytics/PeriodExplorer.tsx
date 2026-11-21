@@ -31,7 +31,7 @@ export function PeriodExplorer({
       sessions.filter(
         (s) =>
           day(s.started) === date &&
-          s.sets.some((row) => row.done && row.reps > 0),
+          (s.activityType === "external" || s.sets.some((row) => row.done && row.reps > 0)),
       ).length,
   );
   const max = Math.max(1, ...counts);
@@ -106,7 +106,7 @@ export function PeriodExplorer({
             {time(s.started)}
             {s.ended ? ` – ${time(s.ended)}` : ""}
           </strong>{" "}
-          · {s.planName || ui("Trening")} ·{" "}
+          · {s.activityName || s.planName || ui("Trening")} ·{" "}
           {ui(s.ended ? "Trening ukończony" : "Trening w trakcie")}
         </p>
       ))}

@@ -72,7 +72,7 @@ export function WorkoutResponseView({
   return (
     <section className="panel">
       <h2>
-        {session.planName ?? "Trening"} ·{" "}
+        {session.activityName || session.planName || ui("Trening")} ·{" "}
         {new Date(session.started).toLocaleString(locale())}
       </h2>
       <p>

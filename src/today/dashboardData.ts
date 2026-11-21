@@ -23,7 +23,7 @@ export function dashboardData(
     (session) =>
       session.ended &&
       Date.parse(session.ended) <= now.getTime() &&
-      sessionDose(session).performedRows > 0,
+      sessionDose(session).performed,
   );
   const recent = completed.filter(
     (session) => day(session.started) >= start && day(session.started) <= end,
@@ -36,6 +36,9 @@ export function dashboardData(
     days,
     reports,
     recent,
+    goalSessions: recent.filter(session => session.activityType !== "external" || !!session.templateId),
+    strengthSessions: recent.filter(session => session.activityType !== "external").length,
+    externalSessions: recent.filter(session => session.activityType === "external").length,
     last,
     daily,
     diaryDays: new Set(reports.map((log) => log.date)).size,
