@@ -3,6 +3,7 @@ import { ui, locale } from "../i18n/config";
 import { useState, type FormEvent } from "react";
 import { day, measurementPhases, measurementPhaseLabels, type MeasurementPhase, type Session, type Injury, type PainContext, type PainLog, type RehabSite } from "../domain";
 import { PainSlider } from "../PainSlider";
+import { diarySessions } from "../diarySessions";
 
 export function DiaryView({ editingId, sessionId, measurementPhase, sessions, onSession, onPhase, onEdit, onNew, date, time, pain, context, note, logs, sites, contexts, injuries, injuryIds, busy,
   onDate, onTime, onPain, onContext, onInjuries, onNote, onSave, onRemove }: {
@@ -26,15 +27,6 @@ export function DiaryView({ editingId, sessionId, measurementPhase, sessions, on
   return <>
     <h1>{ui("Dziennik")}</h1>
     <p className="intro">{ui("Zapisz reakcję bólową dla obszarów skonfigurowanych w profilu.")}</p>
-    <section className="panel" aria-label={ui("Pomiary wybranego dnia")}>
-      <div className="section-title"><h2>{editingId ? ui("Edycja pomiaru") : ui("Nowy pomiar")}</h2>
-        <button type="button" className="secondary" disabled={busy} onClick={onNew}>{ui("Nowy pomiar")}</button></div>
-      <p>{ui("Możesz zapisać kilka pomiarów dziennie. Zmiana daty rozpoczyna nowy wpis.")}</p>
-      {logs.filter((log) => log.date === date).sort((a,b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id)).map((log) => <div className="history-row" key={log.id}>
-        <span>{new Date(log.at).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })} · {ui(measurementPhaseLabels[log.measurementPhase ?? "unspecified"])}</span>
-        <button type="button" className="secondary" disabled={busy} onClick={() => onEdit(log.id)}>{ui("Edytuj ten pomiar")}</button>
-      </div>)}
-    </section>
     <form onSubmit={(event) => {
       const missing = activeSites.some((site) => !pain[site.id] && pain[site.id] !== "0");
       setMissingRatings(missing);
@@ -45,6 +37,7 @@ export function DiaryView({ editingId, sessionId, measurementPhase, sessions, on
       }
       onSave(event);
     }} className="panel">
+      <div className="section-title"><h2>{editingId ? ui("Edycja pomiaru") : ui("Nowy pomiar")}</h2>{editingId && <button type="button" className="secondary" disabled={busy} onClick={onNew}>{ui("Nowy pomiar")}</button>}</div>
       <div className="grid two date-time-fields">
         <label>{ui("Dzień")}<input name="painDate" required type="date" max={day(new Date())} value={date} onChange={(event) => onDate(event.target.value)} /></label>
         <label>{ui("Godzina pomiaru")}<input name="painTime" required type="time" step="1" value={time} onChange={(event) => onTime(event.target.value)} /></label>
@@ -55,7 +48,7 @@ export function DiaryView({ editingId, sessionId, measurementPhase, sessions, on
         </select></label>
         <label>{ui("Powiązany trening (opcjonalnie)")}<select value={sessionId} onChange={(e) => onSession(e.target.value)}>
           <option value="">{ui("Bez powiązania")}</option>
-          {[...sessions].sort((a,b) => b.started.localeCompare(a.started)).map((session) => <option key={session.id} value={session.id}>
+          {diarySessions(sessions,sessionId).map((session) => <option key={session.id} value={session.id}>
             {session.activityName || session.planName || ui("Trening")} · {new Date(session.started).toLocaleString(locale())}</option>)}
         </select></label>
       </div>
@@ -86,5 +79,14 @@ export function DiaryView({ editingId, sessionId, measurementPhase, sessions, on
         {editingId && <button type="button" className="secondary" disabled={busy} onClick={onRemove}>{ui("Usuń pomiar")}</button>}
       </div>
     </form>
+    <section className="panel" aria-label={ui("Pomiary wybranego dnia")}>
+      <h2>{ui("Pomiary")}</h2>
+      <p>{ui("Możesz zapisać kilka pomiarów dziennie. Zmiana daty rozpoczyna nowy wpis.")}</p>
+      {logs.filter((log) => log.date === date).sort((a,b) => a.at.localeCompare(b.at) || a.id.localeCompare(b.id)).map((log) => <div className="history-row" key={log.id}>
+        <span>{new Date(log.at).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })} · {ui(measurementPhaseLabels[log.measurementPhase ?? "unspecified"])}</span>
+        <button type="button" className="secondary" disabled={busy} onClick={() => onEdit(log.id)}>{ui("Edytuj ten pomiar")}</button>
+      </div>)}
+    </section>
+
   </>;
 }

@@ -12,7 +12,8 @@ type ExerciseStatus = "completed" | "finishedEarly" | "stopped";
 
 export function WorkoutView({ active, cloud, busy, confirmAction, templates, workout, workoutDirty, last,
   hours, logs, sites, contexts, onSetChange, onTimerFinish, onReplace, onFinish, onDiscard,
-  onStart, onLoadWorkout, onChangeWorkout, onSavePlan, onEditPlan }: {
+  onStart, onLoadWorkout, onChangeWorkout, onSavePlan, onEditPlan, onHistorical }: {
+  onHistorical: () => void;
   active?: Session;
   cloud: boolean;
   busy: boolean;
@@ -56,7 +57,7 @@ export function WorkoutView({ active, cloud, busy, confirmAction, templates, wor
     setPostPain({});
   }, [active?.id]);
   return <>
-    <h1 id="workout-heading" tabIndex={-1}>{active ? ui("Twój trening trwa") : ui("Następny trening")}</h1>
+    <div className="section-title"><h1 id="workout-heading" tabIndex={-1}>{active ? ui("Twój trening trwa") : ui("Następny trening")}</h1><button type="button" className="secondary" disabled={busy} onClick={onHistorical}>{ui("Dodaj trening historyczny")}</button></div>
     <p className="intro">{active
       ? cloud
         ? ui("Zmiany serii zapisują się na koncie po potwierdzeniu zapisu. Możesz wrócić do treningu później.")

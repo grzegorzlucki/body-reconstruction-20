@@ -327,7 +327,7 @@ function App({ user }: { user?: User }) {
                 onSave={(event) => void savePain(event)} onRemove={() => void removePain()} />
             )}
             {tab === "Trening" && (
-              <WorkoutView active={active} cloud={!!supabase} busy={busy}
+              <WorkoutView onHistorical={() => openSessionEditor()} active={active} cloud={!!supabase} busy={busy}
                 confirmAction={confirmAction}
                 templates={templates} workout={workout} workoutDirty={workoutDirty}
                 last={last} hours={hours} logs={logs} sites={selectedProfile?.rehabSites ?? []} contexts={selectedProfile?.painContexts ?? []}
