@@ -3,6 +3,7 @@ import { ui } from "../i18n/config";
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import type { Profile } from "../db";
 import { RehabAreaPicker } from "../profile/RehabAreaPicker";
+import { ConfigDisclosure } from "../profile/ConfigDisclosure";
 import { linkRehabArea } from "../rehabCatalog";
 import { day, profileSettingsSchema, type ProfileSettings } from "../domain";
 
@@ -131,7 +132,7 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
         </div>
         <p>{ui("Kontuzje łączą raporty z konkretnymi ścięgnami lub obszarami. Zakończone wpisy pozostają w historii.")}</p>
         {!settings.injuries.length && <p>{ui("Nie dodano jeszcze kontuzji.")}</p>}
-        {settings.injuries.map((injury) => <fieldset className="profile-config-row injury-config" key={injury.id}>
+        {settings.injuries.map((injury) => <ConfigDisclosure key={injury.id} title={injury.name || ui("Nowa kontuzja")} initialOpen={!profile.injuries.some(saved=>saved.id===injury.id)}><fieldset className="profile-config-row injury-config">
           <legend className="visually-hidden">{ui("Kontuzja")}</legend>
           <label>{ui("Nazwa lub rozpoznanie")} <input required maxLength={100} value={injury.name}
               onChange={(event) => updateInjury(injury.id, { name: event.target.value })} />
@@ -172,7 +173,7 @@ export function ProfileSettingsView({ profile, busy, onSave, onDirty }: {
               updateInjury(injury.id, { status: "resolved", resolvedOn: day(new Date()) });
             else setSettings((current) => ({ ...current, injuries: current.injuries.filter((item) => item.id !== injury.id) }));
           }}>{profile.injuries.some((saved) => saved.id === injury.id) ? ui("Zakończ kontuzję") : ui("Usuń szkic")}</button>
-        </fieldset>)}
+        </fieldset></ConfigDisclosure>)}
       </section>
 
       <section>

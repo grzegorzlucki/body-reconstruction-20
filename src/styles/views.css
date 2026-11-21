@@ -1,4 +1,29 @@
 /* Focused when a newly started workout replaces the preparation form. */
+.rehab-picker { border: 1px solid var(--color-border); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.rehab-picker summary, .config-disclosure > summary { min-height: 44px; padding-block: 10px; font-weight: 600; box-sizing: border-box; }
+.rehab-picker-options { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,200px),1fr)); gap: 6px; max-height: 230px; overflow-y: auto; margin-block: 10px; }
+.rehab-picker-options button { text-align: left; padding: 8px 10px; font-size: 14px; }
+.config-disclosure { border-block: 1px solid var(--color-border); padding-block: 4px; min-width: 0; }
+.config-disclosure > .injury-config { margin-block: 10px; }
+.profile-settings .injury-config, .profile-settings .rehab-site-config { gap: 12px; padding: 12px; }
+.profile-settings .injury-note textarea { min-height: 72px; }
+.profile-settings label { font-size: 14px; }
+.profile-settings section + section { padding-top: 18px; }
+.language-settings { max-width: 560px; }
+.language-settings > p { font-size: 14px; margin-bottom: 0; }
+.analytics-filters { gap: 12px; }
+.analytics-table th, .analytics-table td { padding: 9px 10px; }
+.timer-config label { margin-bottom: 10px; }
+@media (min-width: 1100px) {
+ .profile-settings .rehab-site-config { grid-template-columns: minmax(140px,1fr) minmax(140px,1fr) minmax(190px,auto); align-items: center; }
+ .profile-settings .site-config-controls { grid-column: auto; gap: 6px; }
+ .profile-settings .site-config-controls button { padding: 8px 10px; }
+}
+@media (max-width: 700px) {
+ .rehab-picker-options { grid-template-columns: minmax(0,1fr); }
+ .analytics-table td { font-size: 14px; }
+ .profile-settings .section-title { gap: 8px; }
+}
 .pain-chart.panel { padding: 18px; margin-block: 12px; }
 .pain-chart svg { display: block; width: 100%; max-width: 450px; height: auto; }
 .pain-chart.chart-expanded svg { max-width: 860px; }

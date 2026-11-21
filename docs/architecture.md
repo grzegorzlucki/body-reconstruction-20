@@ -1,5 +1,7 @@
 # Architecture Map
 
+Profile saved injury configurations use `profile/ConfigDisclosure.tsx`; new injury drafts start expanded. Area catalog results are scroll-bounded; desktop monitored areas use compact rows, with mobile stacking. Shared density rules preserve touch targets and readable labels instead of scaling the page.
+
 History measurement rows are compact and render 50 at a time, with expandable notes. PainCharts defaults to a bounded 450px-wide SVG and offers per-chart expansion without changing time coordinates or keyboard/pointer controls.
 
 `rehabCatalog.ts` / `profile/RehabAreaPicker.tsx` provide a searchable shared area catalog. Selecting an injury area upserts the monitored area and injury link in the same profile-settings draft; existing IDs and history survive. All areas may be inactive after `008_optional_monitoring.sql`; Diary disables new writes when no areas are active. Custom areas remain supported. Unit tests cover deduplication and atomic draft linking.
