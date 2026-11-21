@@ -1,6 +1,7 @@
 // Source labels are indexed separately from the stable resource keys. They are
 // used only for application UI, never for names or notes loaded from a profile.
 export const translations: [string, string][] = `
+Język zmieniony.|Language changed.
 Podaj nazwę aktywności i rzeczywiste godziny. Pomiar bólu możesz dodać po zapisaniu.|Enter the activity name and actual times. You can add a pain measurement after saving.
 Rodzaj treningu|Workout type
 Trening z ćwiczeniami|Workout with exercises

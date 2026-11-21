@@ -5,7 +5,7 @@ for (const width of [320, 390, 1024, 1440, 1920]) {
     await page.setViewportSize({ width, height: 900 });
     await page.goto("./?view=profile&section=preferences");
     await page.getByLabel("Język aplikacji", { exact: true }).selectOption("en");
-    await expect(page.getByRole("status")).toContainText("Language saved.");
+    await expect(page.getByRole("status")).toContainText("Language changed.");
     for (const route of ["diary", "analytics", "profile&section=personal", "profile&section=preferences"]) {
       await page.goto(`./?view=${route}`);
       await expect(page.locator(".shell")).toBeVisible();
@@ -23,7 +23,7 @@ test("language persists, translates lazy views and preserves stored labels", asy
   const language = page.getByLabel("Język aplikacji", { exact: true });
   await language.selectOption("en");
   await expect(page.locator("html")).toHaveAttribute("lang", "en");
-  await expect(page.getByRole("status")).toContainText("Language saved.");
+  await expect(page.getByRole("status")).toContainText("Language changed.");
   await expect(
     page.getByRole("heading", { name: "Preferences", exact: true }),
   ).toBeVisible();

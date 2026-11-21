@@ -21,7 +21,7 @@ test("Today greeting follows live language changes and the saved account prefere
   await expect(page.getByRole("heading", { name: "Cześć, Ada!", exact: true })).toBeVisible();
   await page.goto("./?view=profile&section=preferences");
   await page.getByLabel("Język aplikacji", { exact: true }).selectOption("en");
-  await expect(page.getByRole("status")).toContainText("Language saved.");
+  await expect(page.getByRole("status")).toContainText("Language changed.");
   await page.locator(".phone-nav").getByRole("button", { name: "Today", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Hi, Ada!", exact: true })).toBeVisible();
   await page.reload();
