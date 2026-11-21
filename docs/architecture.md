@@ -1,5 +1,7 @@
 # Architecture Map
 
+Analytics Timeline includes `analytics/ComparisonChart.tsx`: selectable rehabilitation-area pain lines over training bars (sessions, completed sets or ended-session minutes), independent labelled axes and pointer/keyboard daily readout. `overlayData.ts` aggregates daily medians and performed work on local calendar dates, preserves missing values as gaps, and bounds display to 366 days. It uses existing filtered records without additional API calls. Tests: `overlayData.test.ts`, `e2e/analytics.spec.ts`.
+
 History shows charts and their measurement list side by side on wide screens, stacked on smaller screens. Shared selection is keyed by the exact PainLog ID; chart pointer/keyboard selection highlights its list row, and row hover/focus selects the corresponding points across area charts. Both consume the same 50-item expandable slice so list entries never refer to omitted chart records. Analytics daily-median charts retain independent selection.
 
 Collapsed profile disclosures/catalogs mount their form/results only when opened. The diary labels preserved old session links explicitly; chart help is collapsed and measurement history uses separator rows, not bordered cards. SQL verification includes a successful zero-active-area settings save.

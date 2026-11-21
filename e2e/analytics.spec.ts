@@ -15,6 +15,19 @@ for (const width of [320, 390, 1024, 1920]) {
     const nav = page.getByRole("navigation", { name: "Widoki analiz" });
     await nav.getByRole("button", { name: "Oś czasu", exact: true }).click();
     await expect(page).toHaveURL(/analysis=timeline/);
+    const comparison = page.getByRole("region", { name: "Nakładanie danych", exact: true });
+    await expect(comparison).toBeVisible();
+    await comparison.getByRole("combobox", { name: "Dane treningowe", exact: true }).selectOption("sets");
+    await expect(comparison.getByRole("combobox", { name: "Dane treningowe", exact: true })).toHaveValue("sets");
+    const overlay = comparison.getByRole("slider");
+    await overlay.focus();
+    await overlay.press("Home");
+    await expect(overlay).toHaveAttribute("aria-valuenow", "0");
+    await overlay.press("ArrowRight");
+    await expect(overlay).toHaveAttribute("aria-valuenow", "1");
+    await comparison.getByRole("checkbox", { name: "Treningi", exact: true }).uncheck();
+    await expect(comparison.locator("svg rect")).toHaveCount(0);
+    await comparison.getByRole("checkbox", { name: "Treningi", exact: true }).check();
     await expect(
       page.getByRole("heading", { name: "Ból · cały wybrany zakres" }),
     ).toBeVisible();

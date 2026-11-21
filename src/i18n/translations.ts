@@ -1,6 +1,14 @@
 // Source labels are indexed separately from the stable resource keys. They are
 // used only for application UI, never for names or notes loaded from a profile.
 export const translations: [string, string][] = `
+Nakładanie danych|Data overlays
+Ból i treningi na jednym wykresie|Pain and training on one chart
+Dane treningowe|Training data
+Liczba treningów|Workout count
+Czas aktywności (min)|Activity duration (min)
+Lewa oś: ból 0–10 (mediana dnia). Prawa oś: wybrane dane treningowe. Brak pomiaru oznacza lukę.|Left axis: pain 0–10 (daily median). Right axis: selected training data. Missing measurements leave gaps.
+Porównanie bólu i treningów|Pain and training comparison
+Serie i czas dotyczą wykonanej pracy; czas obejmuje tylko zakończone sesje. Trening jest przypisany do dnia rozpoczęcia.|Sets and duration cover performed work; duration includes ended sessions only. Workouts are assigned to their start date.
 Jak czytać wykres|How to read the chart
 Powiązanie historyczne|Historical link
 Zmniejsz wykres|Reduce chart

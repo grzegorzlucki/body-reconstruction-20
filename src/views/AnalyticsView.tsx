@@ -1,5 +1,6 @@
 import { formatNumber } from "../i18n/formatters";
 import { PeriodExplorer } from "../analytics/PeriodExplorer";
+import { ComparisonChart } from "../analytics/ComparisonChart";
 import { useTranslation } from "react-i18next";
 import { ui, locale } from "../i18n/config";
 import { useMemo, useState } from "react";
@@ -435,6 +436,7 @@ export function AnalyticsView({
           )}
           {f.screen === "timeline" && (
             <>
+              <ComparisonChart from={f.from} to={f.to} logs={visibleLogs} sessions={scopedSessions} sites={visibleSites} exercise={f.exercise} />
               <label className="profile-config-toggle">
                 <input
                   type="checkbox"
