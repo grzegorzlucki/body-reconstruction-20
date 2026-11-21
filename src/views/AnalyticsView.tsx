@@ -172,7 +172,7 @@ export function AnalyticsView({
           <button
             type="button"
             key={screen}
-            className={f.screen === screen ? "" : "secondary"}
+            className={f.screen === screen ? "analytics-tab is-selected" : "analytics-tab secondary"}
             aria-current={f.screen === screen ? "page" : undefined}
             onClick={() => update({ screen })}
           >
