@@ -1,4 +1,11 @@
 /* Focused when a newly started workout replaces the preparation form. */
+.pain-chart.panel { padding: 18px; margin-block: 12px; }
+.pain-chart svg { display: block; width: 100%; max-width: 450px; height: auto; }
+.pain-chart.chart-expanded svg { max-width: 860px; }
+.chart-size-toggle { float: right; margin-left: 12px; }
+.history-row { min-height: 0; padding-block: 12px; margin: 0; border-radius: 0; background: transparent; }
+.history-row p { margin-block: 4px; }
+.history-row > div { min-width: 0; overflow-wrap: anywhere; }
 .period-days { display: flex; gap: 6px; overflow-x: auto; padding-block: 12px; max-width: 100%; }
 .period-day { flex: 0 0 52px; padding: 8px 4px; display: grid; gap: 5px; background: var(--color-surface-control); color: var(--color-text); }
 .period-day[aria-pressed="true"] { outline: 2px solid var(--color-accent); outline-offset: -2px; }

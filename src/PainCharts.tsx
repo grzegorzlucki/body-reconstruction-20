@@ -35,6 +35,7 @@ function PainChart({
 }) {
   useTranslation();
   const svg = useRef<SVGSVGElement>(null);
+  const [expanded,setExpanded] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const value = (log: PainLog) => log.values.find((item) => item.siteId === site.id)!.value;
   const selected = Math.max(
@@ -81,7 +82,8 @@ function PainChart({
     setSelectedId(logs[Math.max(0, Math.min(logs.length - 1, next))].id);
   }
   return (
-    <section className="panel pain-chart" aria-label={ui("Wykres: {{v0}}",{v0: site.name})}>
+    <section className={`panel pain-chart${expanded ? " chart-expanded" : ""}`} aria-label={ui("Wykres: {{v0}}",{v0: site.name})}>
+      <button type="button" className="text-button chart-size-toggle" aria-expanded={expanded} onClick={()=>setExpanded(value=>!value)}>{ui(expanded ? "Zmniejsz wykres" : "Powiększ wykres")}</button>
       <h3>{site.name}</h3>
       {!current ? (
         <p>{ui("Brak pomiarów.")}</p>

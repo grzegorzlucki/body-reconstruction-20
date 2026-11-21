@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { ui, locale } from "../i18n/config";
 import { PainCharts } from "../PainCharts";
 import { exerciseCatalog, sessionExercises, sessionPlan, completedGroups, visibleSets, type Injury, type PainLog, type Session, type RehabSite, type PainContext } from "../domain";
@@ -20,6 +21,7 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
   onAnalyze: (id: string) => void;
 }) {
   useTranslation();
+  const [measurementLimit,setMeasurementLimit]=useState(50);
   return <>
 
                 <div className="section-title">
@@ -35,7 +37,7 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                   <p>
                      {ui("Jeszcze bez pomiarów. Zacznij od dzisiejszego check-inu.")} </p>
                 )}
-                {[...logs].reverse().map((l) => (
+                {[...logs].sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,measurementLimit).map((l) => (
                   <article className="history-row" key={l.id}>
                     <div>
                       <b>
@@ -49,9 +51,10 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                         {l.values.map((value) => `${sites.find((site) => site.id === value.siteId)?.name ?? value.siteId}: ${value.value}`).join(" / ")}
                       </p>
                       <small>
-                        {(contexts.find((item) => item.value === l.context)?.label ?? l.context) || "Bez kontekstu"}
-                        {l.injuryIds?.length ? ` · ${l.injuryIds.map((id) => injuries.find((injury) => injury.id === id)?.name ?? id).join(", ")}` : ""} {l.note && `· ${l.note}`}
+                        {(contexts.find((item) => item.value === l.context)?.label ?? l.context) || ui("Bez kontekstu")}
+                        {l.injuryIds?.length ? ` · ${l.injuryIds.map((id) => injuries.find((injury) => injury.id === id)?.name ?? id).join(", ")}` : ""}
                       </small>
+                      {l.note && <details><summary>{ui("Notatka")}</summary><p className="calendar-note">{l.note}</p></details>}
                     </div>
                     <button
                       className="text-button"
@@ -62,6 +65,7 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                        {ui("Edytuj")} </button>
                   </article>
                 ))}
+                {logs.length>measurementLimit && <button type="button" className="secondary" onClick={()=>setMeasurementLimit(value=>value+50)}>{ui("Pokaż kolejne pomiary")}</button>}
                 <h2>{ui("Treningi")}</h2>
                 {!sessions.length && <p>{ui("Jeszcze bez treningów.")}</p>}
                 <label>

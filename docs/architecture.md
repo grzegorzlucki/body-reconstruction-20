@@ -1,5 +1,7 @@
 # Architecture Map
 
+History measurement rows are compact and render 50 at a time, with expandable notes. PainCharts defaults to a bounded 450px-wide SVG and offers per-chart expansion without changing time coordinates or keyboard/pointer controls.
+
 `rehabCatalog.ts` / `profile/RehabAreaPicker.tsx` provide a searchable shared area catalog. Selecting an injury area upserts the monitored area and injury link in the same profile-settings draft; existing IDs and history survive. All areas may be inactive after `008_optional_monitoring.sql`; Diary disables new writes when no areas are active. Custom areas remain supported. Unit tests cover deduplication and atomic draft linking.
 
 Language Preferences reattempts pending sync on open instead of immediately displaying a stale failure. Confirmed saves use the shared transient ToastNotice with Language changed; genuine persistence failures remain visible with retry. The compact selector has one label, without a duplicated section heading.
