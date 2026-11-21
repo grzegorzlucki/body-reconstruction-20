@@ -1,5 +1,7 @@
 # Weryfikacja aplikacji
 
+Uproszczone formularze: `e2e/compact-flows.spec.ts` sprawdza pojedynczy obszar po wielokrotnym wyborze katalogu przy kontuzji, trwałe powiązanie i bezpośredni formularz pomiaru oraz dostęp do treningu historycznego z Treningu. `src/diarySessions.test.ts` obejmuje dziś/wczoraj, nocne sesje i zachowanie starego powiązania. `npm run test:sql` wykonuje także `008_optional_monitoring.sql` i rzeczywisty zapis profilu bez aktywnych obszarów. Testy języka oczekują toastu Language changed.
+
 Inne aktywności: `src/externalActivity.test.ts` sprawdza walidację, brak sztucznych serii i rozdzielenie celu od liczników aktywności. `e2e/external-activity.spec.ts` obejmuje dodanie aktywności ze strony głównej, pomiar bólu powiązany po ID, przypisanie kolejnej aktywności do planu, przeliczenie celu po przeładowaniu oraz nowy styl zaznaczenia zakładki Analiz. `npm run test:sql` wykonuje także `007_external_activities.sql`, sprawdza uprawnienia przypisania planu i import aktywności.
 
 Instalacja bazy od zera: `npm run test:sql` wykonuje kolejno sześć nowych plików `supabase/001_schema.sql`–`006_verify.sql` w lokalnym PostgreSQL/PGlite. Obejmuje m.in. izolację kont, uprawnienia RPC, zapis serii, dwa pomiary w jednym dniu, kursory, import, rollback, odpinanie pomiarów przy usunięciu sesji i uprzywilejowane czyszczenie konta. Auth i Storage mają lokalne interfejsy testowe; pełne usługi Supabase wymagają osobnej walidacji. Archiwalne SQL-e są w `supabase/old/` i nie są częścią nowej instalacji.

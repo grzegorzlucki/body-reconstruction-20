@@ -1,5 +1,7 @@
 # Architecture Map
 
+Collapsed profile disclosures/catalogs mount their form/results only when opened. The diary labels preserved old session links explicitly; chart help is collapsed and measurement history uses separator rows, not bordered cards. SQL verification includes a successful zero-active-area settings save.
+
 Profile saved injury configurations use `profile/ConfigDisclosure.tsx`; new injury drafts start expanded. Area catalog results are scroll-bounded; desktop monitored areas use compact rows, with mobile stacking. Shared density rules preserve touch targets and readable labels instead of scaling the page.
 
 History measurement rows are compact and render 50 at a time, with expandable notes. PainCharts defaults to a bounded 450px-wide SVG and offers per-chart expansion without changing time coordinates or keyboard/pointer controls.

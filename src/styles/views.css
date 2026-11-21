@@ -13,7 +13,11 @@
 .language-settings > p { font-size: 14px; margin-bottom: 0; }
 .analytics-filters { gap: 12px; }
 .analytics-table th, .analytics-table td { padding: 9px 10px; }
-.timer-config label { margin-bottom: 10px; }
+.timer-settings { gap: 12px; }
+.timer-settings label { margin-bottom: 8px; }
+.timer-settings .timer-field { padding: 10px 12px; font-size: 14px; }
+.timer-settings .timer-field input { width: 88px; font-size: 18px; min-height: 44px; padding: 8px; }
+.plan-numbers { gap: 12px; }
 @media (min-width: 1100px) {
  .profile-settings .rehab-site-config { grid-template-columns: minmax(140px,1fr) minmax(140px,1fr) minmax(190px,auto); align-items: center; }
  .profile-settings .site-config-controls { grid-column: auto; gap: 6px; }
@@ -28,7 +32,9 @@
 .pain-chart svg { display: block; width: 100%; max-width: 450px; height: auto; }
 .pain-chart.chart-expanded svg { max-width: 860px; }
 .chart-size-toggle { float: right; margin-left: 12px; }
-.history-row { min-height: 0; padding-block: 12px; margin: 0; border-radius: 0; background: transparent; }
+.history-row { min-height: 0; padding: 10px 0; margin: 0; border: 0; border-bottom: 1px solid var(--color-border); border-radius: 0; background: transparent; }
+.chart-help { margin-block: 8px 12px; }
+.chart-help summary { min-height: 44px; padding-block: 10px; box-sizing: border-box; }
 .history-row p { margin-block: 4px; }
 .history-row > div { min-width: 0; overflow-wrap: anywhere; }
 .period-days { display: flex; gap: 6px; overflow-x: auto; padding-block: 12px; max-width: 100%; }

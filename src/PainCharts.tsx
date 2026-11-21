@@ -232,8 +232,9 @@ export function PainCharts({ logs, sites, limit = 14, daily = false }: { logs: P
   return (
     <section aria-label={ui("Trendy bólu")}>
       <h2>{limit === null ? ui("Ból · cały wybrany zakres") : ui("Ból · ostatnie {{v0}} pomiarów", {v0: limit})}</h2>
-      <p className="footnote">
+      <details className="chart-help"><summary>{ui("Jak czytać wykres")}</summary><p className="footnote">
          {ui("Przesuwaj palcem po wykresie lub wskaż punkt, aby odczytać datę, godzinę i wartość. Na komputerze możesz też używać strzałek. Oś czasu pokazuje rzeczywiste odstępy między pomiarami. Dłuższe luki pozostają bez linii.")} </p>
+      </details>
       {sites.filter((site) => recent.some((log) => log.values.some((item) => item.siteId === site.id))).map((site) => (
         <PainChart key={site.id} logs={recent.filter((log) => log.values.some((item) => item.siteId === site.id))}
           site={site} color="var(--color-text-secondary)" daily={daily} />

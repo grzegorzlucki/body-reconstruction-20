@@ -70,7 +70,6 @@ test("two reports on the same day remain independent when editing by ID", async 
   await expect(
     page.getByRole("heading", { name: "Nowy pomiar", exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Nowy pomiar", exact: true }).click();
   await page.getByLabel("Godzina pomiaru").fill("00:00:01");
   for (const range of await page.locator('input[type="range"]').all()) {
     await range.focus();

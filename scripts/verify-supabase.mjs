@@ -230,6 +230,9 @@ try {
     injuries: [],
   };
   await rpc("save_profile_settings_with_archiving", settings);
+  await rpc("save_profile_settings_with_archiving", {...settings,rehabSites:settings.rehabSites.map(site=>({...site,active:false}))});
+  check(Number((await pg.query("SELECT count(*) FROM public.profile_rehab_sites WHERE active")).rows[0].count),0);
+  await rpc("save_profile_settings_with_archiving", settings);
   await pg.query(
     "INSERT INTO public.timer_settings(profile_id,unilateral,first_side) VALUES ($1,true,$2)",
     [a, "L"],

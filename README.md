@@ -48,6 +48,8 @@ Widoki aplikacji używają adresów `?view=...`, dzięki czemu przycisk Wstecz d
 
 ### Supabase
 
+Możliwość wyłączenia monitorowania wszystkich obszarów wymaga nowej migracji `supabase/008_optional_monitoring.sql`. Nie usuwa ona obszarów ani historycznych pomiarów.
+
 Obsługa innych aktywności (np. biegania) wymaga `supabase/007_external_activities.sql`. W istniejącej, aktualnej bazie uruchom tylko ten nowy plik; w nowym projekcie wykonaj go po plikach 001–006. Kopie zapasowe są eksportowane w wersji 7, z obsługą importu wcześniejszych wersji.
 
 Nowa baza: uruchom kolejno pełne pliki `supabase/001_schema.sql` → `002_catalog.sql` → `003_functions.sql` → `004_rls.sql` → `005_storage.sql` → `006_verify.sql`. Ostatni powinien zwrócić `Installation checks passed`. Archiwum `supabase/old/` nie jest częścią tej instalacji. Szczegóły i konfiguracja Auth/Storage: [instrukcja Supabase](docs/supabase/README.md).

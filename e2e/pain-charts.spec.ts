@@ -22,7 +22,7 @@ test("trzy wykresy liniowe: brak danych, wartości, klawiatura i przesuwanie pal
   page.on("pageerror", (error) => errors.push(error.message));
   await page.goto("./");
   await openTab(page, "Historia");
-  await expect(page.getByRole("region", { name: /^Wykres:/ })).toHaveCount(3);
+  await expect(page.getByRole("region", { name: /^Wykres:/ })).toHaveCount(0);
   await expect(page.getByRole("slider")).toHaveCount(0);
   await openTab(page, "Dane");
   await page
@@ -61,7 +61,8 @@ test("trzy wykresy liniowe: brak danych, wartości, klawiatura i przesuwanie pal
       nodes.map((node) => Number(node.getAttribute("cx"))),
     );
   expect(circles[2] - circles[1]).toBeCloseTo(3 * (circles[1] - circles[0]));
-  await expect(achilles.locator('line[stroke-dasharray="5 5"]')).toHaveCount(2);
+  // Missing days remain gaps rather than interpolated long lines.
+  await expect(achilles.locator('line[stroke-dasharray="5 5"]')).toHaveCount(0);
   await achilles.scrollIntoViewIfNeeded();
   const box = (await achilles.boundingBox())!;
   const x = (svgX: number) => box.x + (box.width * svgX) / 400;
@@ -88,6 +89,14 @@ test("trzy wykresy liniowe: brak danych, wartości, klawiatura i przesuwanie pal
     touchPoints: [],
   });
   await cdp.detach();
+  await page.setViewportSize({width:1440,height:900});
+  const region=page.getByRole("region",{name:"Wykres: Achilles",exact:true});
+  const compactWidth=(await region.locator("svg").boundingBox())!.width;
+  expect(compactWidth).toBeLessThanOrEqual(450);
+  await region.getByRole("button",{name:"Powiększ wykres",exact:true}).click();
+  expect((await region.locator("svg").boundingBox())!.width).toBeGreaterThan(compactWidth);
+  await region.getByRole("button",{name:"Zmniejsz wykres",exact:true}).click();
+  await page.setViewportSize({width:390,height:844});
   const pht = page.getByRole("slider", {
     name: "Pomiar bólu: PHT",
     exact: true,
