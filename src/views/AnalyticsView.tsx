@@ -1,4 +1,5 @@
 import { formatNumber } from "../i18n/formatters";
+import { PeriodExplorer } from "../analytics/PeriodExplorer";
 import { useTranslation } from "react-i18next";
 import { ui, locale } from "../i18n/config";
 import { useMemo, useState } from "react";
@@ -305,6 +306,7 @@ export function AnalyticsView({
           </label>
         </div>
       </details>
+      {validRange && <PeriodExplorer from={f.from} to={f.to} logs={visibleLogs} sessions={scopedSessions} onRange={(from, to) => update({ from, to })} />}
       {!validRange ? (
         <p role="alert">{ui("Data „Od” musi poprzedzać datę „Do”.")}</p>
       ) : (

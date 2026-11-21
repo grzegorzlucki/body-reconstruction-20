@@ -1,4 +1,13 @@
 /* Focused when a newly started workout replaces the preparation form. */
+.period-days { display: flex; gap: 6px; overflow-x: auto; padding-block: 12px; max-width: 100%; }
+.period-day { flex: 0 0 52px; padding: 8px 4px; display: grid; gap: 5px; background: var(--color-surface-control); color: var(--color-text); }
+.period-day[aria-pressed="true"] { outline: 2px solid var(--color-accent); outline-offset: -2px; }
+.period-bar { height: 65px; display: flex; align-items: end; border-bottom: 1px solid var(--color-border); }
+.period-bar i { display: block; width: 100%; min-height: 2px; background: var(--color-success); border-radius: 4px 4px 0 0; }
+.period-hours { display: grid; gap: 8px; max-height: 440px; overflow: auto; }
+.period-hours > div { display: grid; grid-template-columns: 55px minmax(0,1fr); gap: 12px; border-top: 1px solid var(--color-border); padding: 8px; }
+.period-hours article { margin: 0; padding: 8px; overflow-wrap: anywhere; }
+.period-explorer .actions { flex-wrap: wrap; }
 #workout-heading { scroll-margin-top: 16px; }
 .workout-quick-finish { margin-bottom: 20px; }
 .workout-quick-finish p { margin: 0; font-size: var(--font-size-small); }

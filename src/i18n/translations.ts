@@ -1,6 +1,14 @@
 // Source labels are indexed separately from the stable resource keys. They are
 // used only for application UI, never for names or notes loaded from a profile.
 export const translations: [string, string][] = `
+Okres i szczegóły dnia|Period and day details
+Tylko wybrany dzień|Selected day only
+Treningi w wybranym okresie|Workouts in the selected period
+Wybierz słupek dnia, aby zobaczyć godziny i pomiary.|Select a day bar to see times and measurements.
+Wykres pokazuje pierwsze 366 dni. Zawęź okres.|The chart shows the first 366 days. Narrow the date range.
+Szczegóły dnia|Day details
+Godziny pomiarów bólu|Pain measurement times
+Zbieżność czasowa treningu i bólu nie oznacza związku przyczynowego.|Timing alone does not imply that training caused pain.
 Twoja aktywność i samopoczucie w jednym miejscu.|Your activity and wellbeing in one place.
 Twój tydzień w skrócie|Your week at a glance
 Cel treningowy|Workout goal

@@ -1,5 +1,7 @@
 # Architecture Map
 
+`src/analytics/PeriodExplorer.tsx` adds 7/30/90-day shortcuts, daily workout-count bars and selected-day hourly reports to Analytics. It consumes the existing filtered range and updates the shared URL date filters; no database changes or additional requests. Daily bars count sessions with performed work and the hourly list preserves separate reports.
+
 Language persistence: `accountRepository.ts` owns the per-profile write queue and pending cache confirmation; writes survive navigation away from Preferences. `LanguageSettings.tsx` observes in-flight writes and reconciles stale pending markers against the loaded profile preference. A missing language RPC falls back to updating only `profiles.preferred_language` through existing owner RLS, verifying the returned row. Permission failures remain errors; the frontend never bypasses RLS.
 
 Project documentation lives under `docs/`; the root `README.md` is the entry point. File paths in this map and command examples in project documentation are relative to the repository root, unless stated otherwise. Local skill packages live in `docs/skills/` and remain excluded from version control; their internal directory structure and supporting assets are preserved.
