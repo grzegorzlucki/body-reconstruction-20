@@ -10,6 +10,7 @@
     "generate:icons": "node scripts/generate-icons.mjs",
     "verify:pages": "node scripts/verify-pages.mjs dist",
     "test": "vitest run",
+    "test:sql": "node scripts/verify-supabase.mjs",
     "test:load": "vitest run --config vitest.performance.config.ts"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.17",
     "@playwright/test": "^1.64.1",
     "@types/node": "^22.20.5",
     "@types/react": "^19.0.0",

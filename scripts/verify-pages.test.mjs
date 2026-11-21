@@ -7,10 +7,13 @@ import {
   copyFileSync,
   rmSync,
   lstatSync,
+  readFileSync,
+  utimesSync,
 } from "node:fs";
 import { resolve, join, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { verifyPages } from "./verify-pages.mjs";
+import { spawnSync } from "node:child_process";
 
 const workspace = fileURLToPath(new URL("../", import.meta.url));
 const tools = resolve(workspace, ".tools");
@@ -78,6 +81,34 @@ function fixture(name) {
 }
 test("accepts a coherent Pages build with matching icon sizes and lazy chunks", () => {
   assert.ok(verifyPages(fixture("valid"), "/body-reconstruction-20/") > 5);
+});
+
+test("publication requires content comparison rather than size/mtime alone", () => {
+  const workflow = readFileSync(join(workspace, ".github/workflows/pages.yml"), "utf8");
+  assert.match(workflow, /rsync -a --checksum --delete --exclude='\.git'/);
+});
+
+test("checksum copy repairs stale same-size same-mtime HTML and preserves the worktree", (t) => {
+  if (spawnSync("rsync", ["--version"]).status !== 0) {
+    t.skip("rsync is unavailable locally; Ubuntu CI executes this regression");
+    return;
+  }
+  const source = fixture("copy-source"), target = fixture("copy-target");
+  const html = readFileSync(join(source,"index.html"),"utf8");
+  writeFileSync(join(target,"index.html"),html.replace("main.js","gone.js"));
+  copyFileSync(join(target,"assets/main.js"),join(target,"assets/gone.js"));
+  writeFileSync(join(target,".git"),"synthetic worktree marker");
+  const stamp = new Date("2026-01-01T00:00:00Z");
+  for (const directory of [source,target]) utimesSync(join(directory,"index.html"),stamp,stamp);
+  const copy = (checksum) => {
+    const result = spawnSync("rsync", ["-a", ...(checksum ? ["--checksum"] : []), "--delete", "--exclude=.git", source+"/", target+"/"], {encoding:"utf8"});
+    assert.equal(result.status,0,result.stderr);
+  };
+  copy(false);
+  assert.throws(()=>verifyPages(target),/Missing or empty artifact/);
+  copy(true);
+  assert.ok(verifyPages(target)>5);
+  assert.equal(readFileSync(join(target,".git"),"utf8"),"synthetic worktree marker");
 });
 test("rejects HTML referring to an absent hashed JavaScript entry", () => {
   const directory = fixture("missing-entry");

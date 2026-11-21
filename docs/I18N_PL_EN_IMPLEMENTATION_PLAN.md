@@ -103,7 +103,7 @@ Nowe konto może odziedziczyć świadomy wybór z rejestracji jako zwalidowaną 
 
 ## 5. Baza, Dexie i kopie danych
 
-Plan migracji: `supabase/migrations/20261122_profile_language.sql` — nazwa robocza; numer dopasować do faktycznej kolejności wdrożenia.
+Plan migracji: `supabase/old/migrations/20261122_profile_language.sql` — nazwa robocza; numer dopasować do faktycznej kolejności wdrożenia.
 
 1. Dodać `public.profiles.preferred_language` z wartościami `pl`, `en`, `auto`.
 2. Przy pierwszym dodaniu kolumny przyjąć dla istniejących rekordów `pl`. Następnie ustawić domyślną wartość nowych rekordów na `auto`. Idempotentny rerun nie może ponownie ustawiać istniejących kont na PL ani nadpisywać świadomego wyboru `auto`.

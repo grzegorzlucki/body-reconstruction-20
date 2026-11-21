@@ -13,7 +13,7 @@ Lokalne skille znajdują się w `docs/skills/` i zachowują strukturę katalogó
 
 [Otwórz aplikację](https://grzegorzlucki.github.io/body-reconstruction-20/)
 
-Profil konta otwiera się z menu użytkownika w prawym górnym rogu na komputerze lub przez **Więcej → Profil** na telefonie. Sekcje obejmują dane osobowe i zdjęcie, rehabilitację, bezpieczeństwo, preferencje, dane oraz aktualizacje aplikacji. Plany na telefonie są dostępne bezpośrednio w dolnym pasku i przez **Trening → Moje plany**. Strona „Dzisiaj” wita nazwą profilu i udostępnia trening oraz pomiar bólu obok siebie na szerokim ekranie. Przed wdrożeniem zapisu danych konta i awatara zastosuj `supabase/migrations/20261119_account_profile.sql`; usunięcie konta wymaga dodatkowo wdrożenia funkcji `delete-account`, zgodnie z [instrukcją Supabase](docs/supabase/README.md).
+Profil konta otwiera się z menu użytkownika w prawym górnym rogu na komputerze lub przez **Więcej → Profil** na telefonie. Sekcje obejmują dane osobowe i zdjęcie, rehabilitację, bezpieczeństwo, preferencje, dane oraz aktualizacje aplikacji. Plany na telefonie są dostępne bezpośrednio w dolnym pasku i przez **Trening → Moje plany**. Strona „Dzisiaj” wita nazwą profilu i udostępnia trening oraz pomiar bólu obok siebie na szerokim ekranie. Przed wdrożeniem zapisu danych konta i awatara zastosuj `supabase/old/migrations/20261119_account_profile.sql`; usunięcie konta wymaga dodatkowo wdrożenia funkcji `delete-account`, zgodnie z [instrukcją Supabase](docs/supabase/README.md).
 
 Osobisty dziennik aktywności: zapis serii, monitoring samopoczucia, historia oraz kalendarz miesięczny. React + TypeScript + Vite. Dane konta są przechowywane w Supabase; dotychczasowe dane lokalne można przenieść z IndexedDB.
 
@@ -42,15 +42,17 @@ Otwórz http://localhost:4173. Na komputerze, na którym przygotowano projekt, m
 
 Zakładka **Analizy** porównuje zapisane raporty bólu i ukończone treningi; na stronie „Dzisiaj” dostępne jest ich krótkie podsumowanie. Kontuzje i ich powiązane obszary konfiguruje się w ustawieniach profilu, a raport można przypisać do jednej lub kilku kontuzji.
 
-Analizy mają widoki **Przegląd**, **Oś czasu**, **Reakcja po treningu**, **Dawka i regularność** oraz **Obszary i kontuzje**. Dziennik zapisuje kilka pomiarów dziennie i pozwala jawnie powiązać je z sesją i fazą treningu. Przed wdrożeniem tej wersji uruchom w Supabase SQL Editor cały plik [`20261121_analytics_links.sql`](supabase/migrations/20261121_analytics_links.sql), po wcześniejszych migracjach opisanych w [instrukcji bazy](docs/supabase/README.md). Sam deploy nie aktualizuje bazy.
+Analizy mają widoki **Przegląd**, **Oś czasu**, **Reakcja po treningu**, **Dawka i regularność** oraz **Obszary i kontuzje**. Dziennik zapisuje kilka pomiarów dziennie i pozwala jawnie powiązać je z sesją i fazą treningu. Przed wdrożeniem tej wersji uruchom w Supabase SQL Editor cały plik [`20261121_analytics_links.sql`](supabase/old/migrations/20261121_analytics_links.sql), po wcześniejszych migracjach opisanych w [instrukcji bazy](docs/supabase/README.md). Sam deploy nie aktualizuje bazy.
 
 Widoki aplikacji używają adresów `?view=...`, dzięki czemu przycisk Wstecz działa między zakładkami. Na telefonie cztery główne widoki są w dolnej nawigacji, a Historia, Kalendarz, Zegar HSR i Dane znajdują się pod **Więcej**. Strona startowa oraz widoki otwarte z parametrem `view` działają także po ponownym uruchomieniu aplikacji offline, jeżeli nowa wersja została wcześniej pobrana.
 
 ### Supabase
 
-Jeśli pojawia się błąd RLS, brak funkcji zapisu lub błąd klucza obcego ćwiczenia, zastosuj migracje opisane poniżej w podanej kolejności. Starsze pliki `*_rls_repair.sql` służyły do doraźnych napraw i nie należy ich uruchamiać po migracji `20261116_canonical_rls.sql`.
+Nowa baza: uruchom kolejno pełne pliki `supabase/001_schema.sql` → `002_catalog.sql` → `003_functions.sql` → `004_rls.sql` → `005_storage.sql` → `006_verify.sql`. Ostatni powinien zwrócić `Installation checks passed`. Archiwum `supabase/old/` nie jest częścią tej instalacji. Szczegóły i konfiguracja Auth/Storage: [instrukcja Supabase](docs/supabase/README.md).
 
-Przed włączeniem zapisu w chmurze zastosuj SQL zgodnie z [instrukcją bazy Supabase](docs/supabase/README.md). Opisuje osobno istniejącą bazę i nowy projekt oraz kolejność migracji. Nie uruchamiaj wszystkich plików alfabetycznie: starsze funkcje mogą nadpisać obsługę zegara. Przed wdrożeniem wersji z usuwaniem obszarów uruchom również migrację `20261118_rehab_site_archiving.sql`. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
+Starsze pliki `*_rls_repair.sql` służyły do doraźnych napraw. Nie są częścią instalacji nowej bazy i nie należy ich uruchamiać automatycznie.
+
+Nowe pliki instalacyjne są przeznaczone wyłącznie dla pustego projektu. Działającej bazy nie instaluj ponownie; stare migracje zachowano w `supabase/old/` do świadomych aktualizacji starszych wersji. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
 
 W GitHub **Settings → Secrets and variables → Actions → Variables** ustaw `VITE_SUPABASE_URL` i `VITE_SUPABASE_PUBLISHABLE_KEY`. Workflow wymaga obu wartości. Są publiczne i trafiają do kodu przeglądarki. Lokalnie skopiuj `.env.example` do `.env.local` i uzupełnij te same wartości. Nigdy nie przekazuj `SUPABASE_SECRET_KEY` do Vite ani GitHub Pages.
 
@@ -64,11 +66,11 @@ Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu pocz
 
 ## Korzystanie
 
-Zegar HSR obsługuje tryb **Ćwiczenie jednostronne — obie strony po kolei**: wykonuje wszystkie powtórzenia na pierwszą stronę, odlicza przygotowanie do zmiany strony, wykonuje powtórzenia na drugą stronę i dopiero rozpoczyna przerwę. Można wybrać pierwszą stronę i czas przygotowania. Jedna seria obejmuje obie strony. Opcja jest dostępna także w zegarze ćwiczenia w planie. Dla zapisu ustawień samodzielnego zegara w Supabase uruchom `supabase/migrations/20261120_unilateral_timer.sql`.
+Zegar HSR obsługuje tryb **Ćwiczenie jednostronne — obie strony po kolei**: wykonuje wszystkie powtórzenia na pierwszą stronę, odlicza przygotowanie do zmiany strony, wykonuje powtórzenia na drugą stronę i dopiero rozpoczyna przerwę. Można wybrać pierwszą stronę i czas przygotowania. Jedna seria obejmuje obie strony. Opcja jest dostępna także w zegarze ćwiczenia w planie. Dla zapisu ustawień samodzielnego zegara w Supabase uruchom `supabase/old/migrations/20261120_unilateral_timer.sql`.
 
 W zakładce **Trening → Moje plany** można uruchomić zapisany plan albo wczytać go do dostosowania. Podczas edycji planu przy każdym ćwiczeniu można opcjonalnie włączyć zegar HSR i ustawić czasy ruchu, przygotowania, przerwy oraz dźwięk. Zegar używa liczby serii i powtórzeń zapisanych przy ćwiczeniu. Podczas wykonywania dostępne są pauza, wznowienie, wcześniejsze zakończenie i przerwanie ćwiczenia; niewykonane serie nie są automatycznie oznaczane jako wykonane. Konfiguracja zegara jest kopiowana do sesji, więc późniejsza edycja planu nie zmienia historii. Po ponownym otwarciu strony ukończone i przerwane ćwiczenia zachowują status, a rozpoczęte odliczanie trzeba uruchomić ponownie.
 
-Przed opublikowaniem tej funkcji uruchom w Supabase SQL Editor `supabase/migrations/20261115_exercise_timers.sql` po wcześniejszych migracjach. Bez tej migracji zapisy planów i sesji z zegarem nie będą działać.
+Dla starszej bazy archiwalna migracja tej funkcji to `supabase/old/migrations/20261115_exercise_timers.sql` po wcześniejszych migracjach. Bez tej migracji zapisy planów i sesji z zegarem nie będą działać.
 
 W zakladce Trening ukladasz plany nalezace do profilu konta. W Supabase plany sa przypisane do jednego profilu konta; lokalne profile mozna wybrac jako zrodlo migracji w zakladce Dane. Rozpoczecie treningu zapisuje osobna kopie planu w historii.
 
@@ -107,4 +109,4 @@ Po teście usuń zmienną poleceniem `Remove-Item Env:VITE_BASE_PATH`, aby wróc
 
 Choose **Polski**, **English**, or **Automatic** on the sign-in screen or under **Profile → Preferences** (mobile: **More → Profile**). Language changes preserve running timers and unsaved input. User-created names and notes remain unchanged.
 
-Before deploying this release, apply [the language migration](supabase/migrations/20261122_profile_language.sql). See [deployment and verification](docs/I18N_PL_EN_DEPLOYMENT.md), including the separate Supabase email-template setup.
+Existing older databases can use [the archived language migration](supabase/old/migrations/20261122_profile_language.sql). See [deployment and verification](docs/I18N_PL_EN_DEPLOYMENT.md), including the separate Supabase email-template setup.

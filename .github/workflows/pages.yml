@@ -38,7 +38,8 @@ jobs:
         run: |
           git fetch origin gh-pages
           git worktree add "$RUNNER_TEMP/pages-out" origin/gh-pages
-          rsync -a --delete --exclude='.git' dist/ "$RUNNER_TEMP/pages-out/"
+          # Git checkout can give old/new HTML equal size and mtime. Compare content.
+          rsync -a --checksum --delete --exclude='.git' dist/ "$RUNNER_TEMP/pages-out/"
           touch "$RUNNER_TEMP/pages-out/.nojekyll"
           node scripts/verify-pages.mjs "$RUNNER_TEMP/pages-out" /body-reconstruction-20/
           git -C "$RUNNER_TEMP/pages-out" config user.name "github-actions[bot]"

@@ -1,6 +1,6 @@
 # Read optimization deployment and limits
 
-Apply `supabase/migrations/20261123_read_record_pages.sql` manually on staging first, then deploy frontend. The migration adds a stable security-invoker function; authenticated owner access and existing RLS remain mandatory. Anonymous/PUBLIC execution is revoked. No production SQL was executed by the agent. PostgreSQL execution/plans still need staging validation.
+Apply `supabase/old/migrations/20261123_read_record_pages.sql` manually on staging first, then deploy frontend. The migration adds a stable security-invoker function; authenticated owner access and existing RLS remain mandatory. Anonymous/PUBLIC execution is revoked. No production SQL was executed by the agent. PostgreSQL execution/plans still need staging validation.
 
 Without the RPC, reads fall back to existing PostgREST paths only on PGRST202. Permission, server and malformed-response errors are never converted to partial success. Export reads the complete database directly. The startup recent window is 90 UTC dates and includes active/latest performed workouts and their reports when the migration is installed; legacy session reads remain complete to preserve last-workout semantics. Calendar, History and Analytics explicitly wait for complete history, rather than silently showing incomplete statistics.
 

@@ -1,5 +1,9 @@
 # Architecture Map
 
+Pages publication uses `rsync -a --checksum --delete --exclude='.git'`: checksums prevent a checked-out old `index.html`/worker surviving when content length and mtimes equal the new build. `scripts/verify-pages.test.mjs` includes a real rsync regression (runs on Ubuntu CI; skips on systems without rsync), and artifact validation still runs before and after copying.
+
+Fresh database installation: run `supabase/001_schema.sql` → `002_catalog.sql` → `003_functions.sql` → `004_rls.sql` → `005_storage.sql` → `006_verify.sql` on a new Supabase project. These contain the final schema/RPCs/policies, not a replay of repair migrations. Historical SQL is archived unchanged in `supabase/old/`; never run it after the fresh install. `docs/supabase/README.md` is the deployment entry point. `npm run test:sql` / `scripts/verify-supabase.mjs` validates the six files on ephemeral PostgreSQL/PGlite with explicit Auth/Storage fixtures; hosted services still require staging acceptance. No obsolete `app_users` table is created.
+
 Cloud read optimization: `src/app/resourceCache.ts` holds account-lifetime, profile-keyed resources, deduplicates pending reads, clones snapshots, expires records at 30 seconds (profile/templates 120 seconds), and rejects/cancels invalidated in-flight loads. `src/supabase.ts` clears cache on auth owner changes; `apiTransport.ts` bounds requests to six per client and enforces abortable queue/request deadlines without adding a mutation retry loop. Confirmed cloud mutations patch or invalidate the affected cache; imports clear all affected resources. Export bypasses cache. `useProfileData.ts` uses `cloudDb.readRecent` for startup, then gates History/Calendar/Analytics behind complete history loading. Local Dexie remains unchanged. `20261123_read_record_pages.sql` adds invoker/RLS-protected GET RPC keyset pages containing child records, with a compatible legacy-read fallback only for a missing RPC. Recent mode includes active and latest performed workout, plus linked measurements. It is not yet server-filtered per analytics/calendar period; complete history is still required there. Version-conflict handling and mutation idempotency ledgers remain future work, not claimed implemented.
 
 Load/performance checks: `npm run test:load` uses `vitest.performance.config.ts` and `src/performance/cloud-load.perf.ts`, excluded from ordinary tests. It exercises the real cloud adapter/Supabase HTTP client against a loopback synthetic API with 5–125 actors, pagination, repeated reads, targeted writes and 503s. It never targets a real project and does not validate PostgreSQL/RLS or write durability. Findings, retained measurements, staging acceptance steps and read-only database diagnostics are in `docs/performance/`.
@@ -14,25 +18,25 @@ Body Reconstruction is a React + TypeScript single-page app built with Vite. Sup
 
 ## Quick Navigation
 
-Polish/English UI: start at `src/i18n/config.ts`, `translations.ts` and `LanguageProvider.tsx` (above AuthGate/App). Language selection lives in `src/profile/LanguageSettings.tsx`, with focused writes in `src/account/accountRepository.ts`. See `docs/I18N_PL_EN_DEPLOYMENT.md` for behaviour and deployment; apply `supabase/migrations/20261122_profile_language.sql` before the frontend. Dexie v8 preserves Polish for existing profiles. Internal navigation IDs/URLs and backup v6 stay unchanged; translate display labels, never user-owned text or identifiers. Tests: `src/i18n/` and `e2e/i18n.spec.ts`.
+Polish/English UI: start at `src/i18n/config.ts`, `translations.ts` and `LanguageProvider.tsx` (above AuthGate/App). Language selection lives in `src/profile/LanguageSettings.tsx`, with focused writes in `src/account/accountRepository.ts`. See `docs/I18N_PL_EN_DEPLOYMENT.md` for behaviour and deployment; apply `supabase/old/migrations/20261122_profile_language.sql` before the frontend. Dexie v8 preserves Polish for existing profiles. Internal navigation IDs/URLs and backup v6 stay unchanged; translate display labels, never user-owned text or identifiers. Tests: `src/i18n/` and `e2e/i18n.spec.ts`.
 
 `e2e/today-language.spec.ts` covers the Today greeting and dashboard heading during live PL/EN switching, returning to the account language selector and reloading a saved preference. User/profile and saved plan names remain unchanged.
 
 | Task | Start here | Related modules |
 |---|---|---|
 | Compose app, select views, wire persistence/actions | `src/main.tsx` | `src/app/`, `src/views/` |
-| Account profile settings and tracked body areas | `src/views/ProfileSettingsView.tsx` | `src/domain.ts`, `src/db.ts`, `src/cloudDb.ts`, `supabase/migrations/20261116_account_profile_settings.sql`, `supabase/migrations/20261118_rehab_site_archiving.sql` |
-| Account identity, avatar and security | `src/views/AccountProfileView.tsx`, `src/profile/`, `src/app/AccountMenu.tsx` | `src/account/accountRepository.ts`, `supabase/migrations/20261119_account_profile.sql`, `supabase/functions/delete-account/index.ts` |
-| Injury episodes and report associations | `src/views/ProfileSettingsView.tsx`, `src/views/DiaryView.tsx` | `src/domain.ts`, `src/cloudDb.ts`, `supabase/migrations/20261117_injuries_analytics.sql` |
+| Account profile settings and tracked body areas | `src/views/ProfileSettingsView.tsx` | `src/domain.ts`, `src/db.ts`, `src/cloudDb.ts`, `supabase/old/migrations/20261116_account_profile_settings.sql`, `supabase/old/migrations/20261118_rehab_site_archiving.sql` |
+| Account identity, avatar and security | `src/views/AccountProfileView.tsx`, `src/profile/`, `src/app/AccountMenu.tsx` | `src/account/accountRepository.ts`, `supabase/old/migrations/20261119_account_profile.sql`, `supabase/functions/delete-account/index.ts` |
+| Injury episodes and report associations | `src/views/ProfileSettingsView.tsx`, `src/views/DiaryView.tsx` | `src/domain.ts`, `src/cloudDb.ts`, `supabase/old/migrations/20261117_injuries_analytics.sql` |
 | User progress analytics | `src/views/AnalyticsView.tsx`, `src/analytics.ts`, `src/analytics/` | `metrics.ts`, `matching.ts`, `useAnalyticsNavigation.ts`, `WorkoutResponseView.tsx`, `TrainingDoseView.tsx`, `AreaAnalysisView.tsx`, `src/analytics.test.ts` |
 | Profile-scoped loading and storage adapters | `src/app/useProfileData.ts`, `src/app/repository.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/profileRepository.ts` |
 | Startup/loading screen and authentication lifecycle | `src/app/LoadingScreen.tsx`, `src/app/watchAuthSession.ts` | `src/AuthGate.tsx`, `src/main.tsx`, `src/styles/loading.css`, `src/authSession.test.ts` |
 | Diary values and context options | `src/app/usePainLogActions.ts`, `src/views/DiaryView.tsx`, `src/PainSlider.tsx` | `src/domain.ts`, `src/Calendar.tsx`, `src/PainCharts.tsx`, `src/views/HistoryView.tsx` |
 | Navigation and URL view state | `src/app/navigation.ts`, `src/app/useNavigation.ts` | `src/app/AppNavigation.tsx`, `src/main.tsx` |
 | Workouts, plans, exercise timers | `src/Plans.tsx`, `src/views/WorkoutView.tsx`, `src/SessionFields.tsx` | `src/app/useWorkoutActions.ts`, `src/domain.ts`, `src/intervalTimer.ts`, `src/views/HistoryView.tsx`, `src/PainSlider.tsx` |
-| Unilateral HSR timing and side changes | `src/intervalTimer.ts`, `src/UnilateralTimerFields.tsx` | `src/HsrTimer.tsx`, `src/ExerciseTimer.tsx`, `src/Plans.tsx`, `supabase/migrations/20261120_unilateral_timer.sql` |
+| Unilateral HSR timing and side changes | `src/intervalTimer.ts`, `src/UnilateralTimerFields.tsx` | `src/HsrTimer.tsx`, `src/ExerciseTimer.tsx`, `src/Plans.tsx`, `supabase/old/migrations/20261120_unilateral_timer.sql` |
 | Data validation, schemas, backup compatibility | `src/domain.ts` | `src/db.ts`, `src/cloudDb.ts`, `src/app/useBackupActions.ts` |
-| Database schema and migrations | `supabase/bootstrap.sql` | `supabase/migrations/`, `docs/supabase/README.md` |
+| Database schema and installation | `supabase/001_schema.sql` | `002_catalog.sql`–`006_verify.sql`, `docs/supabase/README.md`; historical SQL in `supabase/old/` |
 | Global styles and responsive behavior | `src/style.css` | `src/styles/tokens.css`, `shell.css`, `forms.css`, `responsive.css`, `views.css`, `timer.css` |
 | App icons, PWA metadata and Pages artifact integrity | `public/icon.svg`, `scripts/generate-icons.mjs`, `scripts/verify-pages.mjs` | `vite.config.ts`, `index.html`, `.github/workflows/pages.yml`, `e2e/pages-assets.spec.ts` |
 
@@ -88,7 +92,7 @@ The explicit refresh action in `src/AppUpdater.tsx` activates the waiting worker
 
 `npm run verify:pages -- /body-reconstruction-20/` checks generated HTML references, lazy JS/CSS imports, PNG dimensions, manifest base/scope/id, precached files and accidental source/environment/privileged-key inclusion. The workflow runs its regression tests and verifies both `dist` and the copied publication directory before committing. Only generated assets belong to `gh-pages`; do not merge source branches into it. See `docs/PAGES_ASSETS.md` for the prepared local worktree and publication rules.
 
-For an existing project, apply the migration sequence in `docs/supabase/README.md`, ending with `20261121_analytics_links.sql`. Migrations are applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. New projects use `supabase/bootstrap.sql` and then the documented migrations.
+New projects use the six numbered installation files documented in `docs/supabase/README.md`. Existing projects are not reset by repository file moves and must not run this fresh installer. SQL is applied manually in Supabase SQL Editor; GitHub Pages deployment does not modify the database. Archived migrations are retained for carefully selected existing-project upgrades only.
 
 ## Checks
 

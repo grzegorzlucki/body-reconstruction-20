@@ -3,7 +3,7 @@
 ## Deployment order
 
 1. Back up the Supabase project as usual.
-2. Run the complete file `supabase/migrations/20261122_profile_language.sql` in Supabase SQL Editor. This follows the existing migrations through `20261121_analytics_links.sql`. Pages does not execute SQL.
+2. Run the complete file `supabase/old/migrations/20261122_profile_language.sql` in Supabase SQL Editor. This follows the existing migrations through `20261121_analytics_links.sql`. Pages does not execute SQL.
 3. Deploy the frontend through the existing GitHub Actions workflow. No additional environment variables, translation API keys or secrets are needed.
 4. Activate the updated PWA with **Odśwież aplikację / Refresh application**. Both dictionaries are bundled and cached with the application.
 
