@@ -1,116 +1,127 @@
 # Body Reconstruction
 
-## Dokumentacja i instrukcje pracy
+A personal rehabilitation and activity diary built with React, TypeScript and Vite. Track workouts, pain measurements, injury episodes and progress in Polish or English.
 
-Dokumentacja projektu znajduje się w `docs/`. Przed zmianą kodu przeczytaj [instrukcje repozytorium](docs/AGENTS.md), [mapę architektury](docs/architecture.md) i [zasady kodowania](docs/CODE_PRACTICES.md).
+[Open the application](https://grzegorzlucki.github.io/body-reconstruction-20/)
 
-- [Weryfikacja aplikacji](docs/TESTOWANIE.md)
-- [Konfiguracja i migracje Supabase](docs/supabase/README.md)
-- [Ikony PWA i kontrola plików GitHub Pages](docs/PAGES_ASSETS.md)
-- [Plan zmian UI i wyniki weryfikacji](docs/UI_REFINEMENT_PLAN.md)
+## Documentation
 
-Lokalne skille znajdują się w `docs/skills/` i zachowują strukturę katalogów wraz z plikami pomocniczymi. Instrukcje `docs/AGENTS.md` trzeba wskazać narzędziu, jeśli automatycznie odczytuje ono wyłącznie `AGENTS.md` z katalogu głównego.
+Project documentation lives in `docs/`. Before changing code, read the [repository instructions](docs/AGENTS.md), [architecture map](docs/architecture.md) and [coding practices](docs/CODE_PRACTICES.md).
 
-[Otwórz aplikację](https://grzegorzlucki.github.io/body-reconstruction-20/)
+- [Testing and verification](docs/TESTOWANIE.md)
+- [Supabase setup and migrations](docs/supabase/README.md)
+- [PWA icons and Pages artifact checks](docs/PAGES_ASSETS.md)
+- [UI refinement plan](docs/UI_REFINEMENT_PLAN.md)
+- [Polish and English deployment](docs/I18N_PL_EN_DEPLOYMENT.md)
 
-Profil konta otwiera się z menu użytkownika w prawym górnym rogu na komputerze lub przez **Więcej → Profil** na telefonie. Sekcje obejmują dane osobowe i zdjęcie, rehabilitację, bezpieczeństwo, preferencje, dane oraz aktualizacje aplikacji. Plany na telefonie są dostępne bezpośrednio w dolnym pasku i przez **Trening → Moje plany**. Strona „Dzisiaj” wita nazwą profilu i udostępnia trening oraz pomiar bólu obok siebie na szerokim ekranie. Przed wdrożeniem zapisu danych konta i awatara zastosuj `supabase/old/migrations/20261119_account_profile.sql`; usunięcie konta wymaga dodatkowo wdrożenia funkcji `delete-account`, zgodnie z [instrukcją Supabase](docs/supabase/README.md).
+Local skill packages live in `docs/skills/` with their supporting files. Tools that only discover a root-level AGENTS.md must be explicitly directed to `docs/AGENTS.md`.
 
-Osobisty dziennik aktywności: zapis serii, monitoring samopoczucia, historia oraz kalendarz miesięczny. React + TypeScript + Vite. Dane konta są przechowywane w Supabase; dotychczasowe dane lokalne można przenieść z IndexedDB.
+## Features
 
-## Prywatność
+- **Today:** a profile greeting, compact progress summaries, workout continuation and pain check-in.
+- **Workouts and plans:** named templates, exercise ordering, copying, notes, weights, repetitions and 1-10 sets per exercise. The exercise catalog includes 30 lower-body exercises with search and equipment filters. Loads are entered manually; replacing an exercise does not copy its load from a different machine.
+- **Workout history:** every session keeps its own plan snapshot. Editing or deleting a template does not change previous sessions. Resume an active workout, finish an exercise early or save a partial workout after confirming the summary. Unperformed sets remain unmarked. Add historical workouts from Workout or History.
+- **Other activities:** record running or another activity without artificial sets. Optionally link a saved plan so it counts towards the weekly goal. Strength workouts and other activities are also counted separately; pain reports can be linked afterwards.
+- **Diary:** record multiple pain measurements per day using accessible 0-10 sliders, date, time, context and optional notes. Link reports explicitly to workouts, workout phases and injuries. An optional post-workout pain report is also available when finishing a session.
+- **History charts:** measurements appear beside their charts on wide screens and below them on mobile. Hover, touch and keyboard selection link the exact report to its chart points. The first 50 measurements are shown initially; load more when needed.
+- **Calendar:** select a day to see separate workout and pain sections. On desktop, the calendar sits beside day details. Markers distinguish completed workouts, measurements and ongoing sessions.
+- **Analyses:** Overview, Timeline, Workout response, Dose and regularity, and Areas and injuries. Filter by date, area, injury, context, phase, plan and exercise. Timeline overlays selectable area-specific daily pain medians with workout count, completed sets or activity duration on separate axes. Missing pain remains missing, and daily readouts support mouse, touch and keyboard. The comparison chart displays up to 366 days; narrow the range for longer histories. Temporal associations do not establish causation.
+- **Profile:** each authenticated account has one database-backed profile with a display name, avatar, weekly workout target, default check-in time, rehabilitation areas, diary contexts and injury episodes. Selecting an area for an injury also adds it to monitoring. Areas can be deactivated or archived while historical values remain available.
+- **HSR timer:** configurable preparation, three movement phases, repetitions, sets, rests, sound, pause and resume. Zero skips a phase; at least one movement phase must have positive duration. Preparation appears before the first set and during the final part of each rest. No rest follows the last set.
+- **Unilateral exercises:** complete repetitions on the first side, prepare to switch, complete the other side and then rest. One set includes both sides; the first side and switch preparation are configurable.
+- **Exercise timers:** optionally save a timer with each exercise in a plan. Its configuration is copied into sessions, preserving history after plan edits. Completed and interrupted exercise states survive reloads; an active countdown must be restarted. The standalone timer does not mark workout sets complete.
+- **Backups:** JSON export version 7 includes profile settings, injuries, report links, templates, session snapshots and external activities. Earlier backup formats remain importable. Standalone timer preferences are excluded; exercise-specific timer settings are included.
 
-- Repozytorium i interfejs są publiczne. Nie zawierają indywidualnej dokumentacji medycznej ani danych użytkownika.
-- Początkowe dawki są neutralnym szablonem (0 kg dodatkowego obciążenia). Własne wartości wpisuje się w aplikacji; nie są wysyłane do GitHuba.
-- Po skonfigurowaniu Supabase wpisy konta są przechowywane w jego bazie danych. Wpisy z poprzedniej wersji mogą pozostać lokalnie w przeglądarce do czasu ich ręcznego usunięcia.
-- Lokalna kopia i eksport JSON **nie są szyfrowane hasłem**. Nie publikuj eksportów ani nie przechowuj rzeczywistych wpisów na współdzielonym profilu przeglądarki.
-- Dokumenty prywatne, eksporty, katalog narzędzi i dane testów są wyłączone z Git. Do hostingu trafia wyłącznie katalog `dist`.
-- Zmiana adresu strony, telefonu lub przeglądarki oznacza inną lokalną bazę. Kopie JSON umożliwiają ręczne przeniesienie danych.
+The app displays recorded pain without automatic progression or regression prescriptions. Users decide their training loads.
 
-## Uruchomienie lokalne
+## Navigation and language
 
-Node.js 22.12 lub nowszy LTS:
+On desktop, open the account menu at the top right. On mobile, use **More > Profile**. Profile sections cover personal details, rehabilitation, security, preferences, data and updates. Plans are accessible from the bottom navigation and **Workout > My plans**.
+
+Choose **Polski**, **English** or **Automatic** on the sign-in screen or under **Profile > Preferences**. Changing language preserves timers and unsaved input. User-created names, notes and history are not translated.
+
+Views use `?view=...` URLs and support browser Back navigation. Previously downloaded app views can open offline, but cloud account reads and writes require a connection to Supabase.
+
+## Privacy and storage
+
+- The repository and application shell are public. User records are stored in Supabase, not committed to GitHub.
+- Initial templates use neutral loads: 0 kg of additional weight. Enter personal values in the app.
+- Older local records may remain in the browser's IndexedDB until manually removed. A different browser, device or site origin has a separate local database.
+- Local storage and exported JSON backups are **not password-encrypted**. Do not publish exports or use a shared browser profile for private records.
+- Private documents, exports, local tools and test artifacts are excluded from Git. Only `dist` is published.
+- The Data section can import a local profile into the account profile. Import replaces destination profile data transactionally while keeping the local copy. Export a backup first.
+- Failed cloud writes are reported; offline changes are not silently treated as saved to Supabase.
+
+## Local development
+
+Use Node.js 22.12 or a newer supported LTS release:
 
 ```powershell
 npm ci
+npm run dev
+```
+
+For a production preview:
+
+```powershell
 npm run build
 npm run preview -- --port 4173
 ```
 
-Otwórz http://localhost:4173. Na komputerze, na którym przygotowano projekt, można też użyć `powershell -ExecutionPolicy Bypass -File .\START.ps1`. Tryb programistyczny: `npm run dev`.
+Open http://localhost:4173. The original development machine can also use `powershell -ExecutionPolicy Bypass -File .\START.ps1`.
 
-## GitHub Pages
+Copy `.env.example` to `.env.local` and set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. These values are public browser configuration. Never pass `SUPABASE_SECRET_KEY` or a service-role key to Vite or GitHub Pages.
 
-Zakładka **Analizy** porównuje zapisane raporty bólu i ukończone treningi; na stronie „Dzisiaj” dostępne jest ich krótkie podsumowanie. Kontuzje i ich powiązane obszary konfiguruje się w ustawieniach profilu, a raport można przypisać do jednej lub kilku kontuzji.
+## Supabase
 
-Analizy mają widoki **Przegląd**, **Oś czasu**, **Reakcja po treningu**, **Dawka i regularność** oraz **Obszary i kontuzje**. Dziennik zapisuje kilka pomiarów dziennie i pozwala jawnie powiązać je z sesją i fazą treningu. Przed wdrożeniem tej wersji uruchom w Supabase SQL Editor cały plik [`20261121_analytics_links.sql`](supabase/old/migrations/20261121_analytics_links.sql), po wcześniejszych migracjach opisanych w [instrukcji bazy](docs/supabase/README.md). Sam deploy nie aktualizuje bazy.
+For an **empty project**, run these complete SQL files in order:
 
-Widoki aplikacji używają adresów `?view=...`, dzięki czemu przycisk Wstecz działa między zakładkami. Na telefonie cztery główne widoki są w dolnej nawigacji, a Historia, Kalendarz, Zegar HSR i Dane znajdują się pod **Więcej**. Strona startowa oraz widoki otwarte z parametrem `view` działają także po ponownym uruchomieniu aplikacji offline, jeżeli nowa wersja została wcześniej pobrana.
+1. `supabase/001_schema.sql`
+2. `supabase/002_catalog.sql`
+3. `supabase/003_functions.sql`
+4. `supabase/004_rls.sql`
+5. `supabase/005_storage.sql`
+6. `supabase/006_verify.sql` (expects `Installation checks passed`)
+7. `supabase/007_external_activities.sql`
+8. `supabase/008_optional_monitoring.sql`
 
-### Supabase
+File 007 adds external activities and version-7 imports. File 008 allows all monitored areas to be inactive without deleting areas or historical measurements.
 
-Możliwość wyłączenia monitorowania wszystkich obszarów wymaga nowej migracji `supabase/008_optional_monitoring.sql`. Nie usuwa ona obszarów ani historycznych pomiarów.
+**Do not reinstall a working database using the fresh-install scripts.** Existing installations should apply only the missing upgrades described in the [Supabase guide](docs/supabase/README.md). `supabase/old/` contains archived migrations and repair scripts, not an additional installation sequence. Frontend deployment does not migrate the database.
 
-Obsługa innych aktywności (np. biegania) wymaga `supabase/007_external_activities.sql`. W istniejącej, aktualnej bazie uruchom tylko ten nowy plik; w nowym projekcie wykonaj go po plikach 001–006. Kopie zapasowe są eksportowane w wersji 7, z obsługą importu wcześniejszych wersji.
+For older installations, the archive contains migrations for exercise timers (`20261115_exercise_timers.sql`), account details and avatars (`20261119_account_profile.sql`), unilateral timing (`20261120_unilateral_timer.sql`), analytics links (`20261121_analytics_links.sql`) and account language (`20261122_profile_language.sql`). Follow their prerequisites in the database guide. Account deletion additionally requires deployment of the `delete-account` Edge Function.
 
-Nowa baza: uruchom kolejno pełne pliki `supabase/001_schema.sql` → `002_catalog.sql` → `003_functions.sql` → `004_rls.sql` → `005_storage.sql` → `006_verify.sql`. Ostatni powinien zwrócić `Installation checks passed`. Archiwum `supabase/old/` nie jest częścią tej instalacji. Szczegóły i konfiguracja Auth/Storage: [instrukcja Supabase](docs/supabase/README.md).
+Configure Supabase Auth redirect URLs for email confirmation and password resets. Email-template language is configured separately from the interface language; see the [language deployment guide](docs/I18N_PL_EN_DEPLOYMENT.md).
 
-Starsze pliki `*_rls_repair.sql` służyły do doraźnych napraw. Nie są częścią instalacji nowej bazy i nie należy ich uruchamiać automatycznie.
+## GitHub Pages and updates
 
-Nowe pliki instalacyjne są przeznaczone wyłącznie dla pustego projektu. Działającej bazy nie instaluj ponownie; stare migracje zachowano w `supabase/old/` do świadomych aktualizacji starszych wersji. W Supabase Auth ustaw adres strony jako dozwolony adres przekierowania dla potwierdzenia e-mail i resetu hasła.
+In **Settings > Secrets and variables > Actions > Variables**, set `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`. The workflow requires both.
 
-W GitHub **Settings → Secrets and variables → Actions → Variables** ustaw `VITE_SUPABASE_URL` i `VITE_SUPABASE_PUBLISHABLE_KEY`. Workflow wymaga obu wartości. Są publiczne i trafiają do kodu przeglądarki. Lokalnie skopiuj `.env.example` do `.env.local` i uzupełnij te same wartości. Nigdy nie przekazuj `SUPABASE_SECRET_KEY` do Vite ani GitHub Pages.
+The workflow in `.github/workflows/pages.yml` tests and builds with base path `/body-reconstruction-20/`, publishes only the output to `gh-pages` and triggers Pages deployment. In **Settings > Pages**, choose **Deploy from a branch > gh-pages > /(root)**. Publication runs after changes to `main` or a manual Actions run. `.nojekyll` prevents Jekyll processing of the built files.
 
-Po zalogowaniu w zakładce **Dane** można przenieść wybrany lokalny profil do profilu konta. Import zastępuje dane profilu docelowego w jednej transakcji; lokalna kopia pozostaje na urządzeniu. Wykonaj eksport JSON przed migracją. Brak sieci uniemożliwia zapis do Supabase; aplikacja wyświetla błąd zapisu.
+Free GitHub Pages hosting requires a public repository. Check the workflow result if the new version is not visible at [the application URL](https://grzegorzlucki.github.io/body-reconstruction-20/).
 
-Workflow `.github/workflows/pages.yml` testuje i buduje aplikację z bazą `/body-reconstruction-20/`, następnie zapisuje sam wynik w gałęzi `gh-pages` i zleca natywną budowę Pages. Konfiguracja repozytorium: **Settings → Pages → Source: Deploy from a branch → gh-pages → /(root)**. Publikacja uruchamia się po zmianach gałęzi main lub ręcznie w Actions. Plik `.nojekyll` wyłącza przetwarzanie gotowych plików przez Jekyll.
+**Refresh application** checks for an update, activates the downloaded offline version and reloads without deleting the local database. It needs internet and is unavailable while saving. Storage restrictions may prevent service-worker updates; do not clear site data without backing up local records. Destructive actions and leaving unsaved forms require confirmation.
 
-Darmowy GitHub Pages wymaga publicznego repozytorium. Adres aplikacji: [https://grzegorzlucki.github.io/body-reconstruction-20/](https://grzegorzlucki.github.io/body-reconstruction-20/). Sprawdź wynik workflow, jeśli nowa wersja nie jest jeszcze widoczna.
+On iPhone, open the HTTPS URL in Safari and choose **Share > Add to Home Screen**. Keep the timer visible during use. Sound, screen wake-lock and offline behaviour require verification on a real device. Closing or reloading the page does not resume an active countdown.
 
-Na iPhonie otwórz adres HTTPS w Safari → Udostępnij → Dodaj do ekranu początkowego. Pliki aplikacji są dostępne offline, ale zapis danych konta wymaga połączenia z Supabase. Przycisk „Odśwież aplikację” znajduje się w pasku bocznym na komputerze i nad treścią na telefonie. Sprawdza aktualizację, aktywuje nową wersję offline i przeładowuje aplikację bez kasowania lokalnej bazy. Wymaga internetu; podczas zapisu danych jest niedostępny. Profile settings are available in the Settings tab. Usuwanie danych i opuszczanie niezapisanych formularzy wymaga potwierdzenia w aplikacji; zamknięcie karty z niezapisanymi zmianami wywołuje ostrzeżenie przeglądarki. Zachowanie na rzeczywistym Safari wymaga sprawdzenia na urządzeniu.
-
-## Korzystanie
-
-Zegar HSR obsługuje tryb **Ćwiczenie jednostronne — obie strony po kolei**: wykonuje wszystkie powtórzenia na pierwszą stronę, odlicza przygotowanie do zmiany strony, wykonuje powtórzenia na drugą stronę i dopiero rozpoczyna przerwę. Można wybrać pierwszą stronę i czas przygotowania. Jedna seria obejmuje obie strony. Opcja jest dostępna także w zegarze ćwiczenia w planie. Dla zapisu ustawień samodzielnego zegara w Supabase uruchom `supabase/old/migrations/20261120_unilateral_timer.sql`.
-
-W zakładce **Trening → Moje plany** można uruchomić zapisany plan albo wczytać go do dostosowania. Podczas edycji planu przy każdym ćwiczeniu można opcjonalnie włączyć zegar HSR i ustawić czasy ruchu, przygotowania, przerwy oraz dźwięk. Zegar używa liczby serii i powtórzeń zapisanych przy ćwiczeniu. Podczas wykonywania dostępne są pauza, wznowienie, wcześniejsze zakończenie i przerwanie ćwiczenia; niewykonane serie nie są automatycznie oznaczane jako wykonane. Konfiguracja zegara jest kopiowana do sesji, więc późniejsza edycja planu nie zmienia historii. Po ponownym otwarciu strony ukończone i przerwane ćwiczenia zachowują status, a rozpoczęte odliczanie trzeba uruchomić ponownie.
-
-Dla starszej bazy archiwalna migracja tej funkcji to `supabase/old/migrations/20261115_exercise_timers.sql` po wcześniejszych migracjach. Bez tej migracji zapisy planów i sesji z zegarem nie będą działać.
-
-W zakladce Trening ukladasz plany nalezace do profilu konta. W Supabase plany sa przypisane do jednego profilu konta; lokalne profile mozna wybrac jako zrodlo migracji w zakladce Dane. Rozpoczecie treningu zapisuje osobna kopie planu w historii.
-
-- Plany: własne szablony (np. Lower A / Lower B), kopiowanie, kolejność ćwiczeń, 1–10 serii, powtórzenia, ciężar i notatki. Dotychczasowy zestaw pozostaje jako „Plan początkowy”.
-- Baza: 30 ćwiczeń nóg z wyszukiwarką i filtrem sprzętu. Ćwiczenia z gumą mają pole notatki na opis oporu; ćwiczenia jednostronne opisują powtórzenia na stronę.
-- Trening: wybór szablonu i modyfikacje tylko na tę sesję; zamiana jest dostępna również po rozpoczęciu. Nowe ćwiczenie po zamianie ma puste obciążenie i powtórzenia — nie przenosimy kilogramów z innej maszyny. Wpisy serii dla obu kończyn są wspólne; rozpoczętą sesję można wznowić. Ćwiczenie bez zegara można zakończyć wcześniej. Trening można zapisać z mniejszą liczbą serii po potwierdzeniu podsumowania; niewykonane serie pozostają niezaznaczone w historii.
-- Każda sesja zachowuje własną kopię planu. Edycja lub usunięcie szablonu nie zmienia historii. Obciążenia ustawia się ręcznie. Przed rozpoczęciem widać monitor bólu po ostatnim ukończonym treningu: check-in przed treningiem z tego samego dnia i poranne wpisy z dwóch kolejnych dni (około 24 i 48 h). Braki są oznaczone jako brak danych. Odstęp między treningami jest widoczny, ale nie blokuje rozpoczęcia ani zapisu.
-- Historia: dodawanie wcześniejszych treningów, edycja i usuwanie zapisów oraz filtr według ćwiczenia. Trzy osobne wykresy liniowe bólu (ostatnie 14 pomiarów, skala 0–10) pozwalają odczytywać datę, godzinę i wartość przesunięciem palca, myszą lub strzałkami. Odstępy na osi odpowiadają dniom; linia przerywana oznacza lukę w pomiarach.
-- Kalendarz: zielona kropka oznacza ukończony trening, pomarańczowa pomiar, obwódka trening w trakcie. Wybrany dzień otwiera formularze.
-- Dziennik: codzienna ocena bólu suwakiem 0–10 z datą, godziną i kontekstem. Wpisy można poprawić lub usunąć. Przy kończeniu treningu można opcjonalnie ocenić ból w monitorowanych obszarach; pomiar zostanie dodany do Dziennika.
-- Zegar HSR: konfigurowalne przygotowanie, trzy fazy (Ruch 1 / Zatrzymanie / Ruch 2), powtórzenia, serie i przerwy. Wartość 0 pomija fazę; co najmniej jedna faza musi trwać dłużej niż 0 s. Piknięcia co sekundę lub cisza, pauza i wznowienie, automatyczny zapis ustawień na urządzeniu. Odliczanie trwa po zmianie zakładki aplikacji, ale nie jest wznawiane po zamknięciu lub przeładowaniu strony. Przygotowanie przed pierwszą serią i w końcówce każdej przerwy, bez przerwy po ostatniej. Zegar nie zapisuje wykonanych serii w dzienniku treningu. Podczas używania pozostaw aplikację na ekranie; dźwięk i podtrzymywanie ekranu na rzeczywistym iPhonie wymagają próby na urządzeniu. Ogólne ustawienia zegara nie wchodzą do eksportu; ustawienia przypisane do ćwiczeń w planach i sesjach są eksportowane.
-- Profile: each Supabase account has one database-backed profile with configurable name, weekly workout goal, check-in time, rehabilitation areas, diary contexts, and injury episodes. Reports can be linked to injuries. The Analyses tab summarizes diary and training data; the home screen shows a compact seven-day summary. JSON backup v6 includes profile settings, injuries, and report links; imports accept earlier versions too.
-
-Aplikacja pokazuje zapisane pomiary bólu bez automatycznych sugestii progresji lub regresji. Decyzję o obciążeniu podejmuje użytkownik.
-
-## Testowanie
+## Verification
 
 ```powershell
 npm test
+npm run test:sql
 npm run build
 npx playwright install chromium
 npx playwright test
 ```
 
-Test wersji z podkatalogiem GitHub Pages:
+For the GitHub Pages subdirectory build:
 
 ```powershell
 $env:VITE_BASE_PATH = '/body-reconstruction-20/'
 npm run build
 npx playwright test
+Remove-Item Env:VITE_BASE_PATH
 ```
 
-Po teście usuń zmienną poleceniem `Remove-Item Env:VITE_BASE_PATH`, aby wrócić do lokalnej ścieżki głównej. Szczegóły w [TESTOWANIE.md](docs/TESTOWANIE.md).
-
-## Polish and English
-
-Choose **Polski**, **English**, or **Automatic** on the sign-in screen or under **Profile → Preferences** (mobile: **More → Profile**). Language changes preserve running timers and unsaved input. User-created names and notes remain unchanged.
-
-Existing older databases can use [the archived language migration](supabase/old/migrations/20261122_profile_language.sql). See [deployment and verification](docs/I18N_PL_EN_DEPLOYMENT.md), including the separate Supabase email-template setup.
+`npm run test:sql` verifies the installation against an ephemeral PostgreSQL/PGlite environment with Auth/Storage fixtures; it does not replace hosted-service acceptance testing. `npm run test:load` uses a synthetic loopback API, not production Supabase. See [testing documentation](docs/TESTOWANIE.md) and [performance findings](docs/performance/) for scope and limitations.
