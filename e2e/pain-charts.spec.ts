@@ -40,7 +40,7 @@ test("trzy wykresy liniowe: brak danych, wartości, klawiatura i przesuwanie pal
       ),
     });
   await confirmInApp(page);
-  await expect(page.getByRole("status")).toContainText("Kopia odtworzona");
+  await expect(page.locator(".toast-region")).toContainText("Kopia odtworzona");
   await openTab(page, "Historia");
   await expect(page.getByRole("slider")).toHaveCount(3);
   const achilles = page.getByRole("slider", {
@@ -92,6 +92,16 @@ test("trzy wykresy liniowe: brak danych, wartości, klawiatura i przesuwanie pal
   await page.setViewportSize({width:1440,height:900});
   const region=page.getByRole("region",{name:"Wykres: Achilles",exact:true});
   const compactWidth=(await region.locator("svg").boundingBox())!.width;
+  const list=page.locator(".history-measurement-list");
+  const chartBox=(await region.boundingBox())!, listBox=(await list.boundingBox())!;
+  expect(listBox.x).toBeGreaterThan(chartBox.x+chartBox.width);
+  const second=region.locator("circle").nth(1), third=region.locator("circle").nth(2);
+  const secondId=await second.getAttribute("data-log-id"), thirdId=await third.getAttribute("data-log-id");
+  const row=list.locator(`[data-log-id="${secondId}"]`);
+  await row.hover();
+  await expect(second).toHaveAttribute("data-linked-selected","true");
+  await third.hover();
+  await expect(list.locator(`[data-log-id="${thirdId}"]`)).toHaveClass(/measurement-highlighted/);
   expect(compactWidth).toBeLessThanOrEqual(450);
   await region.getByRole("button",{name:"Powiększ wykres",exact:true}).click();
   expect((await region.locator("svg").boundingBox())!.width).toBeGreaterThan(compactWidth);
@@ -104,7 +114,7 @@ test("trzy wykresy liniowe: brak danych, wartości, klawiatura i przesuwanie pal
   await pht.focus();
   await pht.press("Home");
   await expect(pht).toHaveAttribute("aria-valuetext", /1\/10/);
-  await expect(achilles).toHaveAttribute("aria-valuenow", "3");
+  await expect(achilles).toHaveAttribute("aria-valuenow", "0");
   await expect
     .poll(() =>
       page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
@@ -137,7 +147,7 @@ test("pojedynczy pomiar pozostaje widoczny jako punkt bez NaN", async ({
       ),
     });
   await confirmInApp(page);
-  await expect(page.getByRole("status")).toContainText("Kopia odtworzona");
+  await expect(page.locator(".toast-region")).toContainText("Kopia odtworzona");
   await openTab(page, "Historia");
   const chart = page.getByRole("slider", {
     name: "Pomiar bólu: Achilles",

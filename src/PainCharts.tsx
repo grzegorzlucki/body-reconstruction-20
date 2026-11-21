@@ -27,23 +27,29 @@ function PainChart({
   site,
   color,
   daily,
+  selectedLogId,
+  onSelectLog,
 }: {
   logs: PainLog[];
   site: RehabSite;
   color: string;
   daily: boolean;
+  selectedLogId?: string | null;
+  onSelectLog?: (id: string) => void;
 }) {
   useTranslation();
   const svg = useRef<SVGSVGElement>(null);
   const [expanded,setExpanded] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const effectiveId = selectedLogId && logs.some(log=>log.id===selectedLogId) ? selectedLogId : selectedId;
+  function selectLog(id:string) { setSelectedId(id); onSelectLog?.(id); }
   const value = (log: PainLog) => log.values.find((item) => item.siteId === site.id)!.value;
   const selected = Math.max(
     0,
-    logs.findIndex((log) => log.id === selectedId),
+    logs.findIndex((log) => log.id === effectiveId),
   );
   const index =
-    selectedId && logs.some((log) => log.id === selectedId)
+    effectiveId && logs.some((log) => log.id === effectiveId)
       ? selected
       : logs.length - 1;
   const current = logs[index];
@@ -57,6 +63,8 @@ function PainChart({
   const describe = (log: PainLog) =>
     `${new Date(log.date + "T12:00:00").toLocaleDateString(locale())} · ${daily ? "Mediana dnia" : new Date(log.at).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })} · ${value(log)}/10`;
   function selectAt(event: PointerEvent<SVGSVGElement>) {
+    const target = event.target as SVGElement;
+    if (target.dataset.logId) { selectLog(target.dataset.logId); return; }
     const matrix = svg.current?.getScreenCTM();
     if (!matrix || !logs.length) return;
     const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(
@@ -69,7 +77,7 @@ function PainChart({
           : best,
       0,
     );
-    setSelectedId(logs[nearest].id);
+    selectLog(logs[nearest].id);
   }
   function onKeyDown(event: KeyboardEvent<SVGSVGElement>) {
     let next = index;
@@ -79,7 +87,7 @@ function PainChart({
     else if (event.key === "End") next = logs.length - 1;
     else return;
     event.preventDefault();
-    setSelectedId(logs[Math.max(0, Math.min(logs.length - 1, next))].id);
+    selectLog(logs[Math.max(0, Math.min(logs.length - 1, next))].id);
   }
   return (
     <section className={`panel pain-chart${expanded ? " chart-expanded" : ""}`} aria-label={ui("Wykres: {{v0}}",{v0: site.name})}>
@@ -169,6 +177,9 @@ function PainChart({
             {logs.map((log, i) => (
               <circle
                 key={log.id}
+                data-log-id={log.id}
+                data-linked-selected={selectedLogId === log.id ? "true" : undefined}
+                onPointerEnter={()=>selectLog(log.id)}
                 cx={x(log)}
                 cy={y(value(log))}
                 r={i === index ? 5 : 3}
@@ -218,7 +229,7 @@ function PainChart({
   );
 }
 
-export function PainCharts({ logs, sites, limit = 14, daily = false }: { logs: PainLog[]; sites: RehabSite[]; limit?: number | null; daily?: boolean }) {
+export function PainCharts({ logs, sites, limit = 14, daily = false, selectedLogId, onSelectLog }: { logs: PainLog[]; sites: RehabSite[]; limit?: number | null; daily?: boolean; selectedLogId?: string | null; onSelectLog?: (id:string)=>void }) {
   useTranslation();
   const recent = useMemo(
     () =>
@@ -237,7 +248,7 @@ export function PainCharts({ logs, sites, limit = 14, daily = false }: { logs: P
       </details>
       {sites.filter((site) => recent.some((log) => log.values.some((item) => item.siteId === site.id))).map((site) => (
         <PainChart key={site.id} logs={recent.filter((log) => log.values.some((item) => item.siteId === site.id))}
-          site={site} color="var(--color-text-secondary)" daily={daily} />
+          site={site} color="var(--color-text-secondary)" daily={daily} selectedLogId={selectedLogId} onSelectLog={onSelectLog} />
       ))}
     </section>
   );

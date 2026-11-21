@@ -1,5 +1,7 @@
 # Architecture Map
 
+History shows charts and their measurement list side by side on wide screens, stacked on smaller screens. Shared selection is keyed by the exact PainLog ID; chart pointer/keyboard selection highlights its list row, and row hover/focus selects the corresponding points across area charts. Both consume the same 50-item expandable slice so list entries never refer to omitted chart records. Analytics daily-median charts retain independent selection.
+
 Collapsed profile disclosures/catalogs mount their form/results only when opened. The diary labels preserved old session links explicitly; chart help is collapsed and measurement history uses separator rows, not bordered cards. SQL verification includes a successful zero-active-area settings save.
 
 Profile saved injury configurations use `profile/ConfigDisclosure.tsx`; new injury drafts start expanded. Area catalog results are scroll-bounded; desktop monitored areas use compact rows, with mobile stacking. Shared density rules preserve touch targets and readable labels instead of scaling the page.

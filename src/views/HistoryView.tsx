@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ui, locale } from "../i18n/config";
 import { PainCharts } from "../PainCharts";
 import { exerciseCatalog, sessionExercises, sessionPlan, completedGroups, visibleSets, type Injury, type PainLog, type Session, type RehabSite, type PainContext } from "../domain";
@@ -22,6 +22,8 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
 }) {
   useTranslation();
   const [measurementLimit,setMeasurementLimit]=useState(50);
+  const [selectedLogId,setSelectedLogId]=useState<string | null>(null);
+  const visibleLogs=useMemo(()=>[...logs].sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,measurementLimit),[logs,measurementLimit]);
   return <>
 
                 <div className="section-title">
@@ -31,14 +33,15 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                 </div>
                 <p className="intro">
                    {ui("Twoje rzeczywiste wpisy. Brak pomiaru pozostaje brakiem.")} </p>
-                <PainCharts logs={logs} sites={sites} />
-                <h2>{ui("Pomiary")}</h2>
+                <div className="history-measurement-layout">
+                <PainCharts logs={visibleLogs} sites={sites} limit={null} selectedLogId={selectedLogId} onSelectLog={setSelectedLogId} />
+                <section className="history-measurement-list" aria-label={ui("Pomiary")}><h2>{ui("Pomiary")}</h2>
                 {!logs.length && (
                   <p>
                      {ui("Jeszcze bez pomiarów. Zacznij od dzisiejszego check-inu.")} </p>
                 )}
-                {[...logs].sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,measurementLimit).map((l) => (
-                  <article className="history-row" key={l.id}>
+                {visibleLogs.map((l) => (
+                  <article className={`history-row${selectedLogId === l.id ? " measurement-highlighted" : ""}`} key={l.id} data-log-id={l.id} tabIndex={0} onPointerEnter={()=>setSelectedLogId(l.id)} onFocus={()=>setSelectedLogId(l.id)} onClick={()=>setSelectedLogId(l.id)}>
                     <div>
                       <b>
                         {fmt(l.at)} ·{" "}
@@ -66,6 +69,7 @@ export function HistoryView({ logs, sessions, sites, contexts, injuries, history
                   </article>
                 ))}
                 {logs.length>measurementLimit && <button type="button" className="secondary" onClick={()=>setMeasurementLimit(value=>value+50)}>{ui("Pokaż kolejne pomiary")}</button>}
+                </section></div>
                 <h2>{ui("Treningi")}</h2>
                 {!sessions.length && <p>{ui("Jeszcze bez treningów.")}</p>}
                 <label>
