@@ -1,5 +1,6 @@
 import { isPreference, storePreference, type LanguagePreference } from "../i18n/config";
 import { supabase } from "../supabase";
+import { invalidateResources } from "../app/resourceCache";
 import { db } from "../db";
 import { accountIdentitySchema } from "../domain";
 
@@ -14,6 +15,7 @@ export async function saveAccountIdentity(profileId: string, raw: { name: string
   });
   if (error?.code === "PGRST202") throw Error("Zastosuj migrację 20261119_account_profile.sql w Supabase SQL Editor.");
   if (error) throw error;
+  invalidateResources("profiles:");
 }
 
 export async function uploadAvatar(file: File, userId: string) {
@@ -65,6 +67,7 @@ export async function saveAccountLanguage(profileId: string, preference: Languag
           throw Error("Profile unavailable");
       }
     }
+    invalidateResources("profiles:");
     if (languageWrites.get(profileId) === write) storePreference(preference, profileId);
   });
   languageWrites.set(profileId, write);

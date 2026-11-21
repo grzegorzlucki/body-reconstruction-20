@@ -27,6 +27,8 @@ export function useProfileData(database: Database) {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [ready, setReady] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const complete = useRef(false);
+  const [historyReady, setHistoryReady] = useState(!database.readRecent);
 
   async function refresh(): Promise<Records | null> {
     const currentRequest = ++request.current;
@@ -39,7 +41,7 @@ export function useProfileData(database: Database) {
       const currentId = available.some((profile) => profile.id === profileId)
         ? profileId : available[0]?.id ?? legacyProfileId;
       if (currentId !== profileId) setProfileId(currentId);
-      const records = await withTimeout(readProfileRecords(database, currentId),
+      const records = await withTimeout(database.readRecent && !complete.current ? database.readRecent(currentId) : readProfileRecords(database, currentId),
         "Przekroczono czas pobierania danych profilu. Spróbuj ponownie.");
       if (currentRequest !== request.current) return null;
       setLogs(records.logs);
@@ -81,6 +83,17 @@ export function useProfileData(database: Database) {
     }
   }
 
-  return { profiles, setProfiles, profileId, logs, sessions, setSessions,
+  async function ensureHistory() {
+    if (complete.current || !database.readRecent) return;
+    const currentRequest = ++request.current;
+    setLoadingData(true);
+    try {
+      const records = await readProfileRecords(database, profileId);
+      if (currentRequest !== request.current) return;
+      setSessions(records.sessions); setLogs(records.logs); setTemplates(records.templates);
+      complete.current = true; setHistoryReady(true);
+    } finally { if (currentRequest === request.current) setLoadingData(false); }
+  }
+  return { profiles, setProfiles, profileId, logs, sessions, setSessions, historyReady, ensureHistory,
     templates, ready, loadingData, refresh, switchTo };
 }

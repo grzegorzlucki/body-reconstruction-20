@@ -72,7 +72,7 @@ function App({ user }: { user?: User }) {
   const [localProfiles, setLocalProfiles] = useState<Profile[]>([]);
   const [sourceProfileId, setSourceProfileId] = useState(legacyProfileId);
   const { profiles, profileId, logs, sessions, setSessions,
-    templates, ready, loadingData, refresh: refreshRecords } = useProfileData(db);
+    templates, ready, loadingData, historyReady, ensureHistory, refresh: refreshRecords } = useProfileData(db);
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const { notice, noticeId, setNotice, clearNotice } = useNotice();
@@ -279,6 +279,10 @@ function App({ user }: { user?: User }) {
     window.history.replaceState(null, "", url);
     window.dispatchEvent(new PopStateEvent("popstate"));
   }
+  const needsHistory = ["Historia", "Kalendarz", "Analizy"].includes(tab);
+  useEffect(() => {
+    if (ready && needsHistory && !historyReady) void ensureHistory().catch(cause => setError(cause instanceof Error ? cause.message : "Nie można pobrać historii."));
+  }, [ready, needsHistory, historyReady, profileId]);
   if (!ready && loadingData) return <LoadingScreen fullScreen />;
   return (
     <>
@@ -288,7 +292,7 @@ function App({ user }: { user?: User }) {
       accountId={user?.email} profileName={selectedProfile?.name} avatarPath={selectedProfile?.avatarPath} onSignOut={signOut}
       ready={ready} loadingData={loadingData} error={error} notice={notice} noticeId={noticeId} onNoticeDismiss={clearNotice}>
         {isProfileTab(tab) && <ProfileNavigation tab={tab} onNavigate={navigate} />}
-        {!ready && !["Profil", "Bezpieczeństwo", "Preferencje", "Aplikacja"].includes(tab) ? (
+        {needsHistory && !historyReady ? <>{loadingData ? <LoadingScreen /> : <p>{ui("Nie udało się załadować danych.")}</p>}<button disabled={loadingData} onClick={() => { void ensureHistory().catch(cause => setError(String(cause))); }}>{ui("Spróbuj ponownie")}</button></> : !ready && !["Profil", "Bezpieczeństwo", "Preferencje", "Aplikacja"].includes(tab) ? (
           <div>
             <p>{loadingData ? supabase ? ui("Ładowanie danych konta…") : ui("Otwieranie lokalnej bazy…") : ui("Nie udało się załadować danych.")}</p>
             {error && <button type="button" disabled={loadingData} onClick={() => { void refresh().catch((cause: unknown) => setError(cause instanceof Error ? cause.message : "Nieznany błąd")); }}>{ui("Spróbuj ponownie")}</button>}

@@ -1,4 +1,5 @@
 import { message as systemMessage } from "./i18n/config";
+import { cachedResource, invalidateResources, patchResource } from "./app/resourceCache";
 import { isPreference, readPreference, storePreference } from "./i18n/config";
 import { remapMeasurementSessions } from "./analytics/metrics";
 import { supabase } from "./supabase";
@@ -7,6 +8,24 @@ import type { Profile } from "./db";
 import { profileSettingsSchema, type ProfileSettings } from "./domain";
 
 type Row = Record<string, any>;
+async function recordPages(resource: "sessions" | "logs", profileId: string, signal?: AbortSignal, since?: string): Promise<Row[] | null> {
+  const result: Row[] = [];
+  let before: Row | undefined;
+  for (;;) {
+    const response = await client().rpc("read_record_page_v1", { target_profile: profileId, resource, page_size: 50,
+      ...(before ? { before_time: before[resource === "sessions" ? "started_at" : "measured_at"], before_id: before.id } : {}),
+      ...(since ? { since_date: since } : {}) }, { get: true }).abortSignal(signal ?? new AbortController().signal);
+    if (response.error?.code === "PGRST202" && !before) return null;
+    checked(response);
+    if (!response.data || !Array.isArray(response.data.items)) throw Error("Invalid paginated API response");
+    const items = response.data.items as Row[];
+    result.push(...items);
+    if (items.length < 50) return result;
+    const next = items.at(-1)!;
+    if (before?.id === next.id) throw Error("Invalid API cursor");
+    before = next;
+  }
+}
 const pageSize = 500;
 async function allPages(page: (start: number, end: number) => Promise<{
   data: Row[] | null; error: { message: string } | null;
@@ -18,7 +37,7 @@ async function allPages(page: (start: number, end: number) => Promise<{
     if (batch.length < pageSize) return rows;
   }
 }
-async function rowsForIds(table: string, column: string, ids: string[], order: string[]): Promise<Row[]> {
+async function rowsForIds(table: string, column: string, ids: string[], order: string[], signal?: AbortSignal): Promise<Row[]> {
   const rows: Row[] = [];
   const batches: string[][] = [];
   for (let offset = 0; offset < ids.length; offset += 50)
@@ -28,7 +47,7 @@ async function rowsForIds(table: string, column: string, ids: string[], order: s
       allPages(async (start, end) => {
         let query = client().from(table).select("*").in(column, batchIds);
         for (const field of order) query = query.order(field);
-        return await query.range(start, end);
+        return await query.range(start, end).abortSignal(signal ?? new AbortController().signal);
       })));
     for (const batch of group) rows.push(...batch);
   }
@@ -88,12 +107,12 @@ async function insertProfileWithStarter(id: string, name: string) {
   throw Error(`Tworzenie profilu: ${result.error.message}`);
 }
 
-async function profiles(): Promise<Profile[]> {
-  const owner = await userId();
+async function profiles(ownerId?: string, signal?: AbortSignal): Promise<Profile[]> {
+  const owner = ownerId ?? await userId();
   let rows: Row[];
   try {
     rows = await allPages(async (start, end) => await client().from("profiles")
-      .select("*").eq("owner_user_id", owner).order("id").range(start, end));
+      .select("*").eq("owner_user_id", owner).order("id").range(start, end).abortSignal(signal ?? new AbortController().signal));
   } catch (error) {
     throw Error(`Odczyt profili: ${error instanceof Error ? error.message : String(error)}`);
   }
@@ -106,23 +125,23 @@ async function profiles(): Promise<Profile[]> {
       if (!(error instanceof Error) || !(error.message.includes("duplicate key") || error.message.includes("already has its profile"))) throw error;
     }
     rows = await allPages(async (start, end) => await client().from("profiles")
-      .select("*").eq("owner_user_id", owner).order("id").range(start, end));
+      .select("*").eq("owner_user_id", owner).order("id").range(start, end).abortSignal(signal ?? new AbortController().signal));
     if (!rows.length) throw Error("Nie udało się utworzyć profilu głównego.");
   }
   const profileIds = rows.map((row) => row.id as string);
   const [sites, contexts, injuries, injurySites] = profileIds.length ? await Promise.all([
     allPages(async (start, end) => await client().from("profile_rehab_sites")
       .select("profile_id,id,name,body_area,position,active,archived").in("profile_id", profileIds)
-      .order("profile_id").order("position").range(start, end)),
+      .order("profile_id").order("position").range(start, end).abortSignal(signal ?? new AbortController().signal)),
     allPages(async (start, end) => await client().from("profile_pain_contexts")
       .select("profile_id,value,label,position,active").in("profile_id", profileIds)
-      .order("profile_id").order("position").range(start, end)),
+      .order("profile_id").order("position").range(start, end).abortSignal(signal ?? new AbortController().signal)),
     allPages(async (start, end) => await client().from("profile_injuries")
       .select("profile_id,id,name,side,started_on,resolved_on,status,note,position")
-      .in("profile_id", profileIds).order("profile_id").order("position").range(start, end)),
+      .in("profile_id", profileIds).order("profile_id").order("position").range(start, end).abortSignal(signal ?? new AbortController().signal)),
     allPages(async (start, end) => await client().from("injury_rehab_sites")
       .select("profile_id,injury_id,site_id").in("profile_id", profileIds)
-      .order("profile_id").order("site_id").range(start, end)),
+      .order("profile_id").order("site_id").range(start, end).abortSignal(signal ?? new AbortController().signal)),
   ]) : [[], [], [], []];
   const sitesByProfile = groupRows(sites, "profile_id"), contextsByProfile = groupRows(contexts, "profile_id"),
     injuriesByProfile = groupRows(injuries, "profile_id"), injurySitesById = groupRows(injurySites, "injury_id");
@@ -150,11 +169,11 @@ async function profiles(): Promise<Profile[]> {
     } satisfies Injury)),
   }));
 }
-async function templates(profileId: string): Promise<WorkoutTemplate[]> {
+async function templates(profileId: string, signal?: AbortSignal): Promise<WorkoutTemplate[]> {
   const rows = await allPages(async (start, end) => await client().from("workout_templates")
-    .select("id,name").eq("profile_id", profileId).order("id").range(start, end));
+    .select("id,name").eq("profile_id", profileId).order("id").range(start, end).abortSignal(signal ?? new AbortController().signal));
   if (!rows.length) return [];
-  const entries = await rowsForIds("template_exercises", "template_id", rows.map((r) => r.id), ["template_id", "position"]);
+  const entries = await rowsForIds("template_exercises", "template_id", rows.map((r) => r.id), ["template_id", "position"], signal);
   const byTemplate = groupRows(entries, "template_id");
   return rows.map((row) => ({ id: row.id, name: row.name, profileId,
     entries: (byTemplate.get(row.id) ?? []).map((e) => ({
@@ -176,13 +195,14 @@ async function putTemplate(template: WorkoutTemplate) {
   }
 }
 
-async function logs(profileId: string): Promise<PainLog[]> {
-  const rows = await allPages(async (start, end) => await client().from("pain_logs")
-    .select("*").eq("profile_id", profileId).order("log_date").order("id").range(start, end));
+async function logs(profileId: string, signal?: AbortSignal, since?: string): Promise<PainLog[]> {
+  const embedded = await recordPages("logs", profileId, signal, since);
+  const rows = embedded ?? await allPages(async (start, end) => await client().from("pain_logs")
+    .select("*").eq("profile_id", profileId).gte("log_date", since ?? "0001-01-01").order("log_date").order("id").range(start, end).abortSignal(signal ?? new AbortController().signal));
   if (!rows.length) return [];
-  const [values, injuryLinks] = await Promise.all([
-    rowsForIds("pain_log_values", "pain_log_id", rows.map((r) => r.id), ["pain_log_id", "site_id"]),
-    rowsForIds("pain_log_injuries", "pain_log_id", rows.map((r) => r.id), ["pain_log_id", "injury_id"]),
+  const [values, injuryLinks] = embedded ? [rows.flatMap(row => row.values), rows.flatMap(row => row.injuries)] : await Promise.all([
+    rowsForIds("pain_log_values", "pain_log_id", rows.map((r) => r.id), ["pain_log_id", "site_id"], signal),
+    rowsForIds("pain_log_injuries", "pain_log_id", rows.map((r) => r.id), ["pain_log_id", "injury_id"], signal),
   ]);
   const byLog = groupRows(values, "pain_log_id");
   const injuriesByLog = groupRows(injuryLinks, "pain_log_id");
@@ -200,14 +220,15 @@ async function putLog(log: PainLog) {
   checked(result);
 }
 
-async function sessions(profileId: string): Promise<Session[]> {
-  const rows = await allPages(async (start, end) => await client().from("workout_sessions")
-    .select("*").eq("profile_id", profileId).order("started_at").order("id").range(start, end));
+async function sessions(profileId: string, signal?: AbortSignal, since?: string): Promise<Session[]> {
+  const embedded = await recordPages("sessions", profileId, signal, since);
+  const rows = embedded ?? await allPages(async (start, end) => await client().from("workout_sessions")
+    .select("*").eq("profile_id", profileId).order("started_at").order("id").range(start, end).abortSignal(signal ?? new AbortController().signal));
   if (!rows.length) return [];
   const ids = rows.map((r) => r.id);
-  const [plans, sets] = await Promise.all([
-    rowsForIds("session_exercises", "session_id", ids, ["session_id", "position"]),
-    rowsForIds("session_sets", "session_id", ids, ["session_id", "exercise_id", "side", "set_index"]),
+  const [plans, sets] = embedded ? [rows.flatMap(row => row.plans), rows.flatMap(row => row.sets)] : await Promise.all([
+    rowsForIds("session_exercises", "session_id", ids, ["session_id", "position"], signal),
+    rowsForIds("session_sets", "session_id", ids, ["session_id", "exercise_id", "side", "set_index"], signal),
   ]);
   const plansBySession = groupRows(plans, "session_id");
   const setsBySession = groupRows(sets, "session_id");
@@ -246,29 +267,44 @@ export async function saveCloudSessionSets(session: Session, changed: SetLog[]) 
   const result = await client().rpc("update_session_sets", {
     payload: { sessionId: session.id, sets: changed },
   });
-  if (!result.error) return;
+  if (!result.error) { invalidateResources(`recent-sessions:${session.profileId}`); patchResource<Session[]>(`sessions:${session.profileId}`, rows => rows.map(row => row.id === session.id ? session : row)); return; }
   // Existing deployments may not have the targeted-write migration yet.
   if (result.error.code === "PGRST202") {
     await putSession(session);
+    invalidateResources(`recent-sessions:${session.profileId}`); patchResource<Session[]>(`sessions:${session.profileId}`, rows => rows.map(row => row.id === session.id ? session : row));
     return;
   }
   throw Error(systemMessage("Nie udało się zapisać serii: {{v0}}",{v0: result.error.message}));
 }
 
+function remember<T extends { id: string }>(key: string, value: T) {
+  patchResource<T[]>(key, rows => [...rows.filter(row => row.id !== value.id), value]);
+}
 export const cloudDb = {
-  profiles: { toArray: profiles, update: async (id: string, changes: ProfileSettings) => {
+  readRecent: async (id: string) => {
+    const date = new Date(); date.setDate(date.getDate() - 90);
+    const since = date.toISOString().slice(0,10);
+    const [recentSessions, recentLogs, plans] = await Promise.all([
+      cachedResource(`recent-sessions:${id}`, signal => sessions(id, signal, since)),
+      cachedResource(`recent-logs:${id}`, signal => logs(id, signal, since)),
+      cachedResource(`templates:${id}`, signal => templates(id, signal), 120000),
+    ]);
+    return { sessions: recentSessions.sort((a,b) => a.started.localeCompare(b.started) || a.id.localeCompare(b.id)), logs: recentLogs.sort((a,b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at)), templates: plans };
+  },
+  profiles: { toArray: async () => { const owner = (await client().auth.getSession()).data.session?.user.id ?? await userId(); return cachedResource(`profiles:${owner}`, signal => profiles(owner, signal), 120000); }, update: async (id: string, changes: ProfileSettings) => {
     const settings = profileSettingsSchema.parse(changes);
     const result = await client().rpc("save_profile_settings_with_archiving", { payload: { profileId: id, ...settings } });
     if (result.error?.code === "PGRST202") throw Error("Brak migracji archiwizacji obszarów. Zastosuj 20261118_rehab_site_archiving.sql w Supabase SQL Editor.");
     checked(result);
+    invalidateResources("profiles:");
   } },
-  templates: { where: (_field: string) => ({ equals: (id: string) => ({ toArray: () => templates(id) }) }),
-    put: putTemplate, delete: async (id: string) => { checked(await client().from("workout_templates").delete().eq("id", id)); } },
-  logs: { where: (_field: string) => ({ equals: (id: string) => ({ sortBy: async (_sort: string) => logs(id) }) }),
-    put: putLog, delete: async (id: string) => { checked(await client().from("pain_logs").delete().eq("id", id)); } },
-  sessions: { where: (_field: string) => ({ equals: (id: string) => ({ sortBy: async (_sort: string) => sessions(id) }) }),
-    put: putSession, add: putSession,
-    delete: async (id: string) => { checked(await client().from("workout_sessions").delete().eq("id", id)); } },
+  templates: { where: (_field: string) => ({ equals: (id: string) => ({ toArray: () => cachedResource(`templates:${id}`, signal => templates(id, signal), 120000) }) }),
+    put: async (value: WorkoutTemplate) => { await putTemplate(value); remember(`templates:${value.profileId}`, value); }, delete: async (id: string) => { checked(await client().from("workout_templates").delete().eq("id", id)); invalidateResources("templates:"); } },
+  logs: { where: (_field: string) => ({ equals: (id: string) => ({ sortBy: async (_sort: string) => cachedResource(`logs:${id}`, signal => logs(id, signal)).then(rows => rows.sort((a,b) => a.date.localeCompare(b.date) || a.at.localeCompare(b.at) || a.id.localeCompare(b.id))) }) }),
+    put: async (value: PainLog) => { await putLog(value); invalidateResources(`recent-logs:${value.profileId}`); remember(`logs:${value.profileId}`, value); }, delete: async (id: string) => { checked(await client().from("pain_logs").delete().eq("id", id)); invalidateResources("logs:"); invalidateResources("recent-logs:"); } },
+  sessions: { where: (_field: string) => ({ equals: (id: string) => ({ sortBy: async (_sort: string) => cachedResource(`sessions:${id}`, signal => sessions(id, signal)).then(rows => rows.sort((a,b) => a.started.localeCompare(b.started) || a.id.localeCompare(b.id))) }) }),
+    put: async (value: Session) => { await putSession(value); invalidateResources(`recent-sessions:${value.profileId}`); remember(`sessions:${value.profileId}`, value); }, add: async (value: Session) => { await putSession(value); invalidateResources(`recent-sessions:${value.profileId}`); remember(`sessions:${value.profileId}`, value); },
+    delete: async (id: string) => { checked(await client().from("workout_sessions").delete().eq("id", id)); invalidateResources("sessions:"); invalidateResources("logs:"); invalidateResources("recent-sessions:"); invalidateResources("recent-logs:"); } },
 };
 
 export async function exportCloudBackup(profileId: string) {
@@ -304,4 +340,5 @@ export async function importCloudBackup(raw: unknown, profileId: string) {
   const result = await client().rpc("replace_profile_data_analytics", { target_profile: profileId, payload });
   if (result.error?.code === "PGRST202") throw Error("Brak migracji powiązań analiz. Zastosuj 20261121_analytics_links.sql w Supabase SQL Editor.");
   checked(result);
+  invalidateResources("profiles:"); invalidateResources(`sessions:${profileId}`); invalidateResources(`logs:${profileId}`); invalidateResources(`templates:${profileId}`); invalidateResources(`recent-sessions:${profileId}`); invalidateResources(`recent-logs:${profileId}`);
 }

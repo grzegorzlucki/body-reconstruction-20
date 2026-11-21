@@ -6,6 +6,8 @@ The browser uses only the Supabase project URL and publishable key. Run SQL in t
 
 ## Existing project
 
+For optimized reads, apply `supabase/migrations/20261123_read_record_pages.sql` after the existing migrations, first on staging. This adds bounded, owner-checked, security-invoker keyset reads with nested child rows. The frontend falls back to legacy reads only when the function is missing. Deployment steps and outstanding work: `docs/performance/OPTIMIZATION_DEPLOYMENT.md`. The migration has not been executed against a real PostgreSQL project by the local test harness.
+
 For Polish/English UI, run `supabase/migrations/20261122_profile_language.sql` after the analytics migration and before deploying the frontend. It adds a language preference and owner-checked RPC without rewriting existing rehabilitation data. See `docs/I18N_PL_EN_DEPLOYMENT.md` for account/cache rules, staging checks and the bilingual Auth email templates under `supabase/email-templates/`.
 
 For the new Analytics release, after the earlier migrations below, run the complete file `supabase/migrations/20261121_analytics_links.sql` in one SQL Editor execution **before deploying the frontend**. It is additive and rerunnable. It adds session-linked measurements, measurement phases and completion reasons; it does not guess relationships for old reports. Existing RLS policies remain active. New cloud save/import RPCs require this migration; deployment to Pages does not run SQL.

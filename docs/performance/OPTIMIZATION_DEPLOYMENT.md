@@ -1,0 +1,13 @@
+# Read optimization deployment and limits
+
+Apply `supabase/migrations/20261123_read_record_pages.sql` manually on staging first, then deploy frontend. The migration adds a stable security-invoker function; authenticated owner access and existing RLS remain mandatory. Anonymous/PUBLIC execution is revoked. No production SQL was executed by the agent. PostgreSQL execution/plans still need staging validation.
+
+Without the RPC, reads fall back to existing PostgREST paths only on PGRST202. Permission, server and malformed-response errors are never converted to partial success. Export reads the complete database directly. The startup recent window is 90 UTC dates and includes active/latest performed workouts and their reports when the migration is installed; legacy session reads remain complete to preserve last-workout semantics. Calendar, History and Analytics explicitly wait for complete history, rather than silently showing incomplete statistics.
+
+Cache is in memory, not service worker or persistent health-data storage. Resource keys include profile ID; profile configuration includes owner ID. Auth user changes clear cache and abort in-flight reads. GET requests can be retried by the existing SDK; no extra write retry is introduced. The transport has a six-request budget and a 15-second deadline including queue time. A cached collection load has a 14-second abort budget. Remaining requests cannot continue paginating after invalidation/logout.
+
+Confirmed writes patch affected loaded lists or invalidate relationships. Shared UI refresh still runs to reconcile state, but unaffected valid resources no longer cause database reads. Deletes and imports invalidate dependent lists. Existing targeted unilateral set writes are retained. Browser-local Dexie behavior is unchanged.
+
+Run `npm test`, `npm run build`, and `npm run test:load`. The HTTP fixture supports both original table reads and the new page contract; it does not execute SQL. Retained baseline is `results.json`; optimized fixture results are `optimized-results.json`. Fixture RPC uses indexed in-memory grouping rather than SQL. Compare request counts and cache reuse; absolute latency is not a production SLA or a controlled PostgreSQL before/after comparison.
+
+Still outstanding from the broader design: range-specific Calendar/Analytics endpoints and aggregates, fully lazy per-session details, optimistic version conflict checks, durable idempotency handling for ambiguous writes, server telemetry and a real staging soak test. These were not silently substituted with incomplete client data. No new service-role key, automatic production migration, or real capacity claim is involved.

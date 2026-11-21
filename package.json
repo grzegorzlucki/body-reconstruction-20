@@ -9,7 +9,8 @@
     "preview": "vite preview --host 0.0.0.0",
     "generate:icons": "node scripts/generate-icons.mjs",
     "verify:pages": "node scripts/verify-pages.mjs dist",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:load": "vitest run --config vitest.performance.config.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",

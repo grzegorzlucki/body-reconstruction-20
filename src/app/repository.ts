@@ -18,6 +18,7 @@ type SortedProfileQuery<T> = {
 };
 
 export type AppRepository = {
+  readRecent?: (profileId: string) => Promise<{ sessions: Session[]; logs: PainLog[]; templates: WorkoutTemplate[] }>;
   profiles: {
     toArray(): Promise<Profile[]>;
     update(id: string, changes: ProfileSettings): Promise<unknown>;
